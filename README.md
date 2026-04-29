@@ -1,19 +1,19 @@
-<p align="center">
-  <img src="https://repository-images.githubusercontent.com/1223168847/145cb04c-3479-4eb5-bbb6-23d14d047a7c" alt="NeoStation Banner" width="100%">
-</p>
+<div align="center">
 
-<p align="center">
-  <a href="https://github.com/miguelsotobaez/neostation-frontend/actions">
-    <img src="https://github.com/miguelsotobaez/neostation-frontend/actions/workflows/build-and-deploy.yml/badge.svg" alt="Build Status">
-  </a>
-  <a href="https://www.gnu.org/licenses/gpl-3.0">
-    <img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3">
-  </a>
-</p>
+# NeoStation
 
-<p align="center">
-  NeoStation is a modern, multi-platform emulation frontend built with Flutter. It provides a fast, lightweight, and customizable experience for managing and launching retro games across desktop and mobile devices, with integration for RetroArch and standalone emulators.
-</p>
+<h4>Modern, multi-platform emulation frontend built with Flutter</h4>
+
+[![Build Status](https://github.com/miguelsotobaez/neostation-frontend/actions/workflows/build-and-deploy.yml/badge.svg)](https://github.com/miguelsotobaez/neostation-frontend/actions)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+![NeoStation Hero](https://repository-images.githubusercontent.com/1223168847/145cb04c-3479-4eb5-bbb6-23d14d047a7c)
+
+</div>
+
+<div align="left">
+
+NeoStation provides a fast, lightweight, and customizable experience for managing and launching retro games across desktop and mobile devices, with seamless integration for RetroArch and standalone emulators.
 
 ---
 
