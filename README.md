@@ -4,7 +4,6 @@
 
 <h4>Modern, multi-platform emulation frontend built with Flutter</h4>
 
-[![Build Status](https://github.com/miguelsotobaez/neostation-frontend/actions/workflows/build-and-deploy.yml/badge.svg)](https://github.com/miguelsotobaez/neostation-frontend/actions)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ![NeoStation Hero](https://repository-images.githubusercontent.com/1223168847/145cb04c-3479-4eb5-bbb6-23d14d047a7c)
