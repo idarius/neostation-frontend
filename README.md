@@ -1,6 +1,6 @@
 # NeoStation
 
-[![Build Status](https://github.com/miguelsotobaez/neostation-frontend    /actions/workflows/build-and-deploy.yml/badge.svg)](https://github.com/miguelsotobaez/neostation-frontend/actions)
+[![Build Status](https://github.com/miguelsotobaez/neostation-frontend/actions/workflows/build-and-deploy.yml/badge.svg)](https://github.com/miguelsotobaez/neostation-frontend/actions)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 NeoStation is a modern, multi-platform emulation frontend built with Flutter. It provides a fast, lightweight, and customizable experience for managing and launching retro games across desktop and mobile devices, with integration for RetroArch and standalone emulators.
