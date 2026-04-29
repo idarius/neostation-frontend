@@ -148,4 +148,4 @@ If you discover a security vulnerability, please follow the instructions in [`SE
 
 This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**. See [`LICENSE.md`](LICENSE.md) for details.
 
-Third-party components and assets have their own licenses — see [`NOTICE`](NOTICE).
+Third-party components and assets have their own licenses — see [`NOTICE`](NOTICE.md).
