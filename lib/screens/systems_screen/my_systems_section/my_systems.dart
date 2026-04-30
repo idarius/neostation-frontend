@@ -838,8 +838,9 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
     if (!Platform.isAndroid) return;
     if (_secondaryDisplayState == null) return;
     if (widget.selectedIndex < 0 ||
-        widget.selectedIndex >= widget.systems.length)
+        widget.selectedIndex >= widget.systems.length) {
       return;
+    }
 
     final system = widget.systems[widget.selectedIndex];
     final info = system is SystemInfo
