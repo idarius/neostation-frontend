@@ -50,7 +50,9 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
   }
 
   void _moveLeft() {
-    setState(() => _selectedIndex = (_selectedIndex - 1 + _cardCount) % _cardCount);
+    setState(
+      () => _selectedIndex = (_selectedIndex - 1 + _cardCount) % _cardCount,
+    );
   }
 
   void _moveRight() {
@@ -141,10 +143,7 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
 
   Widget _buildNavHint(ThemeData theme) {
     final hintColor = theme.colorScheme.onSurface.withValues(alpha: 0.3);
-    final textStyle = TextStyle(
-      color: hintColor,
-      fontSize: 10.r,
-    );
+    final textStyle = TextStyle(color: hintColor, fontSize: 10.r);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -217,15 +216,18 @@ class _ProviderCardState extends State<_ProviderCard>
       duration: const Duration(milliseconds: 280),
     );
 
-    _scaleAnim = Tween<double>(begin: 1.0, end: 1.06).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
-    _liftAnim = Tween<double>(begin: 0.0, end: -10.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
-    _glowAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _scaleAnim = Tween<double>(
+      begin: 1.0,
+      end: 1.06,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+    _liftAnim = Tween<double>(
+      begin: 0.0,
+      end: -10.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _glowAnim = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     if (_isSelected) _controller.forward();
   }
@@ -261,7 +263,10 @@ class _ProviderCardState extends State<_ProviderCard>
 
     final iconBgColor = showActive
         ? Color.alphaBlend(accent.withValues(alpha: 0.18), base)
-        : Color.alphaBlend(theme.colorScheme.onSurface.withValues(alpha: 0.14), base);
+        : Color.alphaBlend(
+            theme.colorScheme.onSurface.withValues(alpha: 0.14),
+            base,
+          );
 
     return GestureDetector(
       onTap: widget.onTap,

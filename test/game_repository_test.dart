@@ -9,8 +9,12 @@ void main() {
 
   setUp(() async {
     db = await dbHelper.setUp();
-    await db.execute("INSERT INTO app_systems (id, real_name, folder_name) VALUES ('switch', 'Nintendo Switch', 'switch')");
-    await db.execute("INSERT INTO app_systems (id, real_name, folder_name) VALUES ('snes', 'Super Nintendo', 'snes')");
+    await db.execute(
+      "INSERT INTO app_systems (id, real_name, folder_name) VALUES ('switch', 'Nintendo Switch', 'switch')",
+    );
+    await db.execute(
+      "INSERT INTO app_systems (id, real_name, folder_name) VALUES ('snes', 'Super Nintendo', 'snes')",
+    );
   });
 
   tearDown(() async {
@@ -67,7 +71,9 @@ void main() {
         "INSERT INTO user_roms (filename, rom_path, title_name, title_id, app_system_id) VALUES ('game.nsp', '/roms/switch/game.nsp', 'Super Mario', '0100000000010000', 'switch')",
       );
 
-      final result = await GameRepository.findSwitchGameByTitleId('0100000000010000');
+      final result = await GameRepository.findSwitchGameByTitleId(
+        '0100000000010000',
+      );
       expect(result, isNotNull);
       expect(result!['filename'], 'game.nsp');
     });
@@ -77,7 +83,10 @@ void main() {
         "INSERT INTO user_roms (filename, rom_path, title_id, app_system_id) VALUES ('game.nsp', '/roms/switch/game.nsp', '0100000000010000', 'switch')",
       );
 
-      final titleId = await GameRepository.getTitleIdForGame('game.nsp', 'Super Mario');
+      final titleId = await GameRepository.getTitleIdForGame(
+        'game.nsp',
+        'Super Mario',
+      );
       expect(titleId, '0100000000010000');
     });
 
@@ -105,7 +114,9 @@ void main() {
       final deleted = await GameRepository.deleteRomsByFolderPath('/roms/snes');
       expect(deleted, 2);
 
-      final remaining = await db.rawQuery('SELECT COUNT(*) as c FROM user_roms');
+      final remaining = await db.rawQuery(
+        'SELECT COUNT(*) as c FROM user_roms',
+      );
       expect(remaining.first['c'], 0);
     });
   });

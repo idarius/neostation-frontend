@@ -2582,8 +2582,9 @@ class SqliteService {
         columns: ['actual_folder_name'],
         where: 'is_hidden = 1',
       );
-      final hiddenFolders =
-          hiddenRows.map((r) => r['actual_folder_name'] as String).toSet();
+      final hiddenFolders = hiddenRows
+          .map((r) => r['actual_folder_name'] as String)
+          .toSet();
 
       // Clear previous detections to avoid stale or duplicate entries.
       await txn.delete('user_detected_systems');

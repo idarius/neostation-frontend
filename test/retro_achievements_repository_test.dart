@@ -9,7 +9,9 @@ void main() {
 
   setUp(() async {
     db = await dbHelper.setUp();
-    await db.execute("INSERT INTO app_systems (id, real_name, folder_name, ra_id) VALUES ('nes', 'NES', 'nes', '7')");
+    await db.execute(
+      "INSERT INTO app_systems (id, real_name, folder_name, ra_id) VALUES ('nes', 'NES', 'nes', '7')",
+    );
   });
 
   tearDown(() async {
@@ -62,7 +64,10 @@ void main() {
         "INSERT INTO user_roms (filename, rom_path, app_system_id) VALUES ('a.nes', '/roms/nes/a.nes', 'nes')",
       );
 
-      await RetroAchievementsRepository.updateRomRaGameId('/roms/nes/a.nes', 1234);
+      await RetroAchievementsRepository.updateRomRaGameId(
+        '/roms/nes/a.nes',
+        1234,
+      );
 
       final result = await db.rawQuery(
         "SELECT id_ra FROM user_roms WHERE rom_path = '/roms/nes/a.nes'",
@@ -89,7 +94,12 @@ void main() {
         "INSERT INTO user_roms (filename, rom_path, app_system_id) VALUES ('a.nes', '/roms/nes/a.nes', 'nes')",
       );
 
-      await RetroAchievementsRepository.updateRomRAData('a.nes', 'nes', 'hash123', 42);
+      await RetroAchievementsRepository.updateRomRAData(
+        'a.nes',
+        'nes',
+        'hash123',
+        42,
+      );
 
       final result = await db.rawQuery(
         "SELECT ra_hash, id_ra FROM user_roms WHERE filename = 'a.nes' AND app_system_id = 'nes'",
@@ -103,7 +113,9 @@ void main() {
         "INSERT INTO app_ra_game_list (hash, game_id) VALUES ('abc123', 1001)",
       );
 
-      final gameId = await RetroAchievementsRepository.findGameIdByHash('abc123');
+      final gameId = await RetroAchievementsRepository.findGameIdByHash(
+        'abc123',
+      );
       expect(gameId, 1001);
     });
 
@@ -112,7 +124,10 @@ void main() {
         "INSERT INTO app_ra_game_list (hash, game_id, console_id, title) VALUES ('h1', 2001, '7', 'Super Mario Bros')",
       );
 
-      final gameId = await RetroAchievementsRepository.findGameIdByFilename('nes', 'Super Mario Bros');
+      final gameId = await RetroAchievementsRepository.findGameIdByFilename(
+        'nes',
+        'Super Mario Bros',
+      );
       expect(gameId, 2001);
     });
 
@@ -121,12 +136,18 @@ void main() {
         "INSERT INTO app_ra_game_list (hash, game_id, console_id, title) VALUES ('h1', 3001, '7', 'Legend of Zelda')",
       );
 
-      final gameId = await RetroAchievementsRepository.findGameIdByFilename('nes', 'Zelda');
+      final gameId = await RetroAchievementsRepository.findGameIdByFilename(
+        'nes',
+        'Zelda',
+      );
       expect(gameId, 3001);
     });
 
     test('findGameIdByFilename returns null when no match', () async {
-      final gameId = await RetroAchievementsRepository.findGameIdByFilename('nes', 'Missing');
+      final gameId = await RetroAchievementsRepository.findGameIdByFilename(
+        'nes',
+        'Missing',
+      );
       expect(gameId, isNull);
     });
   });

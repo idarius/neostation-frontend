@@ -837,18 +837,27 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
   void _updateSecondaryScreenName() {
     if (!Platform.isAndroid) return;
     if (_secondaryDisplayState == null) return;
-    if (widget.selectedIndex < 0 || widget.selectedIndex >= widget.systems.length) return;
+    if (widget.selectedIndex < 0 ||
+        widget.selectedIndex >= widget.systems.length)
+      return;
 
     final system = widget.systems[widget.selectedIndex];
-    final info = system is SystemInfo ? system : SystemInfo.fromSystemMetadata(system);
+    final info = system is SystemInfo
+        ? system
+        : SystemInfo.fromSystemMetadata(system);
     final folder = info.primaryFolderName ?? info.folderName ?? 'all';
 
-    final String? customLogo = info.customLogoPath?.isNotEmpty == true ? info.customLogoPath : null;
+    final String? customLogo = info.customLogoPath?.isNotEmpty == true
+        ? info.customLogoPath
+        : null;
     final String? themeLogo = customLogo == null ? _themeLogos[folder] : null;
     final String? systemLogo = info.isGame
         ? info.customWheelImage
-        : (customLogo ?? themeLogo ?? 'assets/images/systems/logos/$folder.webp');
-    final bool isLogoAsset = !info.isGame && customLogo == null && themeLogo == null;
+        : (customLogo ??
+              themeLogo ??
+              'assets/images/systems/logos/$folder.webp');
+    final bool isLogoAsset =
+        !info.isGame && customLogo == null && themeLogo == null;
 
     final String? customBg = info.customBackgroundPath;
     final bool hasCustomBg = customBg != null && customBg.isNotEmpty;

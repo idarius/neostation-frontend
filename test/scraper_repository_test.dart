@@ -9,12 +9,24 @@ void main() {
 
   setUp(() async {
     db = await dbHelper.setUp();
-    await db.execute("INSERT INTO app_systems (id, real_name, folder_name, screenscraper_id) VALUES ('snes', 'SNES', 'snes', 4)");
-    await db.execute("INSERT INTO app_systems (id, real_name, folder_name, screenscraper_id) VALUES ('nes', 'NES', 'nes', 3)");
-    await db.execute("INSERT INTO app_systems (id, real_name, folder_name, screenscraper_id) VALUES ('unmapped', 'Unmapped', 'unmapped', NULL)");
-    await db.execute("INSERT INTO user_detected_systems (app_system_id, actual_folder_name) VALUES ('snes', 'snes')");
-    await db.execute("INSERT INTO user_detected_systems (app_system_id, actual_folder_name) VALUES ('nes', 'nes')");
-    await db.execute("INSERT INTO user_detected_systems (app_system_id, actual_folder_name) VALUES ('unmapped', 'unmapped')");
+    await db.execute(
+      "INSERT INTO app_systems (id, real_name, folder_name, screenscraper_id) VALUES ('snes', 'SNES', 'snes', 4)",
+    );
+    await db.execute(
+      "INSERT INTO app_systems (id, real_name, folder_name, screenscraper_id) VALUES ('nes', 'NES', 'nes', 3)",
+    );
+    await db.execute(
+      "INSERT INTO app_systems (id, real_name, folder_name, screenscraper_id) VALUES ('unmapped', 'Unmapped', 'unmapped', NULL)",
+    );
+    await db.execute(
+      "INSERT INTO user_detected_systems (app_system_id, actual_folder_name) VALUES ('snes', 'snes')",
+    );
+    await db.execute(
+      "INSERT INTO user_detected_systems (app_system_id, actual_folder_name) VALUES ('nes', 'nes')",
+    );
+    await db.execute(
+      "INSERT INTO user_detected_systems (app_system_id, actual_folder_name) VALUES ('unmapped', 'unmapped')",
+    );
   });
 
   tearDown(() async {
@@ -29,11 +41,14 @@ void main() {
       expect(systems.any((s) => s['folder_name'] == 'nes'), isTrue);
     });
 
-    test('getSystemScraperConfig defaults to true for all systems when empty', () async {
-      final config = await ScraperRepository.getSystemScraperConfig();
-      expect(config['snes'], isTrue);
-      expect(config['nes'], isTrue);
-    });
+    test(
+      'getSystemScraperConfig defaults to true for all systems when empty',
+      () async {
+        final config = await ScraperRepository.getSystemScraperConfig();
+        expect(config['snes'], isTrue);
+        expect(config['nes'], isTrue);
+      },
+    );
 
     test('saveSystemConfig persists enabled state', () async {
       final saved = await ScraperRepository.saveSystemConfig('snes', false);
@@ -130,10 +145,10 @@ void main() {
     });
 
     test('saveGameMetadata persists metadata', () async {
-      final saved = await ScraperRepository.saveGameMetadata(
-        {'filename': 'game.smc', 'title': 'Super Game'},
-        'snes',
-      );
+      final saved = await ScraperRepository.saveGameMetadata({
+        'filename': 'game.smc',
+        'title': 'Super Game',
+      }, 'snes');
       expect(saved, isTrue);
 
       final rows = await db.rawQuery(
@@ -167,7 +182,10 @@ void main() {
         "INSERT INTO user_screenscraper_metadata (filename, app_system_id, is_fully_scraped) VALUES ('old.smc', 'snes', 1)",
       );
 
-      final count = await ScraperRepository.getRomCountForScraping('snes', 'new_only');
+      final count = await ScraperRepository.getRomCountForScraping(
+        'snes',
+        'new_only',
+      );
       expect(count, 1);
     });
 
@@ -189,7 +207,9 @@ void main() {
         "INSERT INTO user_roms (filename, rom_path, app_system_id, title_id) VALUES ('no_id.steam', '/roms/steam/no_id.steam', 'steam', NULL)",
       );
 
-      final games = await ScraperRepository.getSteamGamesWithScrapeStatus('steam');
+      final games = await ScraperRepository.getSteamGamesWithScrapeStatus(
+        'steam',
+      );
       expect(games.length, 1);
       expect(games.first['filename'], 'game.steam');
     });

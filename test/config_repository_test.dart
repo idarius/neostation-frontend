@@ -20,10 +20,13 @@ void main() {
       expect(config, isNull);
     });
 
-    test('getGameViewMode returns default "list" when no config exists', () async {
-      final mode = await ConfigRepository.getGameViewMode();
-      expect(mode, 'list');
-    });
+    test(
+      'getGameViewMode returns default "list" when no config exists',
+      () async {
+        final mode = await ConfigRepository.getGameViewMode();
+        expect(mode, 'list');
+      },
+    );
 
     test('updateGameViewMode persists the mode', () async {
       await ConfigRepository.updateGameViewMode('grid');
@@ -31,10 +34,13 @@ void main() {
       expect(mode, 'grid');
     });
 
-    test('getThemeName returns default "system" when no config exists', () async {
-      final theme = await ConfigRepository.getThemeName();
-      expect(theme, 'system');
-    });
+    test(
+      'getThemeName returns default "system" when no config exists',
+      () async {
+        final theme = await ConfigRepository.getThemeName();
+        expect(theme, 'system');
+      },
+    );
 
     test('updateThemeName persists the theme', () async {
       await ConfigRepository.updateThemeName('dark');
