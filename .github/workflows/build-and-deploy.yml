@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Create .env from secrets
         shell: bash
@@ -47,7 +47,7 @@ jobs:
       
       - name: Setup Java (for Android)
         if: matrix.target == 'android'
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -69,7 +69,7 @@ jobs:
           flutter precache --linux
 
       - name: Cache Flutter and Gradle
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.pub-cache
@@ -120,7 +120,7 @@ jobs:
 
       - name: Cache Linux build tools
         if: matrix.target == 'linux-x64' || matrix.target == 'linux-arm'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             .cache/build-tools
@@ -148,7 +148,7 @@ jobs:
         run: bash build-utils/build-linuxarm.sh
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: neostation-${{ matrix.target }}
           path: release/*
@@ -164,12 +164,12 @@ jobs:
       pull-requests: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: release-artifacts
           pattern: neostation-*
