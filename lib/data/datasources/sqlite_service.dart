@@ -1157,6 +1157,15 @@ class SqliteService {
       }
     }
 
+    // FIX: Ensure user_config includes fork-private columns (show_game_wheel).
+    if (tableNames.contains('user_config')) {
+      try {
+        await _ensureUserConfigColumns(db);
+      } catch (e) {
+        _log.e('Minor fix for user_config columns failed: $e');
+      }
+    }
+
     // FIX: Ensure unique_identifier column in app_emulators.
     if (tableNames.contains('app_emulators')) {
       try {
@@ -1329,6 +1338,27 @@ class SqliteService {
     }
   }
 
+  /// Ensures required columns exist in user_config (fork-private additions).
+  ///
+  /// Idempotent: checks PRAGMA table_info and ALTERs only if missing.
+  /// This pattern avoids bumping `_databaseVersion`, which would conflict
+  /// with future upstream migrations (see CLAUDE.md fork policy).
+  Future<void> _ensureUserConfigColumns(DatabaseAdapter db) async {
+    try {
+      final tableInfo = await db.rawQuery('PRAGMA table_info(user_config)');
+      final columns = tableInfo.map((c) => c['name'].toString()).toList();
+
+      if (!columns.contains('show_game_wheel')) {
+        await db.execute(
+          'ALTER TABLE user_config ADD COLUMN show_game_wheel INTEGER DEFAULT 1',
+        );
+      }
+    } catch (e) {
+      _log.e('Minor fix ensuring user_config columns failed: $e');
+      rethrow;
+    }
+  }
+
   /// Creates initial database tables during first run.
   Future<void> _onCreate(DatabaseAdapter db, int version) async {
     final stopwatch = Stopwatch()..start();
@@ -1492,7 +1522,8 @@ class SqliteService {
         app_language TEXT DEFAULT 'en',
         active_theme TEXT DEFAULT '',
         hide_recent_card INTEGER DEFAULT 0,
-        active_sync_provider TEXT DEFAULT 'neosync'
+        active_sync_provider TEXT DEFAULT 'neosync',
+        show_game_wheel INTEGER DEFAULT 1
       );
       ''',
       '''
@@ -2174,6 +2205,7 @@ class SqliteService {
     int? videoSound,
     String? raUser,
     int? showGameInfo,
+    int? showGameWheel,
     int? isFullscreen,
     int? bartopExitPoweroff,
     int? scanOnStartup,
@@ -2209,6 +2241,7 @@ class SqliteService {
     if (videoSound != null) newConfig['video_sound'] = videoSound;
     if (raUser != null) newConfig['ra_user'] = raUser;
     if (showGameInfo != null) newConfig['show_game_info'] = showGameInfo;
+    if (showGameWheel != null) newConfig['show_game_wheel'] = showGameWheel;
     if (isFullscreen != null) newConfig['is_fullscreen'] = isFullscreen;
     if (bartopExitPoweroff != null) {
       newConfig['bartop_exit_poweroff'] = bartopExitPoweroff;

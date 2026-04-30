@@ -1100,6 +1100,13 @@ class SqliteConfigProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Toggles the visibility of the per-game wheel logo on the games page.
+  Future<void> updateShowGameWheel(bool show) async {
+    _config = _config.copyWith(showGameWheel: show);
+    await SqliteConfigService.saveConfig(_config);
+    notifyListeners();
+  }
+
   /// Configures whether the application should shut down the host OS upon exit (Arcade/Cabinet mode).
   Future<void> updateBartopExitPoweroff(bool value) async {
     _config = _config.copyWith(bartopExitPoweroff: value);

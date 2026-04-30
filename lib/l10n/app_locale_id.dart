@@ -117,6 +117,9 @@ const Map<String, dynamic> appLocaleId = {
   AppLocale.setAsDefaultLauncher: 'Tetapkan NeoStation sebagai layar beranda',
   AppLocale.disableSecondaryScreen: 'Nonaktifkan di layar sekunder',
   AppLocale.disableSecondaryScreenSub: 'Menutup aplikasi di layar sekunder',
+  AppLocale.showGameWheelLogo: 'Show game logo',
+  AppLocale.showGameWheelLogoSub:
+      "Display the game's wheel logo over the fanart background on the games page",
   AppLocale.bartopShutdown: 'Matikan BarTOP saat keluar',
   AppLocale.bartopShutdownSubtitle: 'Mematikan komputer saat menutup aplikasi',
 

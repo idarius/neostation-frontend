@@ -103,6 +103,9 @@ const Map<String, dynamic> appLocaleJa = {
   AppLocale.setAsDefaultLauncher: 'NeoStationをホーム画面として設定',
   AppLocale.disableSecondaryScreen: 'セカンダリ画面で無効化',
   AppLocale.disableSecondaryScreenSub: 'セカンダリ画面のアプリを閉じる',
+  AppLocale.showGameWheelLogo: 'Show game logo',
+  AppLocale.showGameWheelLogoSub:
+      "Display the game's wheel logo over the fanart background on the games page",
   AppLocale.bartopShutdown: '終了時にBarTOPをシャットダウン',
   AppLocale.bartopShutdownSubtitle: 'アプリ終了時にコンピュータをシャットダウン',
 

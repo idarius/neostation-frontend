@@ -130,6 +130,8 @@ mixin AppLocale {
   static const String disableSecondaryScreen = 'disable_secondary_screen';
   static const String disableSecondaryScreenSub =
       'disable_secondary_screen_sub';
+  static const String showGameWheelLogo = 'show_game_wheel_logo';
+  static const String showGameWheelLogoSub = 'show_game_wheel_logo_sub';
   static const String bartopShutdown = 'bartop_shutdown';
   static const String bartopShutdownSubtitle = 'bartop_shutdown_subtitle';
 

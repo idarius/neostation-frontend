@@ -84,6 +84,7 @@ class DatabaseTestHelper {
         video_sound INTEGER,
         ra_user TEXT,
         show_game_info INTEGER,
+        show_game_wheel INTEGER DEFAULT 1,
         is_fullscreen INTEGER,
         bartop_exit_poweroff INTEGER,
         scan_on_startup INTEGER,

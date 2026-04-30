@@ -120,6 +120,9 @@ const Map<String, dynamic> appLocaleIt = {
   AppLocale.setAsDefaultLauncher: 'Imposta NeoStation come schermata iniziale',
   AppLocale.disableSecondaryScreen: 'Disabilita su schermo secondario',
   AppLocale.disableSecondaryScreenSub: 'Chiude l’app sullo schermo secondario',
+  AppLocale.showGameWheelLogo: 'Show game logo',
+  AppLocale.showGameWheelLogoSub:
+      "Display the game's wheel logo over the fanart background on the games page",
   AppLocale.bartopShutdown: 'Spegni BarTOP all’uscita',
   AppLocale.bartopShutdownSubtitle: 'Spegne il computer alla chiusura dell’app',
 

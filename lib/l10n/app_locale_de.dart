@@ -119,6 +119,9 @@ const Map<String, dynamic> appLocaleDe = {
   AppLocale.disableSecondaryScreen: 'Auf zweitem Bildschirm deaktivieren',
   AppLocale.disableSecondaryScreenSub:
       'Schließt die App auf dem zweiten Bildschirm',
+  AppLocale.showGameWheelLogo: 'Show game logo',
+  AppLocale.showGameWheelLogoSub:
+      "Display the game's wheel logo over the fanart background on the games page",
   AppLocale.bartopShutdown: 'BarTOP beim Beenden ausschalten',
   AppLocale.bartopShutdownSubtitle:
       'Schaltet den Computer beim Schließen der App aus',

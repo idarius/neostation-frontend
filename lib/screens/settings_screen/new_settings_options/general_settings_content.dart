@@ -58,7 +58,7 @@ class GeneralSettingsContentState extends State<GeneralSettingsContent>
     _checkSecondDisplay();
 
     // Pre-allocate keys for maximum theoretical setting items.
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 13; i++) {
       _itemKeys.add(GlobalKey());
     }
   }
@@ -849,6 +849,76 @@ class GeneralSettingsContentState extends State<GeneralSettingsContent>
               );
             }(),
           ],
+
+          // Setting: Show game wheel logo on the games page.
+          () {
+            final index = currentItemIdx++;
+            return Padding(
+              padding: EdgeInsets.only(top: 12.r),
+              child: Container(
+                key: _itemKeys[index],
+                padding: EdgeInsets.only(
+                  left: 12.r,
+                  right: 12.r,
+                  top: 6.r,
+                  bottom: 6.r,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.cardColor.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(
+                    color:
+                        widget.isContentFocused &&
+                            widget.selectedContentIndex == index
+                        ? theme.colorScheme.primary
+                        : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            AppLocale.showGameWheelLogo.getString(context),
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontSize: 12.r,
+                              fontWeight: FontWeight.w500,
+                              color:
+                                  widget.isContentFocused &&
+                                      widget.selectedContentIndex == index
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          SizedBox(height: 4.r),
+                          Text(
+                            AppLocale.showGameWheelLogoSub.getString(context),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontSize: 9.r,
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    CustomToggleSwitch(
+                      value: config.showGameWheel,
+                      onChanged: (value) {
+                        provider.updateShowGameWheel(value);
+                      },
+                      activeColor: theme.colorScheme.primary,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }(),
 
           // Setting: BarTOP Shutdown (Windows/Linux Power Management).
           if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) ...[

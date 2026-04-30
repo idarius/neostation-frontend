@@ -102,6 +102,9 @@ const Map<String, dynamic> appLocaleZh = {
   AppLocale.setAsDefaultLauncher: '将 NeoStation 设置为默认启动器',
   AppLocale.disableSecondaryScreen: '在副屏幕上禁用',
   AppLocale.disableSecondaryScreenSub: '在副屏幕上关闭应用',
+  AppLocale.showGameWheelLogo: 'Show game logo',
+  AppLocale.showGameWheelLogoSub:
+      "Display the game's wheel logo over the fanart background on the games page",
   AppLocale.bartopShutdown: '退出时关闭 BarTOP',
   AppLocale.bartopShutdownSubtitle: '退出应用时关闭计算机',
 

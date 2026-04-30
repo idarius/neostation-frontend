@@ -99,6 +99,10 @@ class SqliteConfigService {
             (int.tryParse(userConfig?['show_game_info']?.toString() ?? '0') ??
                 0) ==
             1,
+        showGameWheel:
+            (int.tryParse(userConfig?['show_game_wheel']?.toString() ?? '1') ??
+                1) ==
+            1,
         isFullscreen:
             (int.tryParse(userConfig?['is_fullscreen']?.toString() ?? '1') ??
                 1) ==
@@ -159,6 +163,7 @@ class SqliteConfigService {
         systemViewMode: config.systemViewMode,
         themeName: config.themeName,
         showGameInfo: config.showGameInfo ? 1 : 0,
+        showGameWheel: config.showGameWheel ? 1 : 0,
         isFullscreen: config.isFullscreen ? 1 : 0,
         bartopExitPoweroff: config.bartopExitPoweroff ? 1 : 0,
         scanOnStartup: config.scanOnStartup ? 1 : 0,

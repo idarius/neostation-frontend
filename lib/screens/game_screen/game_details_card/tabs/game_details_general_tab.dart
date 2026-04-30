@@ -2,9 +2,11 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
 import '../../../../models/system_model.dart';
 import '../../../../models/game_model.dart';
 import '../../../../providers/file_provider.dart';
+import '../../../../providers/sqlite_config_provider.dart';
 
 /// The default view for the game details card, rendering high-fidelity artwork.
 ///
@@ -26,6 +28,14 @@ class GameDetailsGeneralTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final showGameWheel = context.select<SqliteConfigProvider, bool>(
+      (p) => p.config.showGameWheel,
+    );
+
+    if (!showGameWheel) {
+      return const Positioned.fill(child: SizedBox.shrink());
+    }
+
     final imageSystemFolder = system.primaryFolderName;
     final wheelPath = game.getImagePath(
       imageSystemFolder,

@@ -26,6 +26,9 @@ class ConfigModel {
   /// Whether to display detailed game metadata by default.
   final bool showGameInfo;
 
+  /// Whether to display the per-game wheel logo overlay on the games page.
+  final bool showGameWheel;
+
   /// Whether the application should run in exclusive fullscreen mode.
   final bool isFullscreen;
 
@@ -71,6 +74,7 @@ class ConfigModel {
     this.systemViewMode = 'grid',
     this.themeName = 'system',
     this.showGameInfo = false,
+    this.showGameWheel = true,
     this.isFullscreen = true,
     this.bartopExitPoweroff = false,
     this.scanOnStartup = true,
@@ -126,6 +130,10 @@ class ConfigModel {
       themeName: (json['themeName'] ?? 'system').toString(),
       showGameInfo:
           (json['showGameInfo'] ?? false).toString().toLowerCase() == 'true',
+      showGameWheel: _parseBool(
+        json['showGameWheel'] ?? json['show_game_wheel'],
+        defaultValue: true,
+      ),
       isFullscreen:
           (json['isFullscreen'] ?? true).toString().toLowerCase() == 'true',
       bartopExitPoweroff:
@@ -184,6 +192,7 @@ class ConfigModel {
       'systemViewMode': systemViewMode,
       'themeName': themeName,
       'showGameInfo': showGameInfo,
+      'showGameWheel': showGameWheel,
       'isFullscreen': isFullscreen,
       'bartopExitPoweroff': bartopExitPoweroff,
       'scanOnStartup': scanOnStartup,
@@ -209,6 +218,7 @@ class ConfigModel {
     String? systemViewMode,
     String? themeName,
     bool? showGameInfo,
+    bool? showGameWheel,
     bool? isFullscreen,
     bool? bartopExitPoweroff,
     bool? scanOnStartup,
@@ -231,6 +241,7 @@ class ConfigModel {
       systemViewMode: systemViewMode ?? this.systemViewMode,
       themeName: themeName ?? this.themeName,
       showGameInfo: showGameInfo ?? this.showGameInfo,
+      showGameWheel: showGameWheel ?? this.showGameWheel,
       isFullscreen: isFullscreen ?? this.isFullscreen,
       bartopExitPoweroff: bartopExitPoweroff ?? this.bartopExitPoweroff,
       scanOnStartup: scanOnStartup ?? this.scanOnStartup,
@@ -249,8 +260,17 @@ class ConfigModel {
   /// Static instance representing a default, empty configuration.
   static const empty = ConfigModel();
 
+  /// Parses a JSON value into a bool, handling camelCase/snake_case payloads
+  /// that mix string/int/bool representations.
+  static bool _parseBool(dynamic raw, {required bool defaultValue}) {
+    if (raw == null) return defaultValue;
+    if (raw is bool) return raw;
+    final s = raw.toString().toLowerCase();
+    return s == 'true' || s == '1';
+  }
+
   @override
   String toString() {
-    return 'ConfigModel(romFolders: ${romFolders.length}, detectedSystems: ${detectedSystems.length}, emulators: ${emulators.length}, showGameInfo: $showGameInfo, isFullscreen: $isFullscreen, bartopExitPoweroff: $bartopExitPoweroff, scanOnStartup: $scanOnStartup, setupCompleted: $setupCompleted, hideBottomScreen: $hideBottomScreen, videoSound: $videoSound)';
+    return 'ConfigModel(romFolders: ${romFolders.length}, detectedSystems: ${detectedSystems.length}, emulators: ${emulators.length}, showGameInfo: $showGameInfo, showGameWheel: $showGameWheel, isFullscreen: $isFullscreen, bartopExitPoweroff: $bartopExitPoweroff, scanOnStartup: $scanOnStartup, setupCompleted: $setupCompleted, hideBottomScreen: $hideBottomScreen, videoSound: $videoSound)';
   }
 }
