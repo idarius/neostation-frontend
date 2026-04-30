@@ -86,6 +86,38 @@ storeFile=../release.jks
 
 If `android/key.properties` is not present, the build automatically falls back to debug signing, which is sufficient for local testing and sideloading.
 
+### GitHub Actions CI/CD
+
+The release workflow (`.github/workflows/build-and-deploy.yml`) reads build secrets from your repository. You can store them as **Environment secrets**.
+
+**Required for all platforms:**
+
+| Secret / Variable | Description |
+|-------------------|-------------|
+| `RA_API_KEY` | RetroAchievements API key |
+| `SCREENSCRAPER_DEV_ID` | ScreenScraper developer ID |
+| `SCREENSCRAPER_DEV_PASSWORD` | ScreenScraper developer password |
+
+**Required for Android release signing:**
+
+| Secret | Description |
+|--------|-------------|
+| `ANDROID_KEYSTORE_BASE64` | Your `release.jks` file encoded as **base64** (binary, not text). See below. |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
+| `ANDROID_KEY_PASSWORD` | Key password |
+| `ANDROID_KEY_ALIAS` | Key alias (e.g. `upload`) |
+
+> **Important:** `ANDROID_KEYSTORE_BASE64` must be the **binary keystore file** (`.jks`), not the `key.properties` text file. To encode it:
+> ```bash
+> # Linux / macOS
+> base64 -w 0 release.jks
+>
+> # Windows PowerShell
+> [Convert]::ToBase64String([IO.File]::ReadAllBytes("release.jks"))
+> ```
+
+If the Android secrets are missing, the CI build falls back to debug signing (users will need to uninstall before installing a new release).
+
 ### Running
 
 ```bash
