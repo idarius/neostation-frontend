@@ -289,3 +289,8 @@ ROMs/
 .memory
 .knowledge
 .chat
+
+# Fork-local working notes — NOT committed (personal, ephemeral)
+CLAUDE.md
+AUDIT.md
+/docs/
