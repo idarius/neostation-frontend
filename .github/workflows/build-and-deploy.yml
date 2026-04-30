@@ -13,6 +13,7 @@ jobs:
   build:
     name: Build ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
+    environment: Production
     strategy:
       fail-fast: false
       matrix:
