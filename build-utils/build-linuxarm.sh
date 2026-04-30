@@ -1,0 +1,254 @@
+#!/bin/bash
+set -e
+
+# Build Flutter Linux app natively (ARM64 / aarch64)
+# Usage: ENV_FILE=.env ./build-utils/build-linuxarm.sh
+#
+# System dependencies (Ubuntu/Debian):
+#   sudo apt-get install -y curl git unzip xz-utils zip libglu1-mesa clang cmake \
+#     ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev \
+#     libsqlite3-dev libsecret-1-dev libjsoncpp-dev libasound2-dev libpulse-dev \
+#     libopus-dev libvorbis-dev libflac-dev libogg-dev python3 imagemagick \
+#     patchelf dos2unix desktop-file-utils libgdk-pixbuf2.0-dev fakeroot file \
+#     libfuse2 squashfs-tools wget lld
+
+echo "Building Flutter Linux app (ARM64)..."
+
+# Verify Linux
+if [ "$(uname -s)" != "Linux" ]; then
+    echo "Error: This script must run on Linux."
+    exit 1
+fi
+
+# Verify architecture
+ARCH=$(uname -m)
+if [ "$ARCH" != "aarch64" ]; then
+    echo "Error: This script is for ARM64 (aarch64). Detected: $ARCH"
+    echo "Use build-linux.sh for x86_64 builds."
+    exit 1
+fi
+
+# Verify Flutter
+if ! command -v flutter &> /dev/null; then
+    echo "Error: Flutter not found. Please install Flutter first."
+    echo "  https://docs.flutter.dev/get-started/install/linux"
+    exit 1
+fi
+
+# Project root
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$PROJECT_ROOT"
+
+# Environment file
+ENV_FILE="${ENV_FILE:-.env}"
+ENV_ARG=""
+if [ -f "$ENV_FILE" ]; then
+    echo "Loading environment from $ENV_FILE..."
+    ENV_ARG="--dart-define-from-file=$ENV_FILE"
+else
+    echo "Env file not found: $ENV_FILE"
+fi
+
+# Build cache directory for tools
+CACHE_DIR="$PROJECT_ROOT/.cache/build-tools"
+mkdir -p "$CACHE_DIR"
+
+# Download and extract linuxdeploy if not present
+LINUXDEPLOY_ARCH="aarch64"
+LINUXDEPLOY_URL="https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${LINUXDEPLOY_ARCH}.AppImage"
+LINUXDEPLOY_DIR="$CACHE_DIR/linuxdeploy"
+
+if [ ! -d "$LINUXDEPLOY_DIR" ]; then
+    echo "Downloading linuxdeploy (${LINUXDEPLOY_ARCH})..."
+    wget -q --show-progress "$LINUXDEPLOY_URL" -O "$CACHE_DIR/linuxdeploy.AppImage"
+    chmod +x "$CACHE_DIR/linuxdeploy.AppImage"
+    cd "$CACHE_DIR"
+    ./linuxdeploy.AppImage --appimage-extract >/dev/null 2>&1 || {
+        echo "FUSE not available, extracting manually..."
+        python3 -c "import sys; d=open('linuxdeploy.AppImage','rb').read(); o=d.find(b'hsqs'); exit(1) if o<0 else open('sqfs','wb').write(d[o:])"
+        unsquashfs -d squashfs-root sqfs >/dev/null 2>&1
+        rm -f sqfs
+    }
+    mv squashfs-root linuxdeploy
+    rm -f linuxdeploy.AppImage
+fi
+
+# Download and extract linuxdeploy-plugin-appimage if not present
+PLUGIN_URL="https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-${LINUXDEPLOY_ARCH}.AppImage"
+PLUGIN_DIR="$CACHE_DIR/linuxdeploy-plugin-appimage"
+
+if [ ! -d "$PLUGIN_DIR" ]; then
+    echo "Downloading linuxdeploy-plugin-appimage (${LINUXDEPLOY_ARCH})..."
+    wget -q --show-progress "$PLUGIN_URL" -O "$CACHE_DIR/plugin.AppImage"
+    chmod +x "$CACHE_DIR/plugin.AppImage"
+    cd "$CACHE_DIR"
+    ./plugin.AppImage --appimage-extract >/dev/null 2>&1 || {
+        echo "FUSE not available, extracting manually..."
+        python3 -c "import sys; d=open('plugin.AppImage','rb').read(); o=d.find(b'hsqs'); exit(1) if o<0 else open('sqfs','wb').write(d[o:])"
+        unsquashfs -d squashfs-root sqfs >/dev/null 2>&1
+        rm -f sqfs
+    }
+    mv squashfs-root linuxdeploy-plugin-appimage
+    rm -f plugin.AppImage
+fi
+
+cd "$PROJECT_ROOT"
+
+# Clean previous build
+echo "Cleaning previous build..."
+rm -rf "$PROJECT_ROOT/build/linux"
+flutter clean
+
+# Get dependencies
+echo "Getting Flutter dependencies..."
+flutter pub get
+
+# WORKAROUND: Download and extract mdk-sdk manually to avoid LZMA error in CMake
+# The error "Lzma library error: No progress is possible" occurs when cmake extracts inside Docker
+# For native builds this may not be needed, but we include it for safety
+MDK_SDK_URL="https://sourceforge.net/projects/mdk-sdk/files/nightly/mdk-sdk-linux.tar.xz"
+MDK_FILE="$CACHE_DIR/mdk-sdk-linux.tar.xz"
+
+FVP_LINUX_DIR="$PROJECT_ROOT/linux/flutter/ephemeral/.plugin_symlinks/fvp/linux"
+if [ -d "$FVP_LINUX_DIR" ]; then
+    if [ ! -f "$MDK_FILE" ]; then
+        echo "Downloading mdk-sdk..."
+        wget -q --show-progress "$MDK_SDK_URL" -O "$MDK_FILE" || { echo "Download failed"; exit 1; }
+    else
+        echo "Using cached mdk-sdk"
+    fi
+
+    echo "Extracting mdk-sdk into fvp plugin..."
+    tar -xf "$MDK_FILE" -C "$FVP_LINUX_DIR"
+
+    if [ -d "$FVP_LINUX_DIR/mdk-sdk-linux" ]; then
+        echo "Adjusting mdk-sdk structure..."
+        mv "$FVP_LINUX_DIR/mdk-sdk-linux/"* "$FVP_LINUX_DIR/"
+        rmdir "$FVP_LINUX_DIR/mdk-sdk-linux"
+    fi
+fi
+
+# Build release
+echo "Building Linux release..."
+flutter build linux --release $ENV_ARG
+
+# Get version
+VERSION=$(grep 'version:' pubspec.yaml | head -1 | awk '{print $2}' | tr -d '\r')
+echo "Version: $VERSION"
+
+# Create release directory
+mkdir -p "$PROJECT_ROOT/release"
+
+# Build AppImage
+echo "Building AppImage..."
+APPDIR="$PROJECT_ROOT/build-utils/appimage/AppDir"
+rm -rf "$APPDIR" "$PROJECT_ROOT/build-utils/appimage/"*.AppImage 2>/dev/null || true
+
+mkdir -p "$APPDIR/usr/bin"
+mkdir -p "$APPDIR/usr/lib"
+mkdir -p "$APPDIR/usr/share"
+
+cp -r "$PROJECT_ROOT/build/linux/arm64/release/bundle/"* "$APPDIR/usr/bin/"
+
+# Verify data directory exists
+if [ ! -d "$APPDIR/usr/bin/data" ]; then
+    echo "ERROR: data/ directory not found in bundle!"
+    exit 1
+fi
+
+LIB_DIR="/usr/lib/aarch64-linux-gnu"
+
+# Copy FFmpeg libraries
+echo "Copying FFmpeg libraries..."
+for lib in libavcodec.so.* libavformat.so.* libavutil.so.* libswscale.so.* libswresample.so.* libavfilter.so.*; do
+  find "$LIB_DIR" -name "$lib" -exec cp -L {} "$APPDIR/usr/lib/" \; 2>/dev/null || true
+done
+
+# Copy SQLite3
+if [ -f "$LIB_DIR/libsqlite3.so.0" ]; then
+  cp -L "$LIB_DIR"/libsqlite3.so.* "$APPDIR/usr/lib/" 2>/dev/null || true
+  cd "$APPDIR/usr/lib/"
+  for f in libsqlite3.so.0.*; do
+    [ -f "$f" ] && ln -sf "$f" libsqlite3.so.0
+    [ -f "$f" ] && ln -sf "$f" libsqlite3.so
+  done
+  cd "$PROJECT_ROOT"
+  echo "SQLite3 copied with symlinks"
+fi
+
+# Copy X11 libraries
+echo "Copying X11 libraries..."
+for xlib in libX11.so.* libXau.so.* libXdmcp.so.* libXext.so.* libXfixes.so.* libXrender.so.* libXrandr.so.* libXi.so.* libXcursor.so.* libXdamage.so.* libXcomposite.so.* libXpresent.so.* libxcb.so.* libxcb-shm.so.* libxcb-render.so.*; do
+  find "$LIB_DIR" -name "$xlib" -exec cp -L {} "$APPDIR/usr/lib/" \; 2>/dev/null || true
+done
+
+# Analyze and copy additional binary dependencies
+echo "Analyzing binary dependencies..."
+ldd "$APPDIR/usr/bin/neostation" | grep "=> /" | awk '{print $3}' | while read lib; do
+  if [ -f "$lib" ]; then
+    libname=$(basename "$lib")
+    if [[ ! "$libname" =~ ^(libc\.so|libm\.so|libdl\.so|libpthread\.so|librt\.so|ld-linux|libGL|libEGL|libGLX|libdrm|libnvidia|libvulkan|libgtk|libgdk|libgio|libglib|libgobject|libpango|libcairo|libgvfs|libpixbuf|librsvg|libharfbuzz|libfontconfig|libfreetype|libwayland|libmount|libblkid|libpipewire|libspa|libjack|libasound|libpulse) ]]; then
+      if [ ! -f "$APPDIR/usr/lib/$libname" ]; then
+        cp -L "$lib" "$APPDIR/usr/lib/" 2>/dev/null || true
+      fi
+    fi
+  fi
+done
+
+# Create AppRun
+cat > "$APPDIR/AppRun" << 'APPRUN_EOF'
+#!/bin/bash
+HERE="$(dirname "$(readlink -f "${0}")")"
+
+export LD_LIBRARY_PATH="/usr/lib/aarch64-linux-gnu:/usr/lib64:/usr/lib:${HERE}/usr/lib:${HERE}/usr/bin/lib"
+export XDG_DATA_DIRS="${HERE}/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+
+if [ "$DEBUG_APPIMAGE" = "1" ]; then
+  echo "HERE: $HERE"
+  echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+  ls -la "${HERE}/usr/bin/data" 2>/dev/null || echo "data dir not found"
+  ls "${HERE}/usr/bin/lib" | head -10
+fi
+
+cd "${HERE}/usr/bin"
+exec ./neostation "$@" 2>&1
+APPRUN_EOF
+chmod +x "$APPDIR/AppRun"
+
+# Prepare icon and desktop file
+echo "Preparing icon and desktop file..."
+if [ -f "$PROJECT_ROOT/assets/images/logo.png" ]; then
+  convert "$PROJECT_ROOT/assets/images/logo.png" -resize 256x256 "$APPDIR/neostation.png" 2>/dev/null || \
+    cp "$PROJECT_ROOT/assets/images/logo.png" "$APPDIR/neostation.png"
+elif [ -f "$PROJECT_ROOT/build-utils/appimage/Icon-512.png" ]; then
+  convert "$PROJECT_ROOT/build-utils/appimage/Icon-512.png" -resize 256x256 "$APPDIR/neostation.png" 2>/dev/null || \
+    cp "$PROJECT_ROOT/build-utils/appimage/Icon-512.png" "$APPDIR/neostation.png"
+fi
+
+cp "$PROJECT_ROOT/build-utils/appimage/com.neogamelab.neostation.desktop" "$APPDIR/neostation.desktop" 2>/dev/null || true
+
+if [ -f "$PROJECT_ROOT/linux/packaging/com.neogamelab.neostation.desktop" ]; then
+  cp "$PROJECT_ROOT/linux/packaging/com.neogamelab.neostation.desktop" "$APPDIR/neostation.desktop"
+fi
+
+# Fix line endings
+if [ -f "$APPDIR/neostation.desktop" ]; then
+  sed -i 's/\r$//' "$APPDIR/neostation.desktop"
+fi
+
+# Create AppImage
+echo "Creating AppImage with appimagetool..."
+ARCH=aarch64 "$PLUGIN_DIR/usr/bin/appimagetool" "$APPDIR"
+
+# Move to release
+if ls "$PROJECT_ROOT/build-utils/appimage/"*.AppImage 1> /dev/null 2>&1; then
+    mv "$PROJECT_ROOT/build-utils/appimage/"*.AppImage "$PROJECT_ROOT/release/neostation-linux-arm64-${VERSION}.AppImage"
+    chmod 777 "$PROJECT_ROOT/release/neostation-linux-arm64-${VERSION}.AppImage"
+    echo ""
+    echo "Build completed!"
+    echo "Result in: release/"
+    ls -lh "$PROJECT_ROOT/release/neostation-linux-arm64-${VERSION}.AppImage"
+else
+    echo "AppImage creation failed!"
+    exit 1
+fi

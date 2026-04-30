@@ -1,0 +1,151 @@
+/// Represents an emulator or libretro core entry from the `app_emulators` table.
+class CoreEmulatorModel {
+  /// Unique identifier for the emulator/core configuration.
+  final String uniqueId;
+
+  /// OS identifier (e.g., 1 for Windows, 2 for Android).
+  final int osId;
+
+  /// Identifier of the system this emulator supports (e.g., 'nes', 'psx').
+  final String systemId;
+
+  /// Human-readable name of the emulator.
+  final String name;
+
+  /// Indicates if this is a standalone executable or a libretro core.
+  final bool isStandalone;
+
+  /// Filename of the libretro core (e.g., 'snes9x_libretro.so'), if applicable.
+  final String? coreFilename;
+
+  /// Whether this emulator is the default choice for its system.
+  final bool isDefault;
+
+  /// Whether this emulator supports RetroAchievements.
+  final bool isretroAchievementsCompatible;
+
+  /// Android package name for intent-based launching (e.g., 'com.retroarch'), if applicable.
+  final String? androidPackageName;
+
+  /// Runtime flag indicating if the emulator is currently installed on the device.
+  final bool isInstalled;
+
+  const CoreEmulatorModel({
+    required this.uniqueId,
+    required this.osId,
+    required this.systemId,
+    required this.name,
+    required this.isStandalone,
+    this.coreFilename,
+    required this.isDefault,
+    required this.isretroAchievementsCompatible,
+    this.androidPackageName,
+    this.isInstalled = false,
+  });
+
+  /// Creates a [CoreEmulatorModel] from a database row map.
+  factory CoreEmulatorModel.fromMap(Map<String, dynamic> map) {
+    return CoreEmulatorModel(
+      uniqueId: map['unique_identifier'].toString(),
+      osId: int.tryParse(map['os_id']?.toString() ?? '0') ?? 0,
+      systemId: map['system_id'].toString(),
+      name: map['name'].toString(),
+      isStandalone:
+          (int.tryParse(map['is_standalone']?.toString() ?? '0') ?? 0) == 1,
+      coreFilename: map['core_filename']?.toString(),
+      isDefault: (int.tryParse(map['is_default']?.toString() ?? '0') ?? 0) == 1,
+      isretroAchievementsCompatible:
+          (int.tryParse(map['is_ra_compatible']?.toString() ?? '0') ?? 0) == 1,
+      androidPackageName: map['android_package_name']?.toString(),
+      isInstalled: (map['is_installed'] == 1 || map['is_installed'] == true),
+    );
+  }
+
+  /// Converts the model instance into a map for database operations.
+  Map<String, dynamic> toMap() {
+    return {
+      'unique_identifier': uniqueId,
+      'os_id': osId,
+      'system_id': systemId,
+      'name': name,
+      'is_standalone': isStandalone ? 1 : 0,
+      'core_filename': coreFilename,
+      'is_default': isDefault ? 1 : 0,
+      'is_ra_compatible': isretroAchievementsCompatible ? 1 : 0,
+      'android_package_name': androidPackageName,
+    };
+  }
+
+  /// Returns a new instance with updated properties.
+  CoreEmulatorModel copyWith({
+    String? uniqueId,
+    int? osId,
+    String? systemId,
+    String? name,
+    bool? isStandalone,
+    String? coreFilename,
+    bool? isDefault,
+    bool? isretroAchievementsCompatible,
+    String? androidPackageName,
+    bool? isInstalled,
+  }) {
+    return CoreEmulatorModel(
+      uniqueId: uniqueId ?? this.uniqueId,
+      osId: osId ?? this.osId,
+      systemId: systemId ?? this.systemId,
+      name: name ?? this.name,
+      isStandalone: isStandalone ?? this.isStandalone,
+      coreFilename: coreFilename ?? this.coreFilename,
+      isDefault: isDefault ?? this.isDefault,
+      isretroAchievementsCompatible:
+          isretroAchievementsCompatible ?? this.isretroAchievementsCompatible,
+      androidPackageName: androidPackageName ?? this.androidPackageName,
+      isInstalled: isInstalled ?? this.isInstalled,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'CoreEmulatorModel(uniqueId: $uniqueId, name: $name, isDefault: $isDefault, isretroAchievementsCompatible: $isretroAchievementsCompatible, androidPackageName: $androidPackageName)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is CoreEmulatorModel &&
+        other.uniqueId == uniqueId &&
+        other.osId == osId;
+  }
+
+  @override
+  int get hashCode => Object.hash(uniqueId, osId);
+
+  /// Accessor for dynamic key-based property retrieval.
+  dynamic operator [](String key) {
+    switch (key) {
+      case 'unique_identifier':
+      case 'uniqueId':
+        return uniqueId;
+      case 'os_id':
+        return osId;
+      case 'system_id':
+        return systemId;
+      case 'name':
+        return name;
+      case 'is_standalone':
+        return isStandalone ? 1 : 0;
+      case 'core_filename':
+        return coreFilename;
+      case 'is_default':
+        return isDefault ? 1 : 0;
+      case 'is_ra_compatible':
+        return isretroAchievementsCompatible ? 1 : 0;
+      case 'android_package_name':
+        return androidPackageName;
+      case 'is_installed':
+        return isInstalled;
+      default:
+        return null;
+    }
+  }
+}

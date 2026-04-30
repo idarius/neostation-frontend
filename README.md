@@ -41,10 +41,6 @@ NeoStation provides a fast, lightweight, and customizable experience for managin
 | macOS | ✅ Supported | Apple Silicon & Intel |
 | Android | ✅ Supported | ARM64, Android TV compatible |
 
-## Screenshots
-
-> *Screenshots will be added soon.*
-
 ## Prerequisites
 
 - Flutter SDK ≥ 3.9.2
