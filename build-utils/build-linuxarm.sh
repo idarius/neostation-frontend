@@ -238,16 +238,17 @@ fi
 
 # Create AppImage
 echo "Creating AppImage with appimagetool..."
-ARCH=aarch64 "$PLUGIN_DIR/usr/bin/appimagetool" "$APPDIR"
+APPIMAGE_OUT="$PROJECT_ROOT/release/neostation-linux-arm64-${VERSION}.AppImage"
+mkdir -p "$PROJECT_ROOT/release"
+ARCH=aarch64 "$PLUGIN_DIR/usr/bin/appimagetool" "$APPDIR" "$APPIMAGE_OUT"
 
-# Move to release
-if ls "$PROJECT_ROOT/build-utils/appimage/"*.AppImage 1> /dev/null 2>&1; then
-    mv "$PROJECT_ROOT/build-utils/appimage/"*.AppImage "$PROJECT_ROOT/release/neostation-linux-arm64-${VERSION}.AppImage"
-    chmod 777 "$PROJECT_ROOT/release/neostation-linux-arm64-${VERSION}.AppImage"
+# Verify output
+if [ -f "$APPIMAGE_OUT" ]; then
+    chmod 777 "$APPIMAGE_OUT"
     echo ""
     echo "Build completed!"
     echo "Result in: release/"
-    ls -lh "$PROJECT_ROOT/release/neostation-linux-arm64-${VERSION}.AppImage"
+    ls -lh "$APPIMAGE_OUT"
 else
     echo "AppImage creation failed!"
     exit 1
