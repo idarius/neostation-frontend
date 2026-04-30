@@ -1,5 +1,18 @@
 # Contributing to NeoStation
 
+> **FORK NOTICE — this fork is personal and does not accept external contributions.**
+>
+> This file is preserved verbatim from the upstream project (`miguelsotobaez/neostation-frontend`)
+> for reference. The instructions below describe the upstream project's contribution policy
+> and **do not apply to this fork**. No PRs, issues, or contribution flow target this repository.
+>
+> If you found this fork looking to contribute to NeoStation: please go to the upstream repo
+> at <https://github.com/miguelsotobaez/neostation-frontend> instead.
+>
+> See `CLAUDE.md` (Fork policy) for the local fork conventions.
+
+---
+
 Thank you for your interest in contributing to NeoStation! This document will help you get started.
 
 ## How to contribute

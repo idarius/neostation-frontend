@@ -179,7 +179,7 @@ These packages are "vendored" within the /packages directory to ensure long-term
 
 ## Contributing
 
-Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines on bug reports, feature requests, and pull requests.
+This is a **personal fork** and does not accept external contributions. See `CLAUDE.md` (Fork policy) for local conventions, or visit the upstream project at <https://github.com/miguelsotobaez/neostation-frontend> to contribute to NeoStation itself.
 
 ## Security
 
