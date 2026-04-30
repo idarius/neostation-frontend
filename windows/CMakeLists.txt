@@ -1,9 +1,14 @@
-cmake_minimum_required(VERSION 3.15)
-project(flutter_admin_portal LANGUAGES CXX)
+# Project-level configuration.
+cmake_minimum_required(VERSION 3.14)
+project(neostation LANGUAGES CXX)
 
+# The name of the executable created for the application. Change this to change
+# the on-disk name of your application.
 set(BINARY_NAME "neostation")
 
-cmake_policy(SET CMP0063 NEW)
+# Explicitly opt in to modern CMake behaviors to avoid warnings with recent
+# versions of CMake.
+cmake_policy(VERSION 3.14...3.25)
 
 set(CMAKE_INSTALL_RPATH "$ORIGIN/lib")
 
@@ -79,6 +84,12 @@ if(PLUGIN_BUNDLED_LIBRARIES)
     DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
     COMPONENT Runtime)
 endif()
+
+# Copy the native assets provided by the build.dart from all packages.
+set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/windows/")
+install(DIRECTORY "${NATIVE_ASSETS_DIR}"
+   DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+   COMPONENT Runtime)
 
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.

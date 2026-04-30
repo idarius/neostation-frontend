@@ -185,11 +185,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | head -1 | awk '{print $2}' | tr -d '\r')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          name: NeoStation Beta ${{ github.ref_name }}
+          name: NeoStation Beta ${{ steps.version.outputs.version }}
           body: ${{ steps.build_changelog.outputs.changelog }}
           files: release-artifacts/*
           draft: true
