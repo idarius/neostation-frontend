@@ -191,13 +191,13 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
   final GlobalKey<GameDetailsSettingsTabState> _settingsTabKey =
       GlobalKey<GameDetailsSettingsTabState>();
 
-  /// Determines if the detailed game info tab should be suppressed in favor of secondary display output.
-  bool get _isGameInfoHidden {
-    if (!widget.isSecondaryScreenActive) return false;
-    final config = context.read<SqliteConfigProvider>().config;
-    // If secondary display is active and not explicitly hidden in config, suppress primary UI info.
-    return !config.hideBottomScreen;
-  }
+  /// The GameInfo tab is always available on the primary screen. The
+  /// previous logic suppressed it whenever a secondary display was active,
+  /// assuming that screen would show the same metadata — but the secondary
+  /// screen only renders wheel/fanart/video, not synopsis/year/players/
+  /// developer/etc. Hiding the tab on dual-screen devices left those fields
+  /// orphaned, so this getter is now constant.
+  bool get _isGameInfoHidden => false;
 
   /// Resolves the actual hardware system for the game.
   /// Handles 'Global Library' (isAllMode) resolution from detected systems.

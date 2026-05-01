@@ -323,32 +323,41 @@ class _GameDetailsGameInfoTabState extends State<GameDetailsGameInfoTab> {
   }
 
   /// Main metadata view containing descriptions and media previews.
+  ///
+  /// Layout adapts to secondary-screen presence: when the bottom screen is
+  /// active it already renders screenshot/video for the selected game, so
+  /// duplicating those on the primary GameInfo overlay would be redundant
+  /// (and put a video player on top of the artwork the user wants to see).
+  /// In that mode the description takes the full width; otherwise it sits
+  /// next to the media preview as before.
   Widget _buildScrapedView(String description, String screenshotPath) {
+    final descriptionWidget = ScrollingDescriptionText(
+      text: GameUtils.cleanupDescription(description),
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+        fontSize: 11.r,
+        height: 1.6,
+      ),
+    );
+
     return Column(
       children: [
         Expanded(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 12.r),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: ScrollingDescriptionText(
-                    text: GameUtils.cleanupDescription(description),
-                    style: TextStyle(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.8),
-                      fontSize: 11.r,
-                      height: 1.6,
-                    ),
+            child: widget.isSecondaryScreenActive
+                ? descriptionWidget
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(flex: 2, child: descriptionWidget),
+                      SizedBox(width: 16.r),
+                      Expanded(
+                        flex: 3,
+                        child: _buildMediaPreview(screenshotPath),
+                      ),
+                    ],
                   ),
-                ),
-                SizedBox(width: 16.r),
-                Expanded(flex: 3, child: _buildMediaPreview(screenshotPath)),
-              ],
-            ),
           ),
         ),
         SizedBox(height: 8.r),
