@@ -97,6 +97,11 @@ class AppScreenState extends State<AppScreen> {
   VoidCallback? _updateCheckListener;
   Timer? _updateCheckSafetyTimer;
 
+  /// Timers that progressively mount the non-Console tabs in background
+  /// after launch, so a first L1/R1 to e.g. Settings doesn't pay the 75-185
+  /// ms first-mount cost in front of the user. See `_scheduleTabPrewarm`.
+  final List<Timer> _prewarmTimers = [];
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -134,6 +139,7 @@ class AppScreenState extends State<AppScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _gamepadNav.initialize();
       _checkForUpdates();
+      _scheduleTabPrewarm();
     });
 
     // Synchronize theme changes with secondary displays (e.g., dual-screen hardware).
@@ -194,6 +200,35 @@ class AppScreenState extends State<AppScreen> {
     }
   }
 
+  /// Pre-mounts the non-Console tabs in background after launch. Each tab's
+  /// first mount costs 75-185 ms (first-time widget tree construction +
+  /// initial async loads); paying this silently while the user looks at
+  /// Console removes the perceived stutter when they later L1/R1 to one.
+  /// Once a tab is in `_visitedTabs`, the IndexedStack mounts it on next
+  /// build; subsequent visits are 1-7 ms (state preserved).
+  ///
+  /// Staggered delays so we don't punch the main thread with five mount
+  /// passes at once — and so initial Console paint settles first.
+  void _scheduleTabPrewarm() {
+    const schedule = <int, Duration>{
+      1: Duration(milliseconds: 800), // Sync
+      2: Duration(milliseconds: 1500), // RA
+      3: Duration(milliseconds: 2200), // Scraper
+      4: Duration(milliseconds: 3000), // Settings
+    };
+    for (final entry in schedule.entries) {
+      final tabIdx = entry.key;
+      _prewarmTimers.add(
+        Timer(entry.value, () {
+          if (!mounted || _visitedTabs.contains(tabIdx)) return;
+          setState(() {
+            _visitedTabs.add(tabIdx);
+          });
+        }),
+      );
+    }
+  }
+
   /// Executes the version check and renders the update modal if a newer build is found.
   Future<void> _performUpdateCheck() async {
     try {
@@ -226,6 +261,10 @@ class AppScreenState extends State<AppScreen> {
     }
     _updateCheckSafetyTimer?.cancel();
     _updateCheckSafetyTimer = null;
+    for (final t in _prewarmTimers) {
+      t.cancel();
+    }
+    _prewarmTimers.clear();
     _selectedSystemNotifier.dispose();
     GamepadNavigationManager.popLayer('app_screen');
     _gamepadNav.dispose();
