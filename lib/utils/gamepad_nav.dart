@@ -245,9 +245,14 @@ class GamepadNavigation {
     final wasInactive = !_isActive;
     _isActive = true;
 
-    // Start grace period only on true transitions to prevent discarding mid-flight release events.
     if (wasInactive) {
-      _activationTime = DateTime.now();
+      // Arm the input grace only on the FIRST activation of this nav
+      // instance. Subsequent re-activations (e.g. tab-layer pop/push during
+      // an L1/R1 spam) happen within the same user input context — they
+      // don't need to drop presses, and re-arming the 256 ms grace was
+      // silently eating the 2nd L1 press during fast tab cycling. Use `??=`
+      // so the timestamp is only set when null.
+      _activationTime ??= DateTime.now();
       // Clear any stale repeat timers that may have survived a prior deactivation.
       _cancelAllRepeatTimers();
     }
@@ -259,7 +264,9 @@ class GamepadNavigation {
   /// Disables input processing and cancels any active auto-repeat timers.
   void deactivate() {
     _isActive = false;
-    _activationTime = null;
+    // Note: `_activationTime` is intentionally NOT cleared here. The grace
+    // window applies only to the first activation; preserving the timestamp
+    // makes the next re-activation skip grace (see `activate`).
     _cancelAllRepeatTimers();
   }
 
