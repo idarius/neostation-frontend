@@ -515,7 +515,9 @@ class SqliteDatabaseService {
     final m3uEntries = entries
         .where((e) => path.extension(e.filename).toLowerCase() == '.m3u')
         .toList();
-    if (m3uEntries.isEmpty) return entries;
+    // No M3U files present → return a copy (never the same reference, to avoid
+    // the ..clear()..addAll() aliasing bug in the caller).
+    if (m3uEntries.isEmpty) return List<RomEntry>.from(entries);
 
     final referencedFilenames = <String>{};
     for (final m3u in m3uEntries) {
@@ -536,7 +538,8 @@ class SqliteDatabaseService {
       } catch (_) {}
     }
 
-    if (referencedFilenames.isEmpty) return entries;
+    // No references found → return copy (same aliasing protection).
+    if (referencedFilenames.isEmpty) return List<RomEntry>.from(entries);
     return entries.where((e) {
       if (path.extension(e.filename).toLowerCase() == '.m3u') return true;
       return !referencedFilenames.contains(e.filename.toLowerCase());
@@ -546,7 +549,7 @@ class SqliteDatabaseService {
   /// Deduplicates ROM entries by identifying master files (CUE/GDI/M3U) and
   /// excluding their constituent tracks (BIN/ISO/WAV).
   static List<RomEntry> _filterDeduplicatedRoms(List<RomEntry> entries) {
-    if (entries.isEmpty) return entries;
+    if (entries.isEmpty) return List<RomEntry>.from(entries);
 
     final Map<String, List<RomEntry>> grouped = {};
     for (final entry in entries) {

@@ -9,6 +9,12 @@ set(BINARY_NAME "neostation")
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
 cmake_policy(VERSION 3.14...3.25)
+cmake_policy(SET CMP0091 NEW)
+
+# Force release CRT (/MD) for all targets to match Flutter engine.
+# Without this, window_manager plugin links libcpmtd.lib (/MDd) which
+# is incompatible with flutter_windows.dll and causes LNK2001 errors.
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
 
 set(CMAKE_INSTALL_RPATH "$ORIGIN/lib")
 
