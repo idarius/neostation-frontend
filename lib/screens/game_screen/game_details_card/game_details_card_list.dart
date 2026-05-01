@@ -27,6 +27,7 @@ import 'package:neostation/services/logger_service.dart';
 import 'package:neostation/widgets/custom_notification.dart';
 import '../../../models/secondary_display_state.dart';
 import 'widgets/conflict_resolution_dialog.dart';
+import 'widgets/scrape_name_dialog.dart';
 import 'widgets/game_details_footer.dart';
 import 'widgets/game_details_tabs_header.dart';
 import 'tabs/game_details_general_tab.dart';
@@ -914,8 +915,9 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
     widget.onGameUpdated?.call();
   }
 
-  /// Orchestrates a quick-access metadata scrape.
-  void _onScrapeGameCompact() {
+  /// Opens the custom-name dialog, then starts a metadata scrape using the
+  /// edited name. Cancelling the dialog aborts the scrape.
+  Future<void> _onScrapeGameCompact() async {
     final description =
         widget.localizedDescription ??
         (_game.getDescriptionForLanguage('en').isEmpty
@@ -927,11 +929,22 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
         description == AppLocale.noDescription.getString(context) ||
         description.trim().isEmpty;
 
+    final customName = await showScrapeNameDialog(
+      context,
+      initialName: _game.name,
+    );
+    if (customName == null) return;
+
+    if (!mounted) return;
+
     if (!widget.isSecondaryScreenActive) {
       _setTab(DetailTab.gameInfo);
     }
     // Force metadata overwrite if a valid description is already present.
-    _startSingleGameScrape(forceOverwrite: !isDescriptionMissing);
+    _startSingleGameScrape(
+      forceOverwrite: !isDescriptionMissing,
+      customName: customName,
+    );
   }
 
   /// Displays the modal for manual resolution of cloud save synchronization conflicts.
@@ -1108,7 +1121,10 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
   }
 
   /// Orchestrates a metadata acquisition process via ScreenScraperService.
-  Future<void> _startSingleGameScrape({bool forceOverwrite = true}) async {
+  Future<void> _startSingleGameScrape({
+    bool forceOverwrite = true,
+    String? customName,
+  }) async {
     if (_isScrapingGame) return;
 
     // Safety: Pause video previews to avoid resource contention or audio leaks during scraping.
@@ -1168,7 +1184,7 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
         romName: _game.romname,
         systemFolder: targetSystemFolder,
         romPath: _game.romPath ?? '',
-        gameName: _game.name,
+        gameName: customName ?? _game.name,
         forceOverwrite: forceOverwrite,
         onProgress: (statusKey, progress) {
           if (!context.mounted) return;
