@@ -30,11 +30,22 @@ class _RAContentState extends State<RAContent> {
   bool _isTelevision = false;
   int _tvFieldIndex = 0;
   GamepadNavigation? _tvNav;
+  bool _layerPushed = false;
 
   @override
   void initState() {
     super.initState();
     _initTvMode();
+    // Single-shot fetch on first mount. Previously triggered from build(),
+    // which created an infinite re-fetch loop when the API returned null
+    // (see fetchGOTW: notifyListeners on null result -> rebuild -> re-fetch).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final raProvider = context.read<RetroAchievementsProvider>();
+      if (!raProvider.gotwLoaded && !raProvider.isLoading) {
+        raProvider.fetchGOTW();
+      }
+    });
   }
 
   Future<void> _initTvMode() async {
@@ -58,6 +69,7 @@ class _RAContentState extends State<RAContent> {
       onActivate: () => _tvNav?.activate(),
       onDeactivate: () => _tvNav?.deactivate(),
     );
+    _layerPushed = true;
   }
 
   void _tvMove(int delta) {
@@ -104,7 +116,9 @@ class _RAContentState extends State<RAContent> {
 
   @override
   void dispose() {
-    GamepadNavigationManager.popLayer('ra_content');
+    if (_layerPushed) {
+      GamepadNavigationManager.popLayer('ra_content');
+    }
     _tvNav?.dispose();
     _usernameController.dispose();
     _usernameFocus.dispose();
@@ -115,13 +129,6 @@ class _RAContentState extends State<RAContent> {
   Widget build(BuildContext context) {
     return Consumer<RetroAchievementsProvider>(
       builder: (context, raProvider, child) {
-        // Trigger fetch achievement of the week if not loaded
-        if (!raProvider.gotwLoaded && !raProvider.isLoading) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            raProvider.fetchGOTW();
-          });
-        }
-
         return Responsive(
           handheldXS: _buildLandscapeLayout(context, raProvider),
           handheldSmall: _buildLandscapeLayout(context, raProvider),
