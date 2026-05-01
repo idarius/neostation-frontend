@@ -29,6 +29,12 @@ class ConfigModel {
   /// Whether to display the per-game wheel logo overlay on the games page.
   final bool showGameWheel;
 
+  /// Delay before the video preview starts when navigating between games (ms).
+  ///
+  /// Range is enforced to `[500, 3000]` at every layer (model parse,
+  /// provider update, datasource load) to be defensive against bad DB values.
+  final int videoDelayMs;
+
   /// Whether the application should run in exclusive fullscreen mode.
   final bool isFullscreen;
 
@@ -75,6 +81,7 @@ class ConfigModel {
     this.themeName = 'system',
     this.showGameInfo = false,
     this.showGameWheel = true,
+    this.videoDelayMs = 1500,
     this.isFullscreen = true,
     this.bartopExitPoweroff = false,
     this.scanOnStartup = true,
@@ -133,6 +140,12 @@ class ConfigModel {
       showGameWheel: _parseBool(
         json['showGameWheel'] ?? json['show_game_wheel'],
         defaultValue: true,
+      ),
+      videoDelayMs: _parseClampedInt(
+        json['videoDelayMs'] ?? json['video_delay_ms'],
+        defaultValue: 1500,
+        min: 500,
+        max: 3000,
       ),
       isFullscreen:
           (json['isFullscreen'] ?? true).toString().toLowerCase() == 'true',
@@ -193,6 +206,7 @@ class ConfigModel {
       'themeName': themeName,
       'showGameInfo': showGameInfo,
       'showGameWheel': showGameWheel,
+      'videoDelayMs': videoDelayMs,
       'isFullscreen': isFullscreen,
       'bartopExitPoweroff': bartopExitPoweroff,
       'scanOnStartup': scanOnStartup,
@@ -219,6 +233,7 @@ class ConfigModel {
     String? themeName,
     bool? showGameInfo,
     bool? showGameWheel,
+    int? videoDelayMs,
     bool? isFullscreen,
     bool? bartopExitPoweroff,
     bool? scanOnStartup,
@@ -242,6 +257,7 @@ class ConfigModel {
       themeName: themeName ?? this.themeName,
       showGameInfo: showGameInfo ?? this.showGameInfo,
       showGameWheel: showGameWheel ?? this.showGameWheel,
+      videoDelayMs: videoDelayMs ?? this.videoDelayMs,
       isFullscreen: isFullscreen ?? this.isFullscreen,
       bartopExitPoweroff: bartopExitPoweroff ?? this.bartopExitPoweroff,
       scanOnStartup: scanOnStartup ?? this.scanOnStartup,
@@ -269,8 +285,22 @@ class ConfigModel {
     return s == 'true' || s == '1';
   }
 
+  /// Parses a JSON value into an int and clamps to `[min, max]`. Returns
+  /// [defaultValue] if the value is null or unparseable.
+  static int _parseClampedInt(
+    dynamic raw, {
+    required int defaultValue,
+    required int min,
+    required int max,
+  }) {
+    if (raw == null) return defaultValue;
+    final parsed = raw is int ? raw : int.tryParse(raw.toString());
+    if (parsed == null) return defaultValue;
+    return parsed.clamp(min, max);
+  }
+
   @override
   String toString() {
-    return 'ConfigModel(romFolders: ${romFolders.length}, detectedSystems: ${detectedSystems.length}, emulators: ${emulators.length}, showGameInfo: $showGameInfo, showGameWheel: $showGameWheel, isFullscreen: $isFullscreen, bartopExitPoweroff: $bartopExitPoweroff, scanOnStartup: $scanOnStartup, setupCompleted: $setupCompleted, hideBottomScreen: $hideBottomScreen, videoSound: $videoSound)';
+    return 'ConfigModel(romFolders: ${romFolders.length}, detectedSystems: ${detectedSystems.length}, emulators: ${emulators.length}, showGameInfo: $showGameInfo, showGameWheel: $showGameWheel, videoDelayMs: $videoDelayMs, isFullscreen: $isFullscreen, bartopExitPoweroff: $bartopExitPoweroff, scanOnStartup: $scanOnStartup, setupCompleted: $setupCompleted, hideBottomScreen: $hideBottomScreen, videoSound: $videoSound)';
   }
 }

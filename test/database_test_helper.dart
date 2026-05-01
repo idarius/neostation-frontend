@@ -98,7 +98,8 @@ class DatabaseTestHelper {
         hide_recent_card INTEGER,
         active_sync_provider TEXT,
         game_view_mode TEXT,
-        rom_folders TEXT
+        rom_folders TEXT,
+        video_delay_ms INTEGER DEFAULT 1500
       )
     ''');
 

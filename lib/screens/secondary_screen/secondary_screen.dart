@@ -23,6 +23,11 @@ class _SecondaryScreenState extends State<SecondaryScreen> {
   bool _showVideo = false;
   String? _currentVideoPath;
 
+  /// Monotonically increasing token. Each navigation bumps this; async
+  /// initialisation paths bail out if their token has been superseded.
+  /// Replaces the old defensive role of the hardcoded 500ms timer.
+  int _videoGen = 0;
+
   @override
   void initState() {
     super.initState();
@@ -65,18 +70,22 @@ class _SecondaryScreenState extends State<SecondaryScreen> {
 
   void _startVideoTimer(String path) {
     _videoTimer?.cancel();
-    _videoTimer = Timer(const Duration(milliseconds: 500), () {
-      _initializeVideo(path);
-    });
+    _videoTimer = null;
+    // The previous 500ms timer was redundant with the AnimatedSwitcher fade
+    // (256ms, line ~164) and the upstream debounce in my_games_list.dart.
+    // Bumping the generation token replaces its defensive role.
+    _videoGen++;
+    final gen = _videoGen;
+    _initializeVideo(path, gen);
   }
 
-  Future<void> _initializeVideo(String path) async {
-    if (!mounted) return;
+  Future<void> _initializeVideo(String path, int gen) async {
+    if (!mounted || gen != _videoGen) return;
 
     try {
       final controller = VideoPlayerController.file(File(path));
       await controller.initialize();
-      if (!mounted) {
+      if (!mounted || gen != _videoGen) {
         await controller.dispose();
         return;
       }
@@ -84,11 +93,15 @@ class _SecondaryScreenState extends State<SecondaryScreen> {
       // IMPORTANT: Set volume BEFORE playing to ensure sync and avoid audio burst
       final isMuted = _secondaryDisplayState?.value?.isVideoMuted ?? true;
       await controller.setVolume(isMuted ? 0.0 : 1.0);
+      if (!mounted || gen != _videoGen) {
+        await controller.dispose();
+        return;
+      }
 
       await controller.setLooping(true);
       await controller.play();
 
-      if (!mounted) {
+      if (!mounted || gen != _videoGen) {
         await controller.dispose();
         return;
       }
@@ -103,6 +116,9 @@ class _SecondaryScreenState extends State<SecondaryScreen> {
   }
 
   void _stopVideo() {
+    // Bump generation so any in-flight _initializeVideo bails out at its
+    // next await checkpoint and disposes its controller.
+    _videoGen++;
     _videoTimer?.cancel();
     _videoTimer = null;
     if (_videoController != null) {

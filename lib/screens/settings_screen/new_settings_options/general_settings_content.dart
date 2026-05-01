@@ -58,7 +58,7 @@ class GeneralSettingsContentState extends State<GeneralSettingsContent>
     _checkSecondDisplay();
 
     // Pre-allocate keys for maximum theoretical setting items.
-    for (int i = 0; i < 13; i++) {
+    for (int i = 0; i < 14; i++) {
       _itemKeys.add(GlobalKey());
     }
   }
@@ -913,6 +913,117 @@ class GeneralSettingsContentState extends State<GeneralSettingsContent>
                         provider.updateShowGameWheel(value);
                       },
                       activeColor: theme.colorScheme.primary,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }(),
+
+          // Setting: Video preview delay slider (500-3000ms, step 250).
+          () {
+            final index = currentItemIdx++;
+            final delayMs = config.videoDelayMs;
+            return Padding(
+              padding: EdgeInsets.only(top: 12.r),
+              child: Container(
+                key: _itemKeys[index],
+                padding: EdgeInsets.only(
+                  left: 12.r,
+                  right: 12.r,
+                  top: 6.r,
+                  bottom: 6.r,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.cardColor.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(
+                    color:
+                        widget.isContentFocused &&
+                            widget.selectedContentIndex == index
+                        ? theme.colorScheme.primary
+                        : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppLocale.videoPreviewDelay.getString(context),
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontSize: 12.r,
+                                  fontWeight: FontWeight.w500,
+                                  color:
+                                      widget.isContentFocused &&
+                                          widget.selectedContentIndex == index
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              SizedBox(height: 4.r),
+                              Text(
+                                AppLocale.videoPreviewDelaySub.getString(
+                                  context,
+                                ),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontSize: 9.r,
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 8.r),
+                        Text(
+                          '${(delayMs / 1000).toStringAsFixed(1)} s',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontSize: 12.r,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 2.r,
+                        thumbShape: RoundSliderThumbShape(
+                          enabledThumbRadius: 5.r,
+                        ),
+                        overlayShape: RoundSliderOverlayShape(
+                          overlayRadius: 10.r,
+                        ),
+                        activeTrackColor: theme.colorScheme.primary,
+                        inactiveTrackColor: theme.colorScheme.primary
+                            .withValues(alpha: 0.15),
+                        thumbColor: theme.colorScheme.primary,
+                        overlayColor: theme.colorScheme.primary.withValues(
+                          alpha: 0.15,
+                        ),
+                      ),
+                      child: SizedBox(
+                        height: 24.r,
+                        child: Slider(
+                          value: delayMs.toDouble().clamp(500, 3000),
+                          min: 500,
+                          max: 3000,
+                          divisions: 10,
+                          onChanged: (value) {
+                            provider.updateVideoDelayMs(value.round());
+                          },
+                        ),
+                      ),
                     ),
                   ],
                 ),

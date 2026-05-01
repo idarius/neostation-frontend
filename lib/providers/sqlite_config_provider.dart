@@ -1107,6 +1107,14 @@ class SqliteConfigProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Updates the video preview delay (clamped to `[500, 3000]` ms).
+  Future<void> updateVideoDelayMs(int value) async {
+    final clamped = value.clamp(500, 3000);
+    _config = _config.copyWith(videoDelayMs: clamped);
+    await SqliteConfigService.saveConfig(_config);
+    notifyListeners();
+  }
+
   /// Configures whether the application should shut down the host OS upon exit (Arcade/Cabinet mode).
   Future<void> updateBartopExitPoweroff(bool value) async {
     _config = _config.copyWith(bartopExitPoweroff: value);

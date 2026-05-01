@@ -103,6 +103,12 @@ class SqliteConfigService {
             (int.tryParse(userConfig?['show_game_wheel']?.toString() ?? '1') ??
                 1) ==
             1,
+        videoDelayMs:
+            (int.tryParse(
+                      userConfig?['video_delay_ms']?.toString() ?? '1500',
+                    ) ??
+                    1500)
+                .clamp(500, 3000),
         isFullscreen:
             (int.tryParse(userConfig?['is_fullscreen']?.toString() ?? '1') ??
                 1) ==
@@ -164,6 +170,7 @@ class SqliteConfigService {
         themeName: config.themeName,
         showGameInfo: config.showGameInfo ? 1 : 0,
         showGameWheel: config.showGameWheel ? 1 : 0,
+        videoDelayMs: config.videoDelayMs,
         isFullscreen: config.isFullscreen ? 1 : 0,
         bartopExitPoweroff: config.bartopExitPoweroff ? 1 : 0,
         scanOnStartup: config.scanOnStartup ? 1 : 0,

@@ -168,9 +168,11 @@ class _SystemGamesListState extends State<SystemGamesList> {
   Timer? _videoTimer;
   bool _showVideo = false;
   bool _isVideoLoading = false;
-  static const Duration _videoDelay = Duration(
-    milliseconds: 1500,
-  ); // Debounce for video playback.
+  // Debounce duration for video playback. Read from config at each schedule
+  // so changes via the settings slider apply on the next navigation event.
+  Duration get _videoDelay => Duration(
+    milliseconds: context.read<SqliteConfigProvider>().config.videoDelayMs,
+  );
   bool _lastShowInfo = false; // Memoizes 'showGameInfo' config state.
   bool _isGameLaunching =
       false; // Critical flag to suppress media tasks during transitions.

@@ -1353,6 +1353,11 @@ class SqliteService {
           'ALTER TABLE user_config ADD COLUMN show_game_wheel INTEGER DEFAULT 1',
         );
       }
+      if (!columns.contains('video_delay_ms')) {
+        await db.execute(
+          'ALTER TABLE user_config ADD COLUMN video_delay_ms INTEGER DEFAULT 1500',
+        );
+      }
     } catch (e) {
       _log.e('Minor fix ensuring user_config columns failed: $e');
       rethrow;
@@ -1523,7 +1528,8 @@ class SqliteService {
         active_theme TEXT DEFAULT '',
         hide_recent_card INTEGER DEFAULT 0,
         active_sync_provider TEXT DEFAULT 'neosync',
-        show_game_wheel INTEGER DEFAULT 1
+        show_game_wheel INTEGER DEFAULT 1,
+        video_delay_ms INTEGER DEFAULT 1500
       );
       ''',
       '''
@@ -2206,6 +2212,7 @@ class SqliteService {
     String? raUser,
     int? showGameInfo,
     int? showGameWheel,
+    int? videoDelayMs,
     int? isFullscreen,
     int? bartopExitPoweroff,
     int? scanOnStartup,
@@ -2242,6 +2249,7 @@ class SqliteService {
     if (raUser != null) newConfig['ra_user'] = raUser;
     if (showGameInfo != null) newConfig['show_game_info'] = showGameInfo;
     if (showGameWheel != null) newConfig['show_game_wheel'] = showGameWheel;
+    if (videoDelayMs != null) newConfig['video_delay_ms'] = videoDelayMs;
     if (isFullscreen != null) newConfig['is_fullscreen'] = isFullscreen;
     if (bartopExitPoweroff != null) {
       newConfig['bartop_exit_poweroff'] = bartopExitPoweroff;

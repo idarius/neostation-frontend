@@ -120,6 +120,9 @@ const Map<String, dynamic> appLocaleId = {
   AppLocale.showGameWheelLogo: 'Show game logo',
   AppLocale.showGameWheelLogoSub:
       "Display the game's wheel logo over the fanart background on the games page",
+  AppLocale.videoPreviewDelay: 'Video preview delay',
+  AppLocale.videoPreviewDelaySub:
+      'Time before the video starts playing when you select a game',
   AppLocale.bartopShutdown: 'Matikan BarTOP saat keluar',
   AppLocale.bartopShutdownSubtitle: 'Mematikan komputer saat menutup aplikasi',
 

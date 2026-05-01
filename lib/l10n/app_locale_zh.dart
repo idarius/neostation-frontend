@@ -105,6 +105,9 @@ const Map<String, dynamic> appLocaleZh = {
   AppLocale.showGameWheelLogo: 'Show game logo',
   AppLocale.showGameWheelLogoSub:
       "Display the game's wheel logo over the fanart background on the games page",
+  AppLocale.videoPreviewDelay: 'Video preview delay',
+  AppLocale.videoPreviewDelaySub:
+      'Time before the video starts playing when you select a game',
   AppLocale.bartopShutdown: '退出时关闭 BarTOP',
   AppLocale.bartopShutdownSubtitle: '退出应用时关闭计算机',
 

@@ -125,6 +125,9 @@ const Map<String, dynamic> appLocaleEs = {
   AppLocale.showGameWheelLogo: 'Show game logo',
   AppLocale.showGameWheelLogoSub:
       "Display the game's wheel logo over the fanart background on the games page",
+  AppLocale.videoPreviewDelay: 'Video preview delay',
+  AppLocale.videoPreviewDelaySub:
+      'Time before the video starts playing when you select a game',
   AppLocale.bartopShutdown: 'Apagado BarTOP al Salir',
   AppLocale.bartopShutdownSubtitle:
       'Apagar el equipo al salir de la aplicación',

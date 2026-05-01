@@ -132,6 +132,8 @@ mixin AppLocale {
       'disable_secondary_screen_sub';
   static const String showGameWheelLogo = 'show_game_wheel_logo';
   static const String showGameWheelLogoSub = 'show_game_wheel_logo_sub';
+  static const String videoPreviewDelay = 'video_preview_delay';
+  static const String videoPreviewDelaySub = 'video_preview_delay_sub';
   static const String bartopShutdown = 'bartop_shutdown';
   static const String bartopShutdownSubtitle = 'bartop_shutdown_subtitle';
 
