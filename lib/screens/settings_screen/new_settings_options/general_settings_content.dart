@@ -197,6 +197,8 @@ class GeneralSettingsContentState extends State<GeneralSettingsContent>
         count++; // Secondary Display Suppression
       }
     }
+    count++; // Show game wheel logo
+    count++; // Video preview delay
     if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
       count++; // BarTOP Power Management
     }
@@ -270,6 +272,28 @@ class GeneralSettingsContentState extends State<GeneralSettingsContent>
         currentItemIndex++;
       }
     }
+
+    // Protocol: Show game wheel logo (toggle).
+    if (index == currentItemIndex) {
+      final showGameWheel = configProvider.config.showGameWheel;
+      configProvider.updateShowGameWheel(!showGameWheel);
+      return;
+    }
+    currentItemIndex++;
+
+    // Protocol: Video preview delay (cycles through 250ms steps in 500-3000ms;
+    // wraps around. Touch slider remains the precise control.).
+    if (index == currentItemIndex) {
+      final current = configProvider.config.videoDelayMs;
+      const step = 250;
+      const min = 500;
+      const max = 3000;
+      var next = current + step;
+      if (next > max) next = min;
+      configProvider.updateVideoDelayMs(next);
+      return;
+    }
+    currentItemIndex++;
 
     // Protocol: BarTOP Power Management (System Shutdown).
     if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
