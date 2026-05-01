@@ -12,7 +12,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/gestures.dart';
 import '../../services/game_service.dart' show GamepadNavigationManager;
-import '../app_screen.dart' show AppNavigation;
+import '../app_screen.dart' show AppNavigation, TabActiveScope;
 import 'package:flutter_localization/flutter_localization.dart';
 import 'package:neostation/l10n/app_locale.dart';
 
@@ -64,12 +64,39 @@ class _RAContentState extends State<RAContent> {
       onRightBumper: AppNavigation.nextTab,
     );
     _tvNav!.initialize();
+    // If RA is currently the visible tab, push the layer now. Otherwise
+    // didChangeDependencies will handle it when this tab becomes active.
+    if (mounted && TabActiveScope.of(context)) {
+      _pushMyLayer();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_tvNav == null) return;
+    final isActive = TabActiveScope.of(context);
+    if (isActive && !_layerPushed) {
+      _pushMyLayer();
+    } else if (!isActive && _layerPushed) {
+      _popMyLayer();
+    }
+  }
+
+  void _pushMyLayer() {
+    if (_layerPushed || _tvNav == null) return;
+    _layerPushed = true;
     GamepadNavigationManager.pushLayer(
       'ra_content',
       onActivate: () => _tvNav?.activate(),
       onDeactivate: () => _tvNav?.deactivate(),
     );
-    _layerPushed = true;
+  }
+
+  void _popMyLayer() {
+    if (!_layerPushed) return;
+    _layerPushed = false;
+    GamepadNavigationManager.popLayer('ra_content');
   }
 
   void _tvMove(int delta) {
@@ -116,9 +143,7 @@ class _RAContentState extends State<RAContent> {
 
   @override
   void dispose() {
-    if (_layerPushed) {
-      GamepadNavigationManager.popLayer('ra_content');
-    }
+    _popMyLayer();
     _tvNav?.dispose();
     _usernameController.dispose();
     _usernameFocus.dispose();

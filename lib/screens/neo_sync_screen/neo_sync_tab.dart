@@ -17,6 +17,12 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
   int _selectedIndex = 0;
   late GamepadNavigation _gamepadNav;
 
+  /// Tracks whether the provider-selector layer is currently pushed on the
+  /// global manager. Driven by `TabActiveScope` so the layer stays in sync
+  /// with tab visibility under `IndexedStack`. Also goes false when the user
+  /// confirms NeoSync (`_selectCurrent`) to cede focus to NeoSyncContent.
+  bool _layerPushed = false;
+
   static const int _cardCount = 3;
 
   @override
@@ -34,17 +40,42 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _gamepadNav.initialize();
-      GamepadNavigationManager.pushLayer(
-        'neosync_provider_selector',
-        onActivate: () => _gamepadNav.activate(),
-        onDeactivate: () => _gamepadNav.deactivate(),
-      );
     });
   }
 
   @override
-  void dispose() {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final isActive = TabActiveScope.of(context);
+    // Only show the provider selector layer while the user hasn't confirmed
+    // NeoSync — once they do, NeoSyncContent owns input.
+    final shouldPush = isActive && !_neoSyncSelected;
+    if (shouldPush && !_layerPushed) {
+      _pushMyLayer();
+    } else if (!shouldPush && _layerPushed) {
+      _popMyLayer();
+    }
+  }
+
+  void _pushMyLayer() {
+    if (_layerPushed) return;
+    _layerPushed = true;
+    GamepadNavigationManager.pushLayer(
+      'neosync_provider_selector',
+      onActivate: () => _gamepadNav.activate(),
+      onDeactivate: () => _gamepadNav.deactivate(),
+    );
+  }
+
+  void _popMyLayer() {
+    if (!_layerPushed) return;
+    _layerPushed = false;
     GamepadNavigationManager.popLayer('neosync_provider_selector');
+  }
+
+  @override
+  void dispose() {
+    _popMyLayer();
     _gamepadNav.dispose();
     super.dispose();
   }
@@ -61,7 +92,7 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
 
   void _selectCurrent() {
     if (_selectedIndex == 0) {
-      GamepadNavigationManager.popLayer('neosync_provider_selector');
+      _popMyLayer();
       setState(() => _neoSyncSelected = true);
     }
   }

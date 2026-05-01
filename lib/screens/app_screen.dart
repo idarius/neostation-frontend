@@ -11,7 +11,6 @@ import 'systems_screen/system_content.dart';
 import 'retro_achievements_screen/ra_content.dart';
 import 'settings_screen/new_settings_screen.dart';
 import 'scraper_screen/new_scraper_options_screen.dart';
-import 'neo_sync_screen/login_screen/neo_sync_content.dart';
 import 'neo_sync_screen/neo_sync_tab.dart';
 import '../widgets/scraper_content.dart';
 import 'package:neostation/services/game_service.dart';
@@ -68,8 +67,13 @@ class AppScreenState extends State<AppScreen> {
   /// Input orchestration layer for gamepad and keyboard support.
   late GamepadNavigation _gamepadNav;
 
-  /// Cached list of primary content widgets for each navigation tab.
-  late final List<Widget> _tabContents;
+  /// Total number of top-level tabs (Console, Sync, RA, Scraper, Settings).
+  static const int _tabCount = 5;
+
+  /// Tabs that have been mounted at least once. Unvisited tabs render as
+  /// placeholders inside the IndexedStack so app boot only pays for tab 0;
+  /// other tabs init lazily when first reached via L1/R1.
+  final Set<int> _visitedTabs = {0};
 
   /// Static reference to the currently active instance for global access.
   static AppScreenState? _currentInstance;
@@ -91,14 +95,6 @@ class AppScreenState extends State<AppScreen> {
     super.initState();
     _currentInstance = this;
 
-    _tabContents = [
-      SystemContent(), // Tab 0: Game Systems
-      NeoSyncContent(), // Tab 1: Cloud Persistence (NeoSync)
-      RAContent(), // Tab 2: RetroAchievements
-      ScraperContent(), // Tab 3: Metadata Scraper
-      NewSettingsScreen(), // Tab 4: Global Settings
-    ];
-
     // Initialize the navigation bridge with core application callbacks.
     _gamepadNav = GamepadNavigation(
       onNavigateUp: _navigateContentUp,
@@ -112,18 +108,18 @@ class AppScreenState extends State<AppScreen> {
       onBack: null, // Root level handles back navigation via PopScope.
     );
 
-    // Asynchronous initialization of navigation and update checking.
+    // Register the base navigation layer SYNCHRONOUSLY during initState so
+    // that any tab content mounted during the first build (via `IndexedStack`
+    // + `TabActiveScope`) pushes its own layer ON TOP, not under, the base.
+    GamepadNavigationManager.pushLayer(
+      'app_screen',
+      onActivate: () => _gamepadNav.activate(),
+      onDeactivate: () => _gamepadNav.deactivate(),
+    );
+
+    // Asynchronous bits: gamepad subscription init and update check.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _gamepadNav.initialize();
-      _gamepadNav.activate();
-
-      // Register the primary navigation layer at the base of the navigation stack.
-      GamepadNavigationManager.pushLayer(
-        'app_screen',
-        onActivate: () => _gamepadNav.activate(),
-        onDeactivate: () => _gamepadNav.deactivate(),
-      );
-
       _checkForUpdates();
     });
 
@@ -344,18 +340,21 @@ class AppScreenState extends State<AppScreen> {
   }
 
   /// Handles tab selection lifecycle including state updates and UI side-effects.
+  ///
+  /// With `IndexedStack`-based tab content, switching tabs no longer unmounts
+  /// the previous tab. Tab-scoped gamepad layers are managed by each tab via
+  /// `TabActiveScope` in `didChangeDependencies` (push when becoming active,
+  /// pop when becoming inactive), so AppScreen no longer force-activates its
+  /// own GamepadNavigation post-frame — that was the source of double-firing
+  /// in the first IndexedStack attempt.
   void _onTabSelected(int index) {
     setState(() {
       _selectedTabIndex = index;
       _selectedSystemIndex = 0;
+      _visitedTabs.add(index);
     });
 
     _updateSecondaryScreenTab(index);
-
-    // Re-verify navigation focus after tab transition.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _gamepadNav.activate();
-    });
   }
 
   /// Updates secondary display metadata based on the current active tab.
@@ -405,13 +404,12 @@ class AppScreenState extends State<AppScreen> {
   }
 
   void _navigateToNextTab() {
-    final nextIndex = (_selectedTabIndex + 1) % _tabContents.length;
+    final nextIndex = (_selectedTabIndex + 1) % _tabCount;
     _onTabSelected(nextIndex);
   }
 
   void _navigateToPreviousTab() {
-    final previousIndex =
-        (_selectedTabIndex - 1 + _tabContents.length) % _tabContents.length;
+    final previousIndex = (_selectedTabIndex - 1 + _tabCount) % _tabCount;
     _onTabSelected(previousIndex);
   }
 
@@ -493,31 +491,72 @@ class AppScreenState extends State<AppScreen> {
     return const SizedBox.shrink();
   }
 
-  /// Content factory for the currently selected tab.
-  Widget _buildCurrentTabContent() {
-    switch (_selectedTabIndex) {
+  /// Builds a single tab widget on demand. Called only for visited tabs.
+  Widget _buildTab(int index) {
+    switch (index) {
       case 0:
         return SystemContent(
           selectedIndex: _selectedSystemIndex,
           onCardTapped: _onSystemCardTapped,
         );
       case 1:
-        // NeoSync tab manages its own focus lifecycle due to complex login flows.
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _gamepadNav.deactivate();
-        });
         return const NeoSyncTab();
       case 2:
-        return RAContent();
+        return const RAContent();
       case 3:
-        return ScraperContent();
+        return const ScraperContent();
       case 4:
-        return NewSettingsScreen();
+        return const NewSettingsScreen();
       default:
-        return SystemContent(
-          selectedIndex: _selectedSystemIndex,
-          onCardTapped: _onSystemCardTapped,
-        );
+        return const SizedBox.shrink();
     }
   }
+
+  /// Stack of all top-level tabs. Each tab is wrapped in a `TabActiveScope`
+  /// so layer-pushing tabs (MySystems, NeoSyncTab, RAContent) can push/pop
+  /// their gamepad layer in sync with visibility. Unvisited tabs render as
+  /// zero-sized placeholders until first reach.
+  Widget _buildCurrentTabContent() {
+    return IndexedStack(
+      index: _selectedTabIndex,
+      sizing: StackFit.expand,
+      children: List.generate(_tabCount, (i) {
+        if (!_visitedTabs.contains(i)) {
+          return const SizedBox.shrink();
+        }
+        return TabActiveScope(
+          isActive: i == _selectedTabIndex,
+          child: _buildTab(i),
+        );
+      }),
+    );
+  }
+}
+
+/// Inherits `isActive` down the tree. Tab content widgets that own a
+/// gamepad-navigation layer read this to push their layer when becoming the
+/// visible tab and pop it when another tab takes over. Without this, with
+/// `IndexedStack` keeping all visited tabs mounted, layers from previously-
+/// visited tabs would accumulate and capture L1/R1 events meant for the
+/// currently visible tab.
+class TabActiveScope extends InheritedWidget {
+  final bool isActive;
+
+  const TabActiveScope({
+    super.key,
+    required this.isActive,
+    required super.child,
+  });
+
+  /// Returns whether the nearest enclosing tab is the currently visible one.
+  /// Defaults to `true` outside any scope (back-compat for code paths that
+  /// don't yet read the scope).
+  static bool of(BuildContext context) {
+    final scope = context
+        .dependOnInheritedWidgetOfExactType<TabActiveScope>();
+    return scope?.isActive ?? true;
+  }
+
+  @override
+  bool updateShouldNotify(TabActiveScope old) => isActive != old.isActive;
 }

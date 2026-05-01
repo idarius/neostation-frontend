@@ -743,6 +743,13 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
   final Map<String, String?> _themeLogos = {};
   String _lastThemeFolder = '';
 
+  /// Tracks whether this widget has currently pushed its gamepad nav layer
+  /// onto the global manager. Driven by `TabActiveScope` in
+  /// `didChangeDependencies` so the layer is pushed when the Console tab
+  /// becomes visible and popped when it leaves — required because, with
+  /// `IndexedStack`, the State stays alive across tab switches.
+  bool _layerPushed = false;
+
   @override
   void initState() {
     super.initState();
@@ -892,6 +899,17 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final isActive = TabActiveScope.of(context);
+    if (isActive && !_layerPushed) {
+      _pushMyLayer();
+    } else if (!isActive && _layerPushed) {
+      _popMyLayer();
+    }
+  }
+
+  @override
   void didUpdateWidget(SystemCardGridView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedIndex != widget.selectedIndex) {
@@ -911,7 +929,9 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
     super.dispose();
   }
 
-  /// Configures the gamepad navigation layer for the systems grid.
+  /// Creates the gamepad navigation instance. Layer push/pop is driven by
+  /// `TabActiveScope` (see `didChangeDependencies`), not by initState, so the
+  /// layer stays in sync with tab visibility under `IndexedStack`.
   void _initializeGamepad() {
     _gamepadNav = GamepadNavigation(
       onNavigateUp: (isRepeat) {
@@ -951,16 +971,27 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _gamepadNav.initialize();
-      GamepadNavigationManager.pushLayer(
-        'my_systems_list',
-        onActivate: () => _gamepadNav.activate(),
-        onDeactivate: () => _gamepadNav.deactivate(),
-      );
     });
   }
 
-  void _cleanupGamepad() {
+  void _pushMyLayer() {
+    if (_layerPushed) return;
+    _layerPushed = true;
+    GamepadNavigationManager.pushLayer(
+      'my_systems_list',
+      onActivate: () => _gamepadNav.activate(),
+      onDeactivate: () => _gamepadNav.deactivate(),
+    );
+  }
+
+  void _popMyLayer() {
+    if (!_layerPushed) return;
+    _layerPushed = false;
     GamepadNavigationManager.popLayer('my_systems_list');
+  }
+
+  void _cleanupGamepad() {
+    _popMyLayer();
     _gamepadNav.dispose();
   }
 
