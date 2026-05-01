@@ -12,13 +12,7 @@ import 'my_systems_section/initial_setup_widget.dart';
 /// Manages the visual state transition between the initial scanning/loading phase,
 /// the setup wizard for first-time users, and the primary system library grid.
 class SystemContent extends StatelessWidget {
-  const SystemContent({super.key, this.selectedIndex = 0, this.onCardTapped});
-
-  /// Index of the currently selected system card within the grid.
-  final int selectedIndex;
-
-  /// Callback invoked when a system card is interactively selected.
-  final Function(int index)? onCardTapped;
+  const SystemContent({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -94,11 +88,7 @@ class SystemContent extends StatelessWidget {
             if (showInitialSetup) InitialSetupWidget(),
 
             // PHASE 3: Primary System Library.
-            if (showContent)
-              MySystems(
-                selectedIndex: selectedIndex,
-                onCardTapped: onCardTapped,
-              ),
+            if (showContent) const MySystems(),
           ],
         );
       },

@@ -15,6 +15,7 @@ import '../../../widgets/shaders/music_card_shader_background.dart';
 import '../../../utils/image_utils.dart';
 import '../../../widgets/system_logo_fallback.dart';
 import '../../../utils/game_utils.dart';
+import '../../app_screen.dart' show SelectedSystemIndexNotifier;
 
 /// A premium card component representing a system or a 'Recent Game' entry.
 ///
@@ -24,18 +25,21 @@ class SystemCard extends StatefulWidget {
   const SystemCard({
     super.key,
     required this.info,
+    required this.index,
     this.onTap,
-    this.isSelected = false,
   });
 
   /// The system or game metadata resolved for this card.
   final SystemInfo info;
 
+  /// This card's logical position in the grid. Used to compute its own
+  /// `isSelected` state via `context.select` against the shared notifier —
+  /// only the two cards transitioning in/out of selection rebuild on a
+  /// navigation press, not all 26 in the grid.
+  final int index;
+
   /// Interaction callback for pointer/controller selection.
   final VoidCallback? onTap;
-
-  /// Whether this card currently has visual focus in the grid.
-  final bool isSelected;
 
   @override
   State<SystemCard> createState() => _SystemCardState();
@@ -164,6 +168,15 @@ class _SystemCardState extends State<SystemCard> {
     // Re-bind to theme provider to ensure assets refresh on theme changes.
     context.select<NeoAssetsProvider, String>((p) => p.activeThemeFolder);
 
+    // Self-aware selection state. `context.select` listens to the selection
+    // notifier but only triggers a rebuild of THIS card when its own
+    // selection state flips (e.g. cards 0 & 1 rebuild on a 0→1 nav; the
+    // other 24 stay inert). Replaces the previous `widget.isSelected`
+    // parameter pattern that forced all 26 cards to rebuild on every press.
+    final isSelected = context.select<SelectedSystemIndexNotifier, bool>(
+      (n) => n.value == widget.index,
+    );
+
     if (!widget.info.isGame) {
       final neoAssets = context.read<NeoAssetsProvider>();
       final folderName =
@@ -211,8 +224,9 @@ class _SystemCardState extends State<SystemCard> {
                 key: _contentStackKey,
                 children: [
                   _buildSystemBackground(),
-                  _buildMainBodyContent(context, true),
-                  if (widget.info.isGame) _buildRecentFooter(context),
+                  _buildMainBodyContent(context, true, isSelected),
+                  if (widget.info.isGame)
+                    _buildRecentFooter(context, isSelected),
                 ],
               ),
             ),
@@ -397,7 +411,11 @@ class _SystemCardState extends State<SystemCard> {
   }
 
   /// Builds the foreground content, including badges and specialized layouts for 'Recent Games'.
-  Widget _buildMainBodyContent(BuildContext context, bool includeInnerCard) {
+  Widget _buildMainBodyContent(
+    BuildContext context,
+    bool includeInnerCard,
+    bool isSelected,
+  ) {
     final isGame = widget.info.isGame;
     final customWheelPath = widget.info.customWheelImage;
     final wheelFile =
@@ -482,7 +500,7 @@ class _SystemCardState extends State<SystemCard> {
   }
 
   /// Renders a descriptive footer overlay for game-specific cards.
-  Widget _buildRecentFooter(BuildContext context) {
+  Widget _buildRecentFooter(BuildContext context, bool isSelected) {
     return Positioned(
       bottom: 0,
       left: 0,
@@ -510,7 +528,7 @@ class _SystemCardState extends State<SystemCard> {
                 text:
                     widget.info.title?.toUpperCase() ??
                     AppLocale.unknownGame.getString(context),
-                isActive: widget.isSelected,
+                isActive: isSelected,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 13.r,

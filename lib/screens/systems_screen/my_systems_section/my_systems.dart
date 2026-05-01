@@ -38,18 +38,12 @@ import 'package:neostation/providers/neo_assets_provider.dart';
 /// Orchestrates the selection and navigation of gaming systems, including handling
 /// of 'Recent Games', 'Android Apps', and logical collections like 'All Games'.
 class MySystems extends StatelessWidget {
-  const MySystems({super.key, this.selectedIndex = 0, this.onCardTapped});
+  const MySystems({super.key});
 
   static final _log = LoggerService.instance;
 
   /// Static lock to prevent race conditions during heavy navigation transitions.
   static bool isNavigating = false;
-
-  /// Currently selected system index in the active layout (Grid or Carousel).
-  final int selectedIndex;
-
-  /// Callback for system selection via pointer interaction.
-  final Function(int index)? onCardTapped;
 
   @override
   Widget build(BuildContext context) {
@@ -73,15 +67,22 @@ class MySystems extends StatelessWidget {
           // Dynamically toggle between Carousel and Grid layouts based on user preference.
           final Widget systemsWidget;
           if (configProvider.config.systemViewMode == 'carousel') {
+            // Carousel still uses the legacy `int + callback` API. Wrap it
+            // in a Consumer that mirrors the notifier into those params; the
+            // carousel will rebuild on selection changes (acceptable since
+            // it's a narrower widget than the grid). Grid path uses the
+            // notifier directly via `context.select` per-card.
             systemsWidget = Padding(
               padding: EdgeInsets.only(
                 right: 0.0.r,
                 top: 42.r, // Margin adjustment to clear the FixedHeader.
                 bottom: 0.0.r,
               ),
-              child: MySystemsCarousel(
-                selectedIndex: selectedIndex,
-                onCardTapped: onCardTapped,
+              child: Consumer<SelectedSystemIndexNotifier>(
+                builder: (context, notifier, _) => MySystemsCarousel(
+                  selectedIndex: notifier.value,
+                  onCardTapped: (idx) => notifier.value = idx,
+                ),
               ),
             );
           } else {
@@ -388,10 +389,13 @@ class MySystems extends StatelessWidget {
           }),
     ];
 
-    // Bound check the selected index for safety.
-    final currentSystem = selectedIndex < allSystems.length
-        ? allSystems[selectedIndex]
-        : allSystems[0];
+    // The current selected index is read at press-time from the notifier
+    // (no rebuild dependency in this build method — grid stays stable;
+    // descendants react to selection via their own selectors).
+    SystemInfo currentSystem() {
+      final idx = context.read<SelectedSystemIndexNotifier>().value;
+      return idx < allSystems.length ? allSystems[idx] : allSystems[0];
+    }
 
     return Column(
       children: [
@@ -406,34 +410,33 @@ class MySystems extends StatelessWidget {
             child: SystemCardGridView(
               crossAxisCount: Responsive.getSystemsCrossAxisCount(context),
               childAspectRatio: 1.14,
-              selectedIndex: selectedIndex,
-              onCardTapped: onCardTapped,
               systems: allSystems,
-              onEnterPressed: () {
-                final current = selectedIndex < allSystems.length
-                    ? allSystems[selectedIndex]
-                    : allSystems[0];
-                _navigateToSystem(context, current, configProvider);
-              },
-              onEscapePressed: () {
-                final current = selectedIndex < allSystems.length
-                    ? allSystems[selectedIndex]
-                    : allSystems[0];
-                _openSystemSettings(context, current, configProvider);
-              },
+              onEnterPressed: () =>
+                  _navigateToSystem(context, currentSystem(), configProvider),
+              onEscapePressed: () =>
+                  _openSystemSettings(context, currentSystem(), configProvider),
             ),
           ),
         ),
-        // Sticky footer displaying active system metadata and secondary actions.
-        SystemsGridFooter(
-          system: currentSystem,
-          onEnter: () {
-            SfxService().playEnterSound();
-            _navigateToSystem(context, currentSystem, configProvider);
-          },
-          onSettings: () {
-            SfxService().playEnterSound();
-            _openSystemSettings(context, currentSystem, configProvider);
+        // Footer rebuilds on selection changes via Selector — bounded to
+        // this leaf, doesn't cascade through the grid.
+        Selector<SelectedSystemIndexNotifier, int>(
+          selector: (_, n) => n.value,
+          builder: (context, idx, _) {
+            final current = idx < allSystems.length
+                ? allSystems[idx]
+                : allSystems[0];
+            return SystemsGridFooter(
+              system: current,
+              onEnter: () {
+                SfxService().playEnterSound();
+                _navigateToSystem(context, current, configProvider);
+              },
+              onSettings: () {
+                SfxService().playEnterSound();
+                _openSystemSettings(context, current, configProvider);
+              },
+            );
           },
         ),
       ],
@@ -703,8 +706,6 @@ class SystemCardGridView extends StatefulWidget {
     super.key,
     required this.crossAxisCount,
     this.childAspectRatio = 1.14,
-    this.selectedIndex = 0,
-    this.onCardTapped,
     this.onEnterPressed,
     this.onEscapePressed,
     this.systems = const [],
@@ -712,8 +713,6 @@ class SystemCardGridView extends StatefulWidget {
 
   final int crossAxisCount;
   final double childAspectRatio;
-  final int selectedIndex;
-  final Function(int index)? onCardTapped;
   final VoidCallback? onEnterPressed;
   final VoidCallback? onEscapePressed;
   final List<dynamic> systems;
@@ -749,6 +748,18 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
   /// becomes visible and popped when it leaves — required because, with
   /// `IndexedStack`, the State stays alive across tab switches.
   bool _layerPushed = false;
+
+  /// Reference to the selection notifier (resolved via Provider in
+  /// didChangeDependencies). The State listens to it for side-effects
+  /// (scroll-to-visible, secondary screen update) but does NOT setState on
+  /// changes — selection-driven UI updates happen via `context.select` per
+  /// SystemCard and a Selector around the highlight overlay, so the grid
+  /// itself stays stable when the user navigates between cards.
+  SelectedSystemIndexNotifier? _selectionNotifier;
+
+  /// Cached current selected index. Mirrors the notifier value, refreshed
+  /// by the listener; reading this is cheap and doesn't trigger rebuild.
+  int get _selectedIndex => _selectionNotifier?.value ?? 0;
 
   @override
   void initState() {
@@ -844,12 +855,12 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
   void _updateSecondaryScreenName() {
     if (!Platform.isAndroid) return;
     if (_secondaryDisplayState == null) return;
-    if (widget.selectedIndex < 0 ||
-        widget.selectedIndex >= widget.systems.length) {
+    if (_selectedIndex < 0 ||
+        _selectedIndex >= widget.systems.length) {
       return;
     }
 
-    final system = widget.systems[widget.selectedIndex];
+    final system = widget.systems[_selectedIndex];
     final info = system is SystemInfo
         ? system
         : SystemInfo.fromSystemMetadata(system);
@@ -907,21 +918,35 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
     } else if (!isActive && _layerPushed) {
       _popMyLayer();
     }
+
+    // Hook the selection notifier (Provider). Re-resolve on each call in
+    // case the Provider tree changes; rebind the listener if the notifier
+    // instance is different (rare but safe).
+    final notifier = Provider.of<SelectedSystemIndexNotifier>(
+      context,
+      listen: false,
+    );
+    if (notifier != _selectionNotifier) {
+      _selectionNotifier?.removeListener(_onSelectedIndexChanged);
+      _selectionNotifier = notifier;
+      _selectionNotifier!.addListener(_onSelectedIndexChanged);
+    }
   }
 
-  @override
-  void didUpdateWidget(SystemCardGridView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedIndex != widget.selectedIndex) {
-      if (mounted && _scrollController.hasClients) {
-        _ensureSelectedItemVisibleUniversal();
-      }
-      _updateSecondaryScreenName();
+  /// Fired by the notifier on selection changes. Triggers side-effects
+  /// without calling setState on the grid — visual selection is handled by
+  /// per-card selectors and the highlight overlay's Selector.
+  void _onSelectedIndexChanged() {
+    if (!mounted) return;
+    if (_scrollController.hasClients) {
+      _ensureSelectedItemVisibleUniversal();
     }
+    _updateSecondaryScreenName();
   }
 
   @override
   void dispose() {
+    _selectionNotifier?.removeListener(_onSelectedIndexChanged);
     _secondaryDisplayState?.removeListener(_onSecondaryStateChanged);
     _cleanupGamepad();
     _scrollController.dispose();
@@ -1070,7 +1095,7 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
       return s is SystemInfo ? s : SystemInfo.fromSystemMetadata(s);
     }).toList();
     final cols = widget.crossAxisCount;
-    final current = widget.selectedIndex;
+    final current = _selectedIndex;
 
     final grid = _buildVirtualGrid(cards, cols);
 
@@ -1154,7 +1179,7 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
     }
 
     if (newIndex != current) {
-      widget.onCardTapped?.call(newIndex);
+      _selectionNotifier?.value = newIndex;
     }
   }
 
@@ -1211,14 +1236,14 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
 
     int selectedRow = -1;
     for (int r = 0; r < grid.length; r++) {
-      if (grid[r].contains(widget.selectedIndex)) {
+      if (grid[r].contains(_selectedIndex)) {
         selectedRow = r;
         break;
       }
     }
     if (selectedRow == -1) return;
 
-    final selectedCard = cards[widget.selectedIndex];
+    final selectedCard = cards[_selectedIndex];
     final spanH = (selectedCard.isGame && cols >= 3) ? 2 : 1;
 
     final dimensions = _calculateGridDimensions();
@@ -1332,7 +1357,7 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
                   child: SystemCard(
                     key: ValueKey('system_card_${card.title}_$cardIdx'),
                     info: card,
-                    isSelected: cardIdx == widget.selectedIndex,
+                    index: cardIdx,
                     onTap: () {
                       SfxService().playNavSound();
                       if (_gamepadNavigationActive) {
@@ -1346,7 +1371,7 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
                       }
 
                       _lastNavigationTime = now;
-                      widget.onCardTapped?.call(cardIdx);
+                      _selectionNotifier?.value = cardIdx;
                     },
                   ),
                 ),
@@ -1357,26 +1382,59 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
           }
         }
 
-        // Focused Item Highlight calculations.
-        double? highlightLeft, highlightTop, highlightWidth, highlightHeight;
-        if (widget.selectedIndex != -1) {
-          for (int r = 0; r < grid.length; r++) {
-            for (int c = 0; c < grid[r].length; c++) {
-              if (grid[r][c] == widget.selectedIndex) {
-                final card = systemCards[widget.selectedIndex];
-                final spanW = (card.isGame && cols >= 3) ? 3 : 1;
-                final spanH = (card.isGame && cols >= 3) ? 2 : 1;
-
-                highlightLeft = c * (colWidth + spX);
-                highlightTop = r * (rowHeight + spY);
-                highlightWidth = spanW * colWidth + (spanW - 1) * spX;
-                highlightHeight = spanH * rowHeight + (spanH - 1) * spY;
-                break;
-              }
+        // Highlight overlay: bounded to a Selector so only the overlay
+        // rebuilds on selection changes — `cardWidgets` and the rest of the
+        // grid layout stay stable. Position is computed inside the builder
+        // from the latest notifier value; the closure captures `grid`,
+        // `cols`, `colWidth`, etc. from the parent build so geometry stays
+        // consistent without recomputing the grid.
+        final highlightOverlay =
+            Selector<SelectedSystemIndexNotifier, int>(
+          selector: (_, n) => n.value,
+          builder: (context, idx, _) {
+            if (idx < 0 || idx >= systemCards.length) {
+              return const SizedBox.shrink();
             }
-            if (highlightLeft != null) break;
-          }
-        }
+            double? hLeft, hTop, hWidth, hHeight;
+            for (int r = 0; r < grid.length; r++) {
+              for (int c = 0; c < grid[r].length; c++) {
+                if (grid[r][c] == idx) {
+                  final card = systemCards[idx];
+                  final spanW = (card.isGame && cols >= 3) ? 3 : 1;
+                  final spanH = (card.isGame && cols >= 3) ? 2 : 1;
+                  hLeft = c * (colWidth + spX);
+                  hTop = r * (rowHeight + spY);
+                  hWidth = spanW * colWidth + (spanW - 1) * spX;
+                  hHeight = spanH * rowHeight + (spanH - 1) * spY;
+                  break;
+                }
+              }
+              if (hLeft != null) break;
+            }
+            if (hLeft == null) return const SizedBox.shrink();
+            return AnimatedPositioned(
+              duration: Duration(
+                milliseconds: _isNavigatingFast ? 120 : 300,
+              ),
+              curve: Curves.easeOutQuart,
+              left: hLeft,
+              top: hTop!,
+              width: hWidth!,
+              height: hHeight!,
+              child: IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.secondary,
+                      width: 4.r,
+                    ),
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
 
         return SingleChildScrollView(
           controller: _scrollController,
@@ -1388,28 +1446,7 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
             child: Stack(
               children: [
                 ...cardWidgets,
-                if (highlightLeft != null)
-                  AnimatedPositioned(
-                    duration: Duration(
-                      milliseconds: _isNavigatingFast ? 120 : 300,
-                    ),
-                    curve: Curves.easeOutQuart,
-                    left: highlightLeft,
-                    top: highlightTop!,
-                    width: highlightWidth!,
-                    height: highlightHeight!,
-                    child: IgnorePointer(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.secondary,
-                            width: 4.r,
-                          ),
-                          borderRadius: BorderRadius.circular(16.r),
-                        ),
-                      ),
-                    ),
-                  ),
+                highlightOverlay,
               ],
             ),
           ),

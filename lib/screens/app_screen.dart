@@ -29,6 +29,14 @@ class AppScreen extends StatefulWidget {
   AppScreenState createState() => AppScreenState();
 }
 
+/// Holds the currently selected card index inside the Console (Systems) tab.
+/// Wrapped in a dedicated subclass so descendants (the SystemCard widgets and
+/// the highlight overlay) can resolve it unambiguously via `context.select`
+/// without colliding with any other `ValueNotifier<int>` Providers.
+class SelectedSystemIndexNotifier extends ValueNotifier<int> {
+  SelectedSystemIndexNotifier() : super(0);
+}
+
 /// Bridge class providing static access to the main application navigation state.
 ///
 /// Facilitates tab switching and navigation lifecycle control from deep within
@@ -61,8 +69,13 @@ class AppScreenState extends State<AppScreen> {
   /// Currently active top-level navigation tab index.
   int _selectedTabIndex = 0;
 
-  /// Internal state tracker for system selection within the System tab.
-  int _selectedSystemIndex = 0;
+  /// Selected system index inside the Console tab. A `ValueNotifier` (not a
+  /// setState-bound field) so grid navigation updates it without rebuilding
+  /// the whole AppScreen tree (Consumer2 + Scaffold + IndexedStack + all
+  /// mounted tabs). Cards subscribe via `context.select` and only the two
+  /// affected by a selection change rebuild — instead of all 26 every press.
+  final SelectedSystemIndexNotifier _selectedSystemNotifier =
+      SelectedSystemIndexNotifier();
 
   /// Input orchestration layer for gamepad and keyboard support.
   late GamepadNavigation _gamepadNav;
@@ -213,6 +226,7 @@ class AppScreenState extends State<AppScreen> {
     }
     _updateCheckSafetyTimer?.cancel();
     _updateCheckSafetyTimer = null;
+    _selectedSystemNotifier.dispose();
     GamepadNavigationManager.popLayer('app_screen');
     _gamepadNav.dispose();
     super.dispose();
@@ -328,16 +342,6 @@ class AppScreenState extends State<AppScreen> {
     }
   }
 
-  void _onSystemCardTapped(int index) {
-    setState(() {
-      _selectedSystemIndex = index;
-    });
-    _showSystemSelection();
-  }
-
-  void _showSystemSelection() {
-    setState(() {});
-  }
 
   /// Handles tab selection lifecycle including state updates and UI side-effects.
   ///
@@ -350,9 +354,12 @@ class AppScreenState extends State<AppScreen> {
   void _onTabSelected(int index) {
     setState(() {
       _selectedTabIndex = index;
-      _selectedSystemIndex = 0;
       _visitedTabs.add(index);
     });
+    // Reset Console grid selection on tab change. Done outside setState so it
+    // doesn't trigger a full AppScreen rebuild — the notifier listeners
+    // handle the propagation locally.
+    _selectedSystemNotifier.value = 0;
 
     _updateSecondaryScreenTab(index);
   }
@@ -415,9 +422,11 @@ class AppScreenState extends State<AppScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<SqliteConfigProvider, ThemeProvider>(
-      builder: (context, configProvider, themeProvider, child) {
-        final isOled = themeProvider.isOled;
+    return ChangeNotifierProvider<SelectedSystemIndexNotifier>.value(
+      value: _selectedSystemNotifier,
+      child: Consumer2<SqliteConfigProvider, ThemeProvider>(
+        builder: (context, configProvider, themeProvider, child) {
+          final isOled = themeProvider.isOled;
 
         return PopScope(
           canPop: false, // Intercept hardware back button to maintain app flow.
@@ -484,6 +493,7 @@ class AppScreenState extends State<AppScreen> {
           ),
         );
       },
+      ),
     );
   }
 
@@ -495,10 +505,7 @@ class AppScreenState extends State<AppScreen> {
   Widget _buildTab(int index) {
     switch (index) {
       case 0:
-        return SystemContent(
-          selectedIndex: _selectedSystemIndex,
-          onCardTapped: _onSystemCardTapped,
-        );
+        return const SystemContent();
       case 1:
         return const NeoSyncTab();
       case 2:
