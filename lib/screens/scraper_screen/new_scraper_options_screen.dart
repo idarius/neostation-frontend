@@ -62,15 +62,29 @@ class _NewScraperOptionsScreenState extends State<NewScraperOptionsScreen> {
     'scrape_videos': true,
   };
 
+  /// Guards the one-time post-init bootstrap to prevent re-entry on
+  /// every didChangeDependencies fire (locale change, theme switch, …).
+  bool _bootstrapped = false;
+
   @override
   void initState() {
     super.initState();
     NewScraperOptionsScreen._currentInstance = this;
-    _initializeMenuItems();
+    // _initializeMenuItems is deferred to didChangeDependencies because it
+    // calls AppLocale.xxx.getString(context), which requires the
+    // _LocalizationsScope inherited widget — not yet wired in initState.
     _loadCredentials();
     _loadCurrentScrapeMode();
     _loadCurrentLanguage();
     _loadCurrentMediaConfig();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_bootstrapped) return;
+    _bootstrapped = true;
+    _initializeMenuItems();
   }
 
   @override
