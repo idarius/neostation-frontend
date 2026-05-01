@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,7 +18,6 @@ class SecondaryScreen extends StatefulWidget {
 class _SecondaryScreenState extends State<SecondaryScreen> {
   SecondaryDisplayState? _secondaryDisplayState;
   VideoPlayerController? _videoController;
-  Timer? _videoTimer;
   bool _showVideo = false;
   String? _currentVideoPath;
 
@@ -69,8 +67,6 @@ class _SecondaryScreenState extends State<SecondaryScreen> {
   }
 
   void _startVideoTimer(String path) {
-    _videoTimer?.cancel();
-    _videoTimer = null;
     // The previous 500ms timer was redundant with the AnimatedSwitcher fade
     // (256ms, line ~164) and the upstream debounce in my_games_list.dart.
     // Bumping the generation token replaces its defensive role.
@@ -119,8 +115,6 @@ class _SecondaryScreenState extends State<SecondaryScreen> {
     // Bump generation so any in-flight _initializeVideo bails out at its
     // next await checkpoint and disposes its controller.
     _videoGen++;
-    _videoTimer?.cancel();
-    _videoTimer = null;
     if (_videoController != null) {
       _videoController!.pause();
       _videoController!.dispose();
