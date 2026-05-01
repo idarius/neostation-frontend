@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:neostation/utils/gamepad_nav.dart';
@@ -75,6 +76,10 @@ class AppScreenState extends State<AppScreen> {
 
   ThemeProvider? _themeProvider;
 
+  /// Tracks the deferred update-check listener so it can be removed cleanly.
+  VoidCallback? _updateCheckListener;
+  Timer? _updateCheckSafetyTimer;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -127,6 +132,13 @@ class AppScreenState extends State<AppScreen> {
   }
 
   /// Evaluates the availability of software updates, respecting active background tasks.
+  ///
+  /// If a ROM scan is active, defers the check until the scan transitions to
+  /// idle, then fires exactly once. The listener self-removes on first
+  /// successful invocation so subsequent provider notifications (e.g., a
+  /// settings toggle) do not retrigger the update dialog. A 5-minute safety
+  /// timer detaches the listener if the scan never completes; both the
+  /// listener and timer are cleaned up in `dispose()`.
   Future<void> _checkForUpdates() async {
     try {
       final configProvider = Provider.of<SqliteConfigProvider>(
@@ -134,23 +146,40 @@ class AppScreenState extends State<AppScreen> {
         listen: false,
       );
 
-      // Defer update check if a high-priority ROM scan is currently active.
-      if (configProvider.isScanning) {
-        void checkScanStatus() {
-          if (!configProvider.isScanning && mounted) {
-            _performUpdateCheck();
-          }
-        }
-
-        configProvider.addListener(checkScanStatus);
-
-        // Security fallback: ensure the listener is eventualy detached.
-        Future.delayed(const Duration(minutes: 5), () {
-          configProvider.removeListener(checkScanStatus);
-        });
-      } else {
+      if (!configProvider.isScanning) {
         _performUpdateCheck();
+        return;
       }
+
+      // Capture the initial state so we only fire on the transition
+      // scanning -> idle, not on every notifyListeners() that arrives
+      // while the provider is still scanning (or already idle).
+      bool wasScanning = true;
+      late final VoidCallback listener;
+      listener = () {
+        final isScanning = configProvider.isScanning;
+        if (wasScanning && !isScanning) {
+          // One-shot: detach immediately so we never fire twice.
+          configProvider.removeListener(listener);
+          _updateCheckListener = null;
+          _updateCheckSafetyTimer?.cancel();
+          _updateCheckSafetyTimer = null;
+          if (mounted) _performUpdateCheck();
+        }
+        wasScanning = isScanning;
+      };
+
+      _updateCheckListener = listener;
+      configProvider.addListener(listener);
+
+      // Safety net: detach the listener if the scan never finishes.
+      _updateCheckSafetyTimer = Timer(const Duration(minutes: 5), () {
+        if (_updateCheckListener != null) {
+          configProvider.removeListener(_updateCheckListener!);
+          _updateCheckListener = null;
+        }
+        _updateCheckSafetyTimer = null;
+      });
     } catch (e) {
       _log.e('AppScreen: Failed to initiate update check', error: e);
     }
@@ -177,6 +206,17 @@ class AppScreenState extends State<AppScreen> {
   void dispose() {
     _currentInstance = null;
     _themeProvider?.removeListener(_onThemeChanged);
+    if (_updateCheckListener != null) {
+      try {
+        Provider.of<SqliteConfigProvider>(
+          context,
+          listen: false,
+        ).removeListener(_updateCheckListener!);
+      } catch (_) {}
+      _updateCheckListener = null;
+    }
+    _updateCheckSafetyTimer?.cancel();
+    _updateCheckSafetyTimer = null;
     GamepadNavigationManager.popLayer('app_screen');
     _gamepadNav.dispose();
     super.dispose();
