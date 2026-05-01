@@ -929,9 +929,17 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
         description == AppLocale.noDescription.getString(context) ||
         description.trim().isEmpty;
 
+    final resetName = await ScreenScraperService.getCleanRomName(
+      _game.romname,
+      widget.system.id,
+    );
+
+    if (!mounted) return;
+
     final customName = await showScrapeNameDialog(
       context,
       initialName: _game.name,
+      resetName: resetName,
     );
     if (customName == null) return;
 

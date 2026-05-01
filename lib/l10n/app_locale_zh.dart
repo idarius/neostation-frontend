@@ -390,6 +390,7 @@ const Map<String, dynamic> appLocaleZh = {
   AppLocale.scrapeDialogHelper:
       "Edit the search name if ScreenScraper couldn't find the game",
   AppLocale.scrapeDialogSubmit: 'Search',
+  AppLocale.scrapeDialogReset: 'Reset',
   AppLocale.scrape: '抓取',
   AppLocale.noAchievements: '无成就',
   AppLocale.gameInfo: '游戏信息',

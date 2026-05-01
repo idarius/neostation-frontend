@@ -381,7 +381,6 @@ class AppScreenState extends State<AppScreen> {
     }
   }
 
-
   /// Handles tab selection lifecycle including state updates and UI side-effects.
   ///
   /// With `IndexedStack`-based tab content, switching tabs no longer unmounts
@@ -467,71 +466,73 @@ class AppScreenState extends State<AppScreen> {
         builder: (context, configProvider, themeProvider, child) {
           final isOled = themeProvider.isOled;
 
-        return PopScope(
-          canPop: false, // Intercept hardware back button to maintain app flow.
-          child: Scaffold(
-            body: Stack(
-              children: [
-                // Background Layer: Adaptive gradients or pure black for OLED efficiency.
-                if (!isOled)
-                  Positioned.fill(
-                    child: Builder(
-                      builder: (context) {
-                        final bg = Theme.of(context).scaffoldBackgroundColor;
-                        final primary = Theme.of(context).colorScheme.primary;
-                        return Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [bg, Color.lerp(bg, primary, 0.1)!],
+          return PopScope(
+            canPop:
+                false, // Intercept hardware back button to maintain app flow.
+            child: Scaffold(
+              body: Stack(
+                children: [
+                  // Background Layer: Adaptive gradients or pure black for OLED efficiency.
+                  if (!isOled)
+                    Positioned.fill(
+                      child: Builder(
+                        builder: (context) {
+                          final bg = Theme.of(context).scaffoldBackgroundColor;
+                          final primary = Theme.of(context).colorScheme.primary;
+                          return Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [bg, Color.lerp(bg, primary, 0.1)!],
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
+                    )
+                  else
+                    Positioned.fill(
+                      child: Container(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                      ),
                     ),
-                  )
-                else
-                  Positioned.fill(
-                    child: Container(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                    ),
+
+                  // Main Content Layer.
+                  Positioned.fill(child: _buildCurrentTabContent()),
+
+                  // Global Header: Managed based on app initialization state.
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child:
+                        (configProvider.initialized ||
+                            !configProvider.isLoading)
+                        ? FixedHeader(
+                            selectedTabIndex: _selectedTabIndex,
+                            onTabSelected: _onTabSelected,
+                          )
+                        : const SizedBox.shrink(),
                   ),
 
-                // Main Content Layer.
-                Positioned.fill(child: _buildCurrentTabContent()),
-
-                // Global Header: Managed based on app initialization state.
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child:
-                      (configProvider.initialized || !configProvider.isLoading)
-                      ? FixedHeader(
-                          selectedTabIndex: _selectedTabIndex,
-                          onTabSelected: _onTabSelected,
-                        )
-                      : const SizedBox.shrink(),
-                ),
-
-                // Global Footer Placeholder.
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child:
-                      configProvider.hasRomFolder &&
-                          !configProvider.isLoading &&
-                          !configProvider.isScanning
-                      ? _buildFooterForCurrentTab()
-                      : const SizedBox.shrink(),
-                ),
-              ],
+                  // Global Footer Placeholder.
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child:
+                        configProvider.hasRomFolder &&
+                            !configProvider.isLoading &&
+                            !configProvider.isScanning
+                        ? _buildFooterForCurrentTab()
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
       ),
     );
   }
@@ -598,8 +599,7 @@ class TabActiveScope extends InheritedWidget {
   /// Defaults to `true` outside any scope (back-compat for code paths that
   /// don't yet read the scope).
   static bool of(BuildContext context) {
-    final scope = context
-        .dependOnInheritedWidgetOfExactType<TabActiveScope>();
+    final scope = context.dependOnInheritedWidgetOfExactType<TabActiveScope>();
     return scope?.isActive ?? true;
   }
 

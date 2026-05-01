@@ -437,6 +437,7 @@ const Map<String, dynamic> appLocaleIt = {
   AppLocale.scrapeDialogHelper:
       "Edit the search name if ScreenScraper couldn't find the game",
   AppLocale.scrapeDialogSubmit: 'Search',
+  AppLocale.scrapeDialogReset: 'Reset',
   AppLocale.scrape: 'Scraping',
   AppLocale.noAchievements: 'Nessun Obiettivo',
   AppLocale.gameInfo: 'Info Gioco',

@@ -7,20 +7,27 @@ import '../../../../l10n/app_locale.dart';
 /// Shows a modal dialog that lets the user edit the search name before a
 /// ScreenScraper request. Returns the trimmed string on submit, or `null` if
 /// the user cancels or dismisses the dialog.
+///
+/// [initialName] is what the field starts with (typically `_game.name`).
+/// [resetName] is what the Reset button restores the field to (typically the
+/// raw ROM filename ScreenScraper would search by default).
 Future<String?> showScrapeNameDialog(
   BuildContext context, {
   required String initialName,
+  required String resetName,
 }) {
   return showDialog<String>(
     context: context,
     barrierDismissible: true,
-    builder: (ctx) => _ScrapeNameDialog(initialName: initialName),
+    builder: (ctx) =>
+        _ScrapeNameDialog(initialName: initialName, resetName: resetName),
   );
 }
 
 class _ScrapeNameDialog extends StatefulWidget {
   final String initialName;
-  const _ScrapeNameDialog({required this.initialName});
+  final String resetName;
+  const _ScrapeNameDialog({required this.initialName, required this.resetName});
 
   @override
   State<_ScrapeNameDialog> createState() => _ScrapeNameDialogState();
@@ -29,19 +36,25 @@ class _ScrapeNameDialog extends StatefulWidget {
 class _ScrapeNameDialogState extends State<_ScrapeNameDialog> {
   late final TextEditingController _controller;
   bool _canSubmit = false;
+  bool _canReset = false;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialName);
     _canSubmit = widget.initialName.trim().isNotEmpty;
+    _canReset = widget.initialName != widget.resetName;
     _controller.addListener(_onChanged);
   }
 
   void _onChanged() {
-    final canNow = _controller.text.trim().isNotEmpty;
-    if (canNow != _canSubmit) {
-      setState(() => _canSubmit = canNow);
+    final canSubmitNow = _controller.text.trim().isNotEmpty;
+    final canResetNow = _controller.text != widget.resetName;
+    if (canSubmitNow != _canSubmit || canResetNow != _canReset) {
+      setState(() {
+        _canSubmit = canSubmitNow;
+        _canReset = canResetNow;
+      });
     }
   }
 
@@ -52,6 +65,13 @@ class _ScrapeNameDialogState extends State<_ScrapeNameDialog> {
   }
 
   void _cancel() => Navigator.of(context).pop();
+
+  void _reset() {
+    _controller.text = widget.resetName;
+    _controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: widget.resetName.length),
+    );
+  }
 
   @override
   void dispose() {
@@ -104,6 +124,10 @@ class _ScrapeNameDialogState extends State<_ScrapeNameDialog> {
         TextButton(
           onPressed: _cancel,
           child: Text(AppLocale.cancel.getString(context)),
+        ),
+        TextButton(
+          onPressed: _canReset ? _reset : null,
+          child: Text(AppLocale.scrapeDialogReset.getString(context)),
         ),
         TextButton(
           onPressed: _canSubmit ? _submit : null,

@@ -250,7 +250,7 @@ class ScreenScraperService {
   }
 
   /// Sanitizes a ROM filename by removing system-specific extensions.
-  static Future<String> _getCleanRomName(
+  static Future<String> getCleanRomName(
     String romName,
     String? appSystemId,
   ) async {
@@ -572,7 +572,7 @@ class ScreenScraperService {
         } catch (_) {}
       }
 
-      final cleanRomName = await _getCleanRomName(
+      final cleanRomName = await getCleanRomName(
         gameName ?? romName,
         targetAppSystemId,
       );
@@ -957,7 +957,7 @@ class ScreenScraperService {
       );
       if (bestMedia != null) {
         final folderName = _mapMediaTypeToFolder(mediaType);
-        final romBaseName = await _getCleanRomName(romName, appSystemId);
+        final romBaseName = await getCleanRomName(romName, appSystemId);
         final fileName =
             '$romBaseName.${bestMedia['format']?.toString() ?? 'png'}';
         final relativePath = '$systemFolder/$folderName/$fileName';
@@ -1482,7 +1482,7 @@ class ScreenScraperService {
       }
       final userDataDir = await _getMediaDirectory();
       const expectedTypes = ['fanarts', 'screenshots', 'videos'];
-      final romBaseName = await _getCleanRomName(romName, appSystemId);
+      final romBaseName = await getCleanRomName(romName, appSystemId);
       final missing = <String>[];
       final existing = <String>[];
 

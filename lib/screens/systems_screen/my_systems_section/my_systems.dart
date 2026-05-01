@@ -855,8 +855,7 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
   void _updateSecondaryScreenName() {
     if (!Platform.isAndroid) return;
     if (_secondaryDisplayState == null) return;
-    if (_selectedIndex < 0 ||
-        _selectedIndex >= widget.systems.length) {
+    if (_selectedIndex < 0 || _selectedIndex >= widget.systems.length) {
       return;
     }
 
@@ -1388,8 +1387,7 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
         // from the latest notifier value; the closure captures `grid`,
         // `cols`, `colWidth`, etc. from the parent build so geometry stays
         // consistent without recomputing the grid.
-        final highlightOverlay =
-            Selector<SelectedSystemIndexNotifier, int>(
+        final highlightOverlay = Selector<SelectedSystemIndexNotifier, int>(
           selector: (_, n) => n.value,
           builder: (context, idx, _) {
             if (idx < 0 || idx >= systemCards.length) {
@@ -1413,9 +1411,7 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
             }
             if (hLeft == null) return const SizedBox.shrink();
             return AnimatedPositioned(
-              duration: Duration(
-                milliseconds: _isNavigatingFast ? 120 : 300,
-              ),
+              duration: Duration(milliseconds: _isNavigatingFast ? 120 : 300),
               curve: Curves.easeOutQuart,
               left: hLeft,
               top: hTop!,
@@ -1443,12 +1439,7 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
           ),
           child: SizedBox(
             height: totalHeight,
-            child: Stack(
-              children: [
-                ...cardWidgets,
-                highlightOverlay,
-              ],
-            ),
+            child: Stack(children: [...cardWidgets, highlightOverlay]),
           ),
         );
       },
