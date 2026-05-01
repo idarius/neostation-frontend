@@ -425,7 +425,8 @@ const Map<String, dynamic> appLocaleId = {
   AppLocale.addFav: 'Tambah ke Favorit',
   AppLocale.rescrape: 'Scrape Ulang',
   AppLocale.scrapeDialogTitle: 'Scrape with custom name',
-  AppLocale.scrapeDialogHelper: "Edit the search name if ScreenScraper couldn't find the game",
+  AppLocale.scrapeDialogHelper:
+      "Edit the search name if ScreenScraper couldn't find the game",
   AppLocale.scrapeDialogSubmit: 'Search',
   AppLocale.scrape: 'Scraping',
   AppLocale.noAchievements: 'Tidak Ada Pencapaian',

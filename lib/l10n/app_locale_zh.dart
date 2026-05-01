@@ -387,7 +387,8 @@ const Map<String, dynamic> appLocaleZh = {
   AppLocale.addFav: '收藏',
   AppLocale.rescrape: '重新抓取',
   AppLocale.scrapeDialogTitle: 'Scrape with custom name',
-  AppLocale.scrapeDialogHelper: "Edit the search name if ScreenScraper couldn't find the game",
+  AppLocale.scrapeDialogHelper:
+      "Edit the search name if ScreenScraper couldn't find the game",
   AppLocale.scrapeDialogSubmit: 'Search',
   AppLocale.scrape: '抓取',
   AppLocale.noAchievements: '无成就',

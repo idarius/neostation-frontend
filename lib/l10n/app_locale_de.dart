@@ -439,7 +439,8 @@ const Map<String, dynamic> appLocaleDe = {
   AppLocale.addFav: 'Zu Favoriten hinzufügen',
   AppLocale.rescrape: 'Erneut scrapen',
   AppLocale.scrapeDialogTitle: 'Scrape with custom name',
-  AppLocale.scrapeDialogHelper: "Edit the search name if ScreenScraper couldn't find the game",
+  AppLocale.scrapeDialogHelper:
+      "Edit the search name if ScreenScraper couldn't find the game",
   AppLocale.scrapeDialogSubmit: 'Search',
   AppLocale.scrape: 'Scraping',
   AppLocale.noAchievements: 'Keine Erfolge',

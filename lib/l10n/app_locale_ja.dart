@@ -389,7 +389,8 @@ const Map<String, dynamic> appLocaleJa = {
   AppLocale.addFav: 'お気に入りに追加',
   AppLocale.rescrape: '再スクレイピング',
   AppLocale.scrapeDialogTitle: 'Scrape with custom name',
-  AppLocale.scrapeDialogHelper: "Edit the search name if ScreenScraper couldn't find the game",
+  AppLocale.scrapeDialogHelper:
+      "Edit the search name if ScreenScraper couldn't find the game",
   AppLocale.scrapeDialogSubmit: 'Search',
   AppLocale.scrape: 'スクレイピング',
   AppLocale.noAchievements: '実績なし',
