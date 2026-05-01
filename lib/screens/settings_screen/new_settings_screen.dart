@@ -255,6 +255,15 @@ class _NewSettingsScreenState extends State<NewSettingsScreen> {
           _selectedContentIndex = 0;
         });
       }
+    } else if (selectedKey == AppLocale.general) {
+      final returnToMenu =
+          _generalSettingsKey.currentState?.navigateLeft() ?? true;
+      if (returnToMenu) {
+        setState(() {
+          _focusOnMenu = true;
+          _selectedContentIndex = 0;
+        });
+      }
     } else {
       setState(() {
         _focusOnMenu = true;
@@ -279,6 +288,8 @@ class _NewSettingsScreenState extends State<NewSettingsScreen> {
       _paletteSettingsKey.currentState?.navigateRight();
     } else if (selectedKey == AppLocale.neoThemes) {
       _themesSettingsKey.currentState?.navigateRight();
+    } else if (selectedKey == AppLocale.general) {
+      _generalSettingsKey.currentState?.navigateRight();
     }
   }
 

@@ -49,6 +49,11 @@ class GeneralSettingsContentState extends State<GeneralSettingsContent>
   /// Keys for scroll-into-view orchestration during gamepad navigation.
   final List<GlobalKey> _itemKeys = [];
 
+  /// Tracks the dynamic index of the video-delay slider so that
+  /// navigateLeft/navigateRight can route gamepad input to it.
+  /// Set during `build()` inside the slider IIFE.
+  int? _videoDelayItemIndex;
+
   @override
   void initState() {
     super.initState();
@@ -304,6 +309,40 @@ class GeneralSettingsContentState extends State<GeneralSettingsContent>
       }
       currentItemIndex++;
     }
+  }
+
+  /// Gamepad LEFT handler. Returns `true` if focus should pop back to the
+  /// side menu; returns `false` if the input was consumed locally.
+  ///
+  /// Currently only the video-delay slider consumes left/right (to decrement
+  /// by 250 ms, bounded at 500 ms). At the bound, returns true so the user
+  /// can still escape to the menu.
+  bool navigateLeft() {
+    if (_videoDelayItemIndex != null &&
+        widget.selectedContentIndex == _videoDelayItemIndex) {
+      final cfg = context.read<SqliteConfigProvider>();
+      final current = cfg.config.videoDelayMs;
+      if (current > 500) {
+        cfg.updateVideoDelayMs(current - 250);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /// Gamepad RIGHT handler. Returns `false` always (no rightward navigation
+  /// inside the panel); if the slider is focused, increments by 250 ms
+  /// bounded at 3000 ms before returning.
+  bool navigateRight() {
+    if (_videoDelayItemIndex != null &&
+        widget.selectedContentIndex == _videoDelayItemIndex) {
+      final cfg = context.read<SqliteConfigProvider>();
+      final current = cfg.config.videoDelayMs;
+      if (current < 3000) {
+        cfg.updateVideoDelayMs(current + 250);
+      }
+    }
+    return false;
   }
 
   /// Synchronizes the scroll viewport with the currently focused setting item.
@@ -947,6 +986,7 @@ class GeneralSettingsContentState extends State<GeneralSettingsContent>
           // Setting: Video preview delay slider (500-3000ms, step 250).
           () {
             final index = currentItemIdx++;
+            _videoDelayItemIndex = index;
             final delayMs = config.videoDelayMs;
             return Padding(
               padding: EdgeInsets.only(top: 12.r),
