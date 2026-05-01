@@ -56,7 +56,12 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.neogamelab.neostation"
+        // FORK REBRAND: applicationId differs from namespace so this fork
+        // can install side-by-side with the upstream NeoStation APK on the
+        // same device. The Kotlin namespace (com.neogamelab.neostation)
+        // remains unchanged so existing `<provider android:name="...">` and
+        // R class references stay valid without moving any source file.
+        applicationId = "fr.idarius.idastation"
         minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = flutterVersionCode.toInt()

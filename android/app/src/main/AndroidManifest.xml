@@ -63,7 +63,7 @@
     </queries>
         
    <application
-        android:label="NeoStation"
+        android:label="Idastation"
         android:icon="@mipmap/launcher_icon"
         android:largeHeap="true"
         android:banner="@mipmap/launcher_icon"

@@ -400,7 +400,7 @@ class _MyAppState extends State<MyApp> {
                     actions: {ToggleFullscreenIntent: ToggleFullscreenAction()},
                     child: MaterialApp(
                       debugShowCheckedModeBanner: false,
-                      title: 'NeoStation',
+                      title: 'Idastation',
                       locale: _locale,
                       localizationsDelegates:
                           FlutterLocalization.instance.localizationsDelegates,
