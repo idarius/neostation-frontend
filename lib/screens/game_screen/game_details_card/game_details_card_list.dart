@@ -862,6 +862,7 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
                 system: _effectiveSystem,
                 game: _game,
                 fileProvider: widget.fileProvider,
+                imageVersion: _imageVersion,
                 androidAppIconFuture: _androidAppIconFuture,
               ),
             if (_currentTab == DetailTab.gameInfo)

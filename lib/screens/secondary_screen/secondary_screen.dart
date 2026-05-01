@@ -200,7 +200,7 @@ class _SecondaryScreenState extends State<SecondaryScreen> {
                                     ),
                                 child: Stack(
                                   key: ValueKey(
-                                    'game_content_${value.systemName}_${value.gameId}_${value.gameScreenshot ?? 'none'}_${value.gameImageBytes != null ? value.gameImageBytes.hashCode : 'none'}',
+                                    'game_content_${value.systemName}_${value.gameId}_${value.gameScreenshot ?? 'none'}_${value.gameImageBytes != null ? value.gameImageBytes.hashCode : 'none'}_${value.mediaRevision}',
                                   ),
                                   fit: StackFit.expand,
                                   children: [

@@ -2559,6 +2559,14 @@ class _SystemGamesListState extends State<SystemGamesList> {
 
         if (mounted && _selectedGame != null) {
           _updateSecondaryDisplay(updatedGame);
+          // Force secondary screen to rebuild image-displaying widgets even
+          // if the file paths didn't change (rescrape rewrites the same paths
+          // with new content).
+          final currentRevision =
+              _secondaryDisplayState?.value?.mediaRevision ?? 0;
+          await _secondaryDisplayState?.updateState(
+            mediaRevision: currentRevision + 1,
+          );
           _updateBackground(updatedGame);
           _startVideoTimer();
         }

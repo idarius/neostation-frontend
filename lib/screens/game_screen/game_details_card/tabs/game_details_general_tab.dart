@@ -17,12 +17,14 @@ class GameDetailsGeneralTab extends StatelessWidget {
   final GameModel game;
   final FileProvider fileProvider;
   final Future<Uint8List?>? androidAppIconFuture;
+  final int imageVersion;
 
   const GameDetailsGeneralTab({
     super.key,
     required this.system,
     required this.game,
     required this.fileProvider,
+    required this.imageVersion,
     this.androidAppIconFuture,
   });
 
@@ -68,7 +70,7 @@ class GameDetailsGeneralTab extends StatelessWidget {
                       ? Image.file(
                           File(wheelPath),
                           key: ValueKey(
-                            'wheel_shadow_${game.romPath ?? game.romname}',
+                            'wheel_shadow_${game.romPath ?? game.romname}_$imageVersion',
                           ),
                           fit: BoxFit.contain,
                           filterQuality: FilterQuality.low,
@@ -122,7 +124,9 @@ class GameDetailsGeneralTab extends StatelessWidget {
                 child: wheelExists
                     ? Image.file(
                         File(wheelPath),
-                        key: ValueKey('wheel_${game.romPath ?? game.romname}'),
+                        key: ValueKey(
+                          'wheel_${game.romPath ?? game.romname}_$imageVersion',
+                        ),
                         fit: BoxFit.contain,
                         filterQuality: FilterQuality.medium,
                         isAntiAlias: true,

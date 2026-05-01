@@ -71,6 +71,10 @@ class SecondaryDisplayStateData {
   /// Trigger value used to notify the secondary display of scraper status changes.
   final int scrapeTrigger;
 
+  /// Bumped after rescrape success to force image-displaying widgets on the
+  /// secondary screen to rebuild even when the file paths are unchanged.
+  final int mediaRevision;
+
   /// Absolute path or asset name of the system logo.
   final String? systemLogo;
 
@@ -119,6 +123,7 @@ class SecondaryDisplayStateData {
     this.scrapeStatus,
     this.isScraperLoggedIn = true,
     this.scrapeTrigger = 0,
+    this.mediaRevision = 0,
     this.systemLogo,
     this.isLogoAsset = false,
     this.systemBackground,
@@ -160,6 +165,7 @@ class SecondaryDisplayStateData {
     bool clearScrapeStatus = false,
     bool? isScraperLoggedIn,
     int? scrapeTrigger,
+    int? mediaRevision,
     String? systemLogo,
     bool clearSystemLogo = false,
     bool? isLogoAsset,
@@ -201,6 +207,7 @@ class SecondaryDisplayStateData {
           : (scrapeStatus ?? this.scrapeStatus),
       isScraperLoggedIn: isScraperLoggedIn ?? this.isScraperLoggedIn,
       scrapeTrigger: scrapeTrigger ?? this.scrapeTrigger,
+      mediaRevision: mediaRevision ?? this.mediaRevision,
       systemLogo: clearSystemLogo ? null : (systemLogo ?? this.systemLogo),
       isLogoAsset: isLogoAsset ?? this.isLogoAsset,
       systemBackground: clearSystemBackground
@@ -240,6 +247,7 @@ class SecondaryDisplayStateData {
       scrapeStatus: json['scrapeStatus'] as String?,
       isScraperLoggedIn: json['isScraperLoggedIn'] as bool? ?? true,
       scrapeTrigger: json['scrapeTrigger'] as int? ?? 0,
+      mediaRevision: json['mediaRevision'] as int? ?? 0,
       systemLogo: json['systemLogo'] as String?,
       isLogoAsset: json['isLogoAsset'] as bool? ?? false,
       systemBackground: json['systemBackground'] as String?,
@@ -277,6 +285,7 @@ class SecondaryDisplayStateData {
       'scrapeStatus': scrapeStatus,
       'isScraperLoggedIn': isScraperLoggedIn,
       'scrapeTrigger': scrapeTrigger,
+      'mediaRevision': mediaRevision,
       'systemLogo': systemLogo,
       'isLogoAsset': isLogoAsset,
       'systemBackground': systemBackground,
@@ -337,6 +346,7 @@ class SecondaryDisplayState extends SharedState<SecondaryDisplayStateData> {
     bool clearScrapeStatus = false,
     bool? isScraperLoggedIn,
     int? scrapeTrigger,
+    int? mediaRevision,
     String? systemLogo,
     bool clearSystemLogo = false,
     bool? isLogoAsset,
@@ -387,6 +397,7 @@ class SecondaryDisplayState extends SharedState<SecondaryDisplayStateData> {
             clearScrapeStatus: clearScrapeStatus,
             isScraperLoggedIn: isScraperLoggedIn,
             scrapeTrigger: scrapeTrigger,
+            mediaRevision: mediaRevision,
             systemLogo: systemLogo,
             clearSystemLogo: clearSystemLogo,
             isLogoAsset: isLogoAsset,
