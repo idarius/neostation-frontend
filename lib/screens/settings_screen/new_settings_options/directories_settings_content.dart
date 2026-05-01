@@ -41,14 +41,23 @@ class DirectoriesSettingsContentState
   List<String> _currentRomFolders = [];
   bool _isLoading = true;
 
+  /// Guards the one-time post-init bootstrap to prevent re-entry on
+  /// every didChangeDependencies fire (locale change, theme switch, …).
+  bool _bootstrapped = false;
+
   static final _log = LoggerService.instance;
 
   /// Dynamic list of navigable directory actions and managed paths.
   final List<Map<String, dynamic>> _directoryItems = [];
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // _buildDirectoryItems calls AppLocale.getString(context), which requires
+    // the inherited Localizations scope to be wired up — not yet the case in
+    // initState. didChangeDependencies fires once after that scope is ready.
+    if (_bootstrapped) return;
+    _bootstrapped = true;
     _buildDirectoryItems();
     _loadCurrentPaths();
   }
