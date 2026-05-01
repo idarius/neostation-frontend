@@ -424,6 +424,9 @@ mixin AppLocale {
   static const String addFav = 'add_fav';
   static const String rescrape = 'rescrape';
   static const String scrape = 'scrape';
+  static const String scrapeDialogTitle = 'scrape_dialog_title';
+  static const String scrapeDialogHelper = 'scrape_dialog_helper';
+  static const String scrapeDialogSubmit = 'scrape_dialog_submit';
   static const String noAchievements = 'no_achievements';
   static const String gameInfo = 'game_info';
   static const String unlocked = 'unlocked';
