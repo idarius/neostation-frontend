@@ -474,6 +474,60 @@ class ScraperRepository {
     );
   }
 
+  /// Records that a scrape attempt was made for this rom but ScreenScraper
+  /// did not find the game. Idempotent: upserts into the metadata table with
+  /// only the bookkeeping columns.
+  static Future<void> markScrapeAttemptFailed(
+    String filename,
+    String appSystemId,
+  ) async {
+    final db = await SqliteService.getDatabase();
+    final updated = await db.update(
+      'user_screenscraper_metadata',
+      {
+        'scrape_attempt_failed': 1,
+        'updated_at': DateTime.now().toIso8601String(),
+      },
+      where: 'app_system_id = ? AND filename = ?',
+      whereArgs: [appSystemId, filename],
+    );
+    if (updated == 0) {
+      await db.insert('user_screenscraper_metadata', {
+        'app_system_id': appSystemId,
+        'filename': filename,
+        'scrape_attempt_failed': 1,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    }
+  }
+
+  /// Returns the current scrape state for the given rom:
+  ///   - 'never'   no row in metadata (never attempted)
+  ///   - 'failed'  row exists with scrape_attempt_failed = 1 and is_fully_scraped = 0
+  ///   - 'success' row exists with is_fully_scraped = 1
+  /// 'partial' (is_fully_scraped = 0 without the failed flag) is treated as 'success'
+  /// for dialog-routing purposes — it means at least one prior attempt got data back.
+  static Future<String> getScrapeState(
+    String filename,
+    String appSystemId,
+  ) async {
+    final db = await SqliteService.getDatabase();
+    final rows = await db.query(
+      'user_screenscraper_metadata',
+      columns: ['is_fully_scraped', 'scrape_attempt_failed'],
+      where: 'app_system_id = ? AND filename = ?',
+      whereArgs: [appSystemId, filename],
+      limit: 1,
+    );
+    if (rows.isEmpty) return 'never';
+    final row = rows.first;
+    final fully = (row['is_fully_scraped'] as int?) ?? 0;
+    final failed = (row['scrape_attempt_failed'] as int?) ?? 0;
+    if (fully == 1) return 'success';
+    if (failed == 1) return 'failed';
+    return 'success'; // partial scrape — treat as success for routing.
+  }
+
   // ── Bulk scraping ─────────────────────────────────────────────────────────
 
   /// Returns the count of ROMs eligible for scraping for a given system.

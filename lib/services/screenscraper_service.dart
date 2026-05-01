@@ -1093,6 +1093,7 @@ class ScreenScraperService {
       }
 
       if (gameInfoResult == null || gameInfoResult['gameInfo'] == null) {
+        await ScraperRepository.markScrapeAttemptFailed(romName, appSystemId);
         return {'success': false, 'message': AppLocale.scrapeGameNotFound};
       }
 
@@ -1462,6 +1463,7 @@ class ScreenScraperService {
         );
         return {'success': true, 'cancelled': false, 'requests': requestsMade};
       }
+      await ScraperRepository.markScrapeAttemptFailed(filename, appSystemId);
       return {'success': false, 'cancelled': false, 'requests': requestsMade};
     } catch (e) {
       return {'success': false, 'cancelled': false, 'requests': 0};

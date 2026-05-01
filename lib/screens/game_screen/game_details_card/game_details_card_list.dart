@@ -14,6 +14,7 @@ import '../../../models/neo_sync_models.dart';
 import '../../../models/retro_achievements_game_info.dart';
 import '../../../repositories/game_repository.dart';
 import '../../../repositories/retro_achievements_repository.dart';
+import '../../../repositories/scraper_repository.dart';
 import '../../../services/retroachievements_hash_service.dart';
 import '../../../utils/gamepad_nav.dart';
 import 'package:flutter/foundation.dart';
@@ -917,6 +918,11 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
 
   /// Opens the custom-name dialog, then starts a metadata scrape using the
   /// edited name. Cancelling the dialog aborts the scrape.
+  ///
+  /// On the first press (state == 'never'), skips the dialog and scrapes
+  /// directly with the default name. The dialog opens on subsequent presses
+  /// so the user can correct the name if the first attempt failed (or retry
+  /// with a different name if it succeeded).
   Future<void> _onScrapeGameCompact() async {
     final description =
         widget.localizedDescription ??
@@ -928,6 +934,26 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
         description.isEmpty ||
         description == AppLocale.noDescription.getString(context) ||
         description.trim().isEmpty;
+
+    if (widget.system.id == null) return;
+
+    final scrapeState = await ScraperRepository.getScrapeState(
+      _game.romname,
+      widget.system.id!,
+    );
+
+    if (!mounted) return;
+
+    // Never attempted: try a direct scrape with the default name.
+    // The dialog only appears once we know the default name failed (or
+    // succeeded and the user wants to retry with a different name).
+    if (scrapeState == 'never') {
+      if (!widget.isSecondaryScreenActive) {
+        _setTab(DetailTab.gameInfo);
+      }
+      _startSingleGameScrape(forceOverwrite: !isDescriptionMissing);
+      return;
+    }
 
     final resetName = await ScreenScraperService.getCleanRomName(
       _game.romname,

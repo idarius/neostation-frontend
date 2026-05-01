@@ -1128,6 +1128,7 @@ class SqliteService {
 
     // FIX: Ensure user_screenscraper_config columns are up to date (v29).
     await _ensureScreenScraperConfigColumns(db);
+    await _ensureScraperMetadataColumns(db);
 
     // FIX: Resolve inconsistencies in default emulator assignments.
     if (tableNames.contains('app_systems') &&
@@ -1334,6 +1335,29 @@ class SqliteService {
       }
     } catch (e) {
       _log.e('Error ensuring ScreenScraper configuration integrity: $e');
+      rethrow;
+    }
+  }
+
+  /// Ensures the user_screenscraper_metadata table has fork-private columns.
+  ///
+  /// Idempotent: checks PRAGMA table_info and ALTERs only if missing.
+  /// This pattern avoids bumping `_databaseVersion`, which would conflict
+  /// with future upstream migrations (see CLAUDE.md fork policy).
+  Future<void> _ensureScraperMetadataColumns(DatabaseAdapter db) async {
+    try {
+      final tableInfo = await db.rawQuery(
+        'PRAGMA table_info(user_screenscraper_metadata)',
+      );
+      final columns = tableInfo.map((c) => c['name'].toString()).toList();
+
+      if (!columns.contains('scrape_attempt_failed')) {
+        await db.execute(
+          'ALTER TABLE user_screenscraper_metadata ADD COLUMN scrape_attempt_failed INTEGER DEFAULT 0',
+        );
+      }
+    } catch (e) {
+      _log.e('Error ensuring scraper metadata columns: $e');
       rethrow;
     }
   }
@@ -1653,6 +1677,7 @@ class SqliteService {
         genre TEXT,
         players TEXT,
         is_fully_scraped INTEGER DEFAULT 0,
+        scrape_attempt_failed INTEGER DEFAULT 0,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (app_system_id) REFERENCES app_systems(id) ON DELETE CASCADE,
         UNIQUE(app_system_id, filename)
