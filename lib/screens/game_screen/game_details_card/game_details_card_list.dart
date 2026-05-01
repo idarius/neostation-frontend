@@ -1040,7 +1040,7 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
     // Metadata Tab: Initiates scraping if the dedicated button is focused.
     if (_currentTab == DetailTab.gameInfo) {
       if (_scrapeButtonFocusNode.hasFocus) {
-        _startSingleGameScrape();
+        _onScrapeGameCompact();
       }
     }
   }
@@ -1056,7 +1056,7 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
 
     if (_isScrapingGame) return;
 
-    _startSingleGameScrape();
+    _onScrapeGameCompact();
   }
 
   /// Processes tab navigation via hardware bumpers (LB/RB).
