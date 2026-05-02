@@ -21,6 +21,10 @@ import '../../services/recent_system_helper.dart';
 ///     ([AndroidAppsGrid]) and the cycle reuses the same `SystemGamesList`
 ///     widget in-place; routing to a different screen mid-cycle would
 ///     reintroduce widget tear-down on every press.
+///   - The `search` virtual system: cycling away would lose the typed
+///     query. Excluded by [_cycleToNeighbourSystem] in `my_games_list.dart`,
+///     not by this helper (the helper's cycle list never contains 'search'
+///     since neither RecentSystemHelper nor visibleDetectedSystems return it).
 class SystemCycleHelper {
   /// Returns systems in display order. Async because the `recent` virtual
   /// system is built from a JSON asset (cached after first load).

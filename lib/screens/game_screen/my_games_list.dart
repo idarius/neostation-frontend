@@ -1564,6 +1564,8 @@ class _SystemGamesListState extends State<SystemGamesList> {
   /// screen ([AndroidAppsGrid]) — see [SystemCycleHelper.getOrderedSystems].
   Future<void> _cycleToNeighbourSystem({required bool forward}) async {
     if (_isCyclingSystem || !mounted) return;
+    // Cycling from the search list would lose the typed query — disabled.
+    if (_effectiveSystem.folderName == 'search') return;
     _isCyclingSystem = true;
 
     try {
