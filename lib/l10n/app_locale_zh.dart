@@ -560,6 +560,8 @@ const Map<String, dynamic> appLocaleZh = {
   AppLocale.localSyncBtnTest: 'Test access',
   AppLocale.localSyncBtnList: 'List saves',
   AppLocale.localSyncRestartHint: 'Restart the app to apply the new path',
+  AppLocale.localSyncContentUriUnsupported:
+      'Path scheme not supported (content://). Pick a regular folder.',
   AppLocale.packageNameMissing: '缺少包名',
   AppLocale.failedToLaunchAndroidApp: '启动 Android 应用失败',
   AppLocale.romFileNotFound: '未发现 ROM 文件',

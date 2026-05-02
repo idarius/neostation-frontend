@@ -631,6 +631,8 @@ mixin AppLocale {
   static const String localSyncBtnTest = 'local_sync_btn_test';
   static const String localSyncBtnList = 'local_sync_btn_list';
   static const String localSyncRestartHint = 'local_sync_restart_hint';
+  static const String localSyncContentUriUnsupported =
+      'local_sync_content_uri_unsupported';
 
   static const String packageNameMissing = 'package_name_missing';
   static const String failedToLaunchAndroidApp = 'failed_to_launch_android_app';

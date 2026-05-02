@@ -639,6 +639,8 @@ const Map<String, dynamic> appLocaleFr = {
   AppLocale.localSyncBtnList: 'Lister les saves',
   AppLocale.localSyncRestartHint:
       'Redémarrer l\'application pour appliquer le nouveau chemin',
+  AppLocale.localSyncContentUriUnsupported:
+      'Schéma de chemin non supporté (content://). Choisissez un dossier classique.',
   AppLocale.packageNameMissing: 'Nom du paquet manquant',
   AppLocale.failedToLaunchAndroidApp: 'Échec du lancement de l’app Android',
   AppLocale.romFileNotFound: 'Fichier ROM non trouvé',

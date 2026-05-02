@@ -631,6 +631,8 @@ const Map<String, dynamic> appLocaleDe = {
   AppLocale.localSyncBtnTest: 'Test access',
   AppLocale.localSyncBtnList: 'List saves',
   AppLocale.localSyncRestartHint: 'Restart the app to apply the new path',
+  AppLocale.localSyncContentUriUnsupported:
+      'Path scheme not supported (content://). Pick a regular folder.',
   AppLocale.packageNameMissing: 'Paketname fehlt',
   AppLocale.failedToLaunchAndroidApp:
       'Android-App konnte nicht gestartet werden',

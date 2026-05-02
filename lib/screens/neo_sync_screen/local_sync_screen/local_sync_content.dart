@@ -110,19 +110,20 @@ class _LocalSyncContentState extends State<LocalSyncContent> {
 
     if (picked.startsWith('content://')) {
       if (!mounted) return;
+      final msg =
+          AppLocale.localSyncContentUriUnsupported.getString(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Path scheme not supported (content://). '
-            'Use a real filesystem path.',
-          ),
-        ),
+        SnackBar(content: Text(msg)),
       );
       return;
     }
 
     await configProvider.updateLocalSyncPath(picked);
     if (!mounted) return;
+    setState(() {
+      _statusOverride = null;
+      _listingResult = null;
+    });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(restartHint),
