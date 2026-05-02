@@ -1095,6 +1095,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
   /// preserving the user's current scroll/focus index for a seamless experience.
   void _reorderGamesListKeepingVisualPosition() {
     if (_selectedGame == null) return;
+    if (widget.system.folderName == 'recent') return;
 
     final oldIndex = _selectedGameIndex;
 
@@ -1128,6 +1129,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
   /// Sorts the list and re-anchors focus to a specific ROM.
   /// Primarily used after scraping to follow a game to its new alphabetical position.
   void _reorderGamesListFollowingGame(String romname) {
+    if (widget.system.folderName == 'recent') return;
     setState(() {
       final sortedGames = List<GameModel>.from(_games);
       sortedGames.sort((a, b) {
