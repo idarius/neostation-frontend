@@ -1048,6 +1048,12 @@ class SqliteConfigProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateHideRecentSystem(bool value) async {
+    _config = _config.copyWith(hideRecentSystem: value);
+    await SqliteConfigService.saveConfig(_config);
+    notifyListeners();
+  }
+
   Future<void> updateActiveSyncProvider(String providerId) async {
     _config = _config.copyWith(activeSyncProvider: providerId);
     await SqliteConfigService.saveConfig(_config);
