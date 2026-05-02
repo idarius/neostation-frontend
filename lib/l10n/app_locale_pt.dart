@@ -59,6 +59,9 @@ const Map<String, dynamic> appLocalePt = {
       'Mostrar o card de jogos recentes na grade de sistemas',
   AppLocale.recentSystem: 'Recente',
   AppLocale.searchSystem: 'Buscar',
+  AppLocale.searchEmptyHint: 'Digite para pesquisar em todos os sistemas',
+  AppLocale.searchNoResults: 'Nenhum jogo encontrado para "{query}"',
+  AppLocale.searchMinLength: 'Digite pelo menos 2 caracteres',
   AppLocale.hideRecentSystem: 'Sistema Recente',
   AppLocale.hideRecentSystemSubtitle:
       'Mostrar o sistema "Recente" na grade Console.',

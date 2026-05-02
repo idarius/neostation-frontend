@@ -81,6 +81,9 @@ mixin AppLocale {
   static const String hideRecentSystem = 'hide_recent_system';
   static const String hideRecentSystemSubtitle = 'hide_recent_system_subtitle';
   static const String searchSystem = 'search_system';
+  static const String searchEmptyHint = 'search_empty_hint';
+  static const String searchNoResults = 'search_no_results';
+  static const String searchMinLength = 'search_min_length';
 
   // ---------------------------------------------------------------------------
   // General settings

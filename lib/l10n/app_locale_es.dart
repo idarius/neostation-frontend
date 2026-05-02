@@ -59,6 +59,9 @@ const Map<String, dynamic> appLocaleEs = {
       'Muestra la tarjeta de jugados recientemente en la grilla',
   AppLocale.recentSystem: 'Reciente',
   AppLocale.searchSystem: 'Buscar',
+  AppLocale.searchEmptyHint: 'Escribe para buscar en todos los sistemas',
+  AppLocale.searchNoResults: 'Ningún juego encontrado para "{query}"',
+  AppLocale.searchMinLength: 'Escribe al menos 2 caracteres',
   AppLocale.hideRecentSystem: 'Sistema Reciente',
   AppLocale.hideRecentSystemSubtitle:
       'Mostrar el sistema "Reciente" en la cuadrícula de Consola.',

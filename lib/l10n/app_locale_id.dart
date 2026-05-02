@@ -58,6 +58,9 @@ const Map<String, dynamic> appLocaleId = {
       'Tampilkan kartu game terbaru di grid sistem',
   AppLocale.recentSystem: 'Terbaru',
   AppLocale.searchSystem: 'Cari',
+  AppLocale.searchEmptyHint: 'Ketik untuk mencari di semua sistem',
+  AppLocale.searchNoResults: 'Tidak ada game ditemukan untuk "{query}"',
+  AppLocale.searchMinLength: 'Ketik minimal 2 karakter',
   AppLocale.hideRecentSystem: 'Sistem Terbaru',
   AppLocale.hideRecentSystemSubtitle:
       'Tampilkan sistem "Terbaru" di kisi Konsol.',

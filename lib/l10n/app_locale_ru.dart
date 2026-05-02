@@ -58,6 +58,9 @@ const Map<String, dynamic> appLocaleRu = {
       'Показать карточку недавних игр в сетке систем',
   AppLocale.recentSystem: 'Недавние',
   AppLocale.searchSystem: 'Поиск',
+  AppLocale.searchEmptyHint: 'Введите для поиска по всем системам',
+  AppLocale.searchNoResults: 'Игра не найдена по запросу «{query}»',
+  AppLocale.searchMinLength: 'Введите минимум 2 символа',
   AppLocale.hideRecentSystem: 'Система "Недавние"',
   AppLocale.hideRecentSystemSubtitle:
       'Показывать систему "Недавние" в сетке консоли.',

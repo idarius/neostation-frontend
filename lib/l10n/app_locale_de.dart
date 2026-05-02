@@ -59,6 +59,9 @@ const Map<String, dynamic> appLocaleDe = {
       'Karte der zuletzt gespielten Spiele im Raster anzeigen',
   AppLocale.recentSystem: 'Kürzlich',
   AppLocale.searchSystem: 'Suche',
+  AppLocale.searchEmptyHint: 'Tippen, um in allen Systemen zu suchen',
+  AppLocale.searchNoResults: 'Kein Spiel gefunden für „{query}"',
+  AppLocale.searchMinLength: 'Mindestens 2 Zeichen eingeben',
   AppLocale.hideRecentSystem: 'Kürzlich-System',
   AppLocale.hideRecentSystemSubtitle:
       'Das System "Kürzlich" im Konsolenraster anzeigen.',
