@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localization/flutter_localization.dart';
@@ -306,22 +307,30 @@ class GameDetailsSettingsTabState extends State<GameDetailsSettingsTab> {
       right: 12.r,
       top: 55.r,
       bottom: 98.r,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(8.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 2.r,
-              offset: Offset(2.0.r, 2.0.r),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8.r),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(8.r),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.10),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 8.r,
+                  offset: Offset(0, 4.r),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header: Category title and icon.
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header: Category title and icon.
             Padding(
               padding: EdgeInsets.fromLTRB(8.r, 8.r, 8.r, 0),
               child: Column(
@@ -567,6 +576,8 @@ class GameDetailsSettingsTabState extends State<GameDetailsSettingsTab> {
             ),
             SizedBox(height: 8.r),
           ],
+        ),
+      ),
         ),
       ),
     );

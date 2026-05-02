@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -129,32 +130,42 @@ class GameDetailsAchievementsTabState
           right: 12.r,
           top: 55.r,
           bottom: 98.r,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(8.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
-                  blurRadius: 2.r,
-                  offset: Offset(2.0.r, 2.0.r),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircularProgressIndicator(),
-                  SizedBox(height: 16.r),
-                  Text(
-                    AppLocale.loadingAchievements.getString(context),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 12.r,
-                    ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8.r),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.10),
+                    width: 1,
                   ),
-                ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      blurRadius: 8.r,
+                      offset: Offset(0, 4.r),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      SizedBox(height: 16.r),
+                      Text(
+                        AppLocale.loadingAchievements.getString(context),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 12.r,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -167,36 +178,46 @@ class GameDetailsAchievementsTabState
         right: 12.r,
         top: 55.r,
         bottom: 98.r,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(8.r),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 2.r,
-                offset: Offset(2.0.r, 2.0.r),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.videogame_asset_off,
-                  size: 48.r,
-                  color: Theme.of(context).colorScheme.onSurface,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8.r),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.10),
+                  width: 1,
                 ),
-                SizedBox(height: 16.r),
-                Text(
-                  AppLocale.noAchievementsFound.getString(context),
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 14.r,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    blurRadius: 8.r,
+                    offset: Offset(0, 4.r),
                   ),
+                ],
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.videogame_asset_off,
+                      size: 48.r,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    SizedBox(height: 16.r),
+                    Text(
+                      AppLocale.noAchievementsFound.getString(context),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 14.r,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -218,22 +239,30 @@ class GameDetailsAchievementsTabState
       right: 12.r,
       top: 55.r,
       bottom: 98.r,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(8.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 2.r,
-              offset: Offset(2.0.r, 2.0.r),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8.r),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(8.r),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.10),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 8.r,
+                  offset: Offset(0, 4.r),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header: Contains progress stats and the manual refresh action.
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header: Contains progress stats and the manual refresh action.
             Padding(
               padding: EdgeInsets.fromLTRB(8.r, 8.r, 8.r, 0),
               child: Column(
@@ -348,6 +377,8 @@ class GameDetailsAchievementsTabState
             ),
             SizedBox(height: 8.r),
           ],
+        ),
+      ),
         ),
       ),
     );
