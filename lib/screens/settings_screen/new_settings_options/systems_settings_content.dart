@@ -54,21 +54,24 @@ class SystemsSettingsContentState extends State<SystemsSettingsContent> {
     }
   }
 
-  /// Calculates the total number of navigable settings (Global Card + Detected Systems).
+  /// Calculates the total number of navigable settings (Card + System + Detected Systems).
   int getItemCount(SqliteConfigProvider provider) {
-    return 1 + provider.detectedSystems.length;
+    return 2 + provider.detectedSystems.length;
   }
 
   /// Executes the toggle action for the specified system or feature.
   void selectItem(int index, SqliteConfigProvider provider) {
     SfxService().playNavSound();
 
-    // Index 0: Global 'Recent Games' card visibility.
     if (index == 0) {
+      // Index 0: Global 'Carte Récents' single-game card visibility.
       provider.updateHideRecentCard(!provider.config.hideRecentCard);
+    } else if (index == 1) {
+      // Index 1: 'Système Récent' virtual system visibility.
+      provider.updateHideRecentSystem(!provider.config.hideRecentSystem);
     } else {
-      // Indices >0: Specific system visibility filters.
-      final systemIndex = index - 1;
+      // Indices >=2: Specific system visibility filters.
+      final systemIndex = index - 2;
       if (systemIndex < provider.detectedSystems.length) {
         final system = provider.detectedSystems[systemIndex];
         provider.toggleSystemHidden(system.folderName);
@@ -96,6 +99,12 @@ class SystemsSettingsContentState extends State<SystemsSettingsContent> {
             title: AppLocale.hideRecentCard.getString(context),
             subtitle: AppLocale.hideRecentCardSubtitle.getString(context),
             isEnabled: !provider.config.hideRecentCard,
+          ),
+          _SettingsRow(
+            icon: Icons.history,
+            title: AppLocale.hideRecentSystem.getString(context),
+            subtitle: AppLocale.hideRecentSystemSubtitle.getString(context),
+            isEnabled: !provider.config.hideRecentSystem,
           ),
           ...systems.map(
             (s) => _SettingsRow(
