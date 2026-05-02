@@ -137,6 +137,12 @@ class _SystemGamesListState extends State<SystemGamesList> {
   // "Chargement des jeux" UI.
   bool _showLoadingSplash = false;
   Timer? _loadingSplashTimer;
+
+  // ── Search mode (active only when widget.system.folderName == 'search') ──
+  late final TextEditingController _searchController;
+  late final FocusNode _searchFocusNode;
+  Timer? _searchDebounceTimer;
+
   bool _isLoadingGames = false; // Prevents redundant reload triggers.
   int _selectedGameIndex = 0;
   late GamepadNavigation
@@ -223,12 +229,25 @@ class _SystemGamesListState extends State<SystemGamesList> {
     super.initState();
     _fileProvider = widget.fileProvider;
     _backButtonFocusNode = FocusNode(skipTraversal: true);
-    _loadingSplashTimer = Timer(const Duration(milliseconds: 150), () {
-      if (mounted && _isLoading) {
-        setState(() => _showLoadingSplash = true);
-      }
-    });
-    _loadGames();
+    _searchController = TextEditingController();
+    _searchFocusNode = FocusNode();
+
+    if (widget.system.folderName == 'search') {
+      // Search mode: list starts empty, no auto-load. The user types to
+      // trigger _loadGames via _onSearchChanged debounce.
+      _isLoading = false;
+      _searchController.addListener(_onSearchChanged);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _searchFocusNode.requestFocus();
+      });
+    } else {
+      _loadingSplashTimer = Timer(const Duration(milliseconds: 150), () {
+        if (mounted && _isLoading) {
+          setState(() => _showLoadingSplash = true);
+        }
+      });
+      _loadGames();
+    }
     _initializeGamepad();
 
     // Attach persistent listeners to global providers.
@@ -265,6 +284,9 @@ class _SystemGamesListState extends State<SystemGamesList> {
 
     _cleanupResources();
     _backButtonFocusNode.dispose();
+    _searchDebounceTimer?.cancel();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -1112,7 +1134,10 @@ class _SystemGamesListState extends State<SystemGamesList> {
   /// preserving the user's current scroll/focus index for a seamless experience.
   void _reorderGamesListKeepingVisualPosition() {
     if (_selectedGame == null) return;
-    if (_effectiveSystem.folderName == 'recent') return;
+    if (_effectiveSystem.folderName == 'recent' ||
+        _effectiveSystem.folderName == 'search') {
+      return;
+    }
 
     final oldIndex = _selectedGameIndex;
 
@@ -1146,7 +1171,10 @@ class _SystemGamesListState extends State<SystemGamesList> {
   /// Sorts the list and re-anchors focus to a specific ROM.
   /// Primarily used after scraping to follow a game to its new alphabetical position.
   void _reorderGamesListFollowingGame(String romname) {
-    if (_effectiveSystem.folderName == 'recent') return;
+    if (_effectiveSystem.folderName == 'recent' ||
+        _effectiveSystem.folderName == 'search') {
+      return;
+    }
     setState(() {
       final sortedGames = List<GameModel>.from(_games);
       sortedGames.sort((a, b) {
@@ -1624,6 +1652,26 @@ class _SystemGamesListState extends State<SystemGamesList> {
     });
   }
 
+  /// Listener attached to [_searchController] in search mode. Debounces user
+  /// input by 200 ms then triggers [_loadGames] with the trimmed query. Below
+  /// 2 characters, clears the list immediately (no SQL call).
+  void _onSearchChanged() {
+    _searchDebounceTimer?.cancel();
+    final query = _searchController.text.trim();
+    if (query.length < 2) {
+      setState(() {
+        _games = [];
+        _selectedGame = null;
+        _selectedGameIndex = 0;
+        _isLoading = false;
+      });
+      return;
+    }
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 200), () {
+      if (mounted) _loadGames();
+    });
+  }
+
   Future<void> _loadGames() async {
     if (!mounted || _isLoadingGames) return;
     _isLoadingGames = true;
@@ -1634,7 +1682,12 @@ class _SystemGamesListState extends State<SystemGamesList> {
     }
 
     try {
-      final games = await GameService.loadGamesForSystem(_effectiveSystem);
+      final games = await GameService.loadGamesForSystem(
+        _effectiveSystem,
+        searchQuery: _effectiveSystem.folderName == 'search'
+            ? _searchController.text.trim()
+            : null,
+      );
       if (!mounted) return;
 
       _log.i(
@@ -1898,15 +1951,50 @@ class _SystemGamesListState extends State<SystemGamesList> {
               ),
 
             // Content Layer: Loading, Empty, or Game Grid.
-            SizedBox(
-              child: _isLoading
-                  ? (_showLoadingSplash
-                        ? _buildLoadingState()
-                        : const SizedBox.shrink())
-                  : _games.isEmpty
-                  ? _buildEmptyState()
-                  : _buildGamesList(),
+            Padding(
+              padding: EdgeInsets.only(
+                top: _effectiveSystem.folderName == 'search' ? 80.h : 0,
+              ),
+              child: SizedBox(
+                child: _isLoading
+                    ? (_showLoadingSplash
+                          ? _buildLoadingState()
+                          : const SizedBox.shrink())
+                    : _games.isEmpty
+                    ? _buildEmptyState()
+                    : _buildGamesList(),
+              ),
             ),
+
+            // Search bar overlay (sticky top, only in search mode).
+            if (_effectiveSystem.folderName == 'search')
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 24.w,
+                    vertical: 12.h,
+                  ),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surface.withValues(alpha: 0.85),
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    autofocus: true,
+                    style: TextStyle(fontSize: 18.sp),
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search),
+                      hintText: AppLocale.searchEmptyHint.getString(context),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
 
             // Navigation Layer: Visual alphabetical feedback for rapid scrolling.
             if (_currentLetter != null) _buildLetterIndicator(),
@@ -2042,6 +2130,35 @@ class _SystemGamesListState extends State<SystemGamesList> {
   /// specialized view for systems with zero detected media files.
   /// includes controls for recursive scanning and directory management.
   Widget _buildEmptyState() {
+    if (_effectiveSystem.folderName == 'search') {
+      final raw = _searchController.text;
+      final trimmed = raw.trim();
+      final String message;
+      if (trimmed.length < 2) {
+        message = raw.isEmpty
+            ? AppLocale.searchEmptyHint.getString(context)
+            : AppLocale.searchMinLength.getString(context);
+      } else {
+        message = AppLocale.searchNoResults
+            .getString(context)
+            .replaceFirst('{query}', trimmed);
+      }
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 32.w),
+          child: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16.sp,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+          ),
+        ),
+      );
+    }
     bool currentScanValue = _effectiveSystem.recursiveScan;
 
     return Center(
