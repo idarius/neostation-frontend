@@ -464,39 +464,20 @@ class AppScreenState extends State<AppScreen> {
       value: _selectedSystemNotifier,
       child: Consumer2<SqliteConfigProvider, ThemeProvider>(
         builder: (context, configProvider, themeProvider, child) {
-          final isOled = themeProvider.isOled;
-
           return PopScope(
             canPop:
                 false, // Intercept hardware back button to maintain app flow.
             child: Scaffold(
               body: Stack(
                 children: [
-                  // Background Layer: Adaptive gradients or pure black for OLED efficiency.
-                  if (!isOled)
-                    Positioned.fill(
-                      child: Builder(
-                        builder: (context) {
-                          final bg = Theme.of(context).scaffoldBackgroundColor;
-                          final primary = Theme.of(context).colorScheme.primary;
-                          return Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [bg, Color.lerp(bg, primary, 0.1)!],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    )
-                  else
-                    Positioned.fill(
-                      child: Container(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                      ),
+                  // Background Layer: flat color (gradient removed to prevent
+                  // red glitch on some old GPUs — cherry-picked from upstream
+                  // 24069ff).
+                  Positioned.fill(
+                    child: Container(
+                      color: Theme.of(context).scaffoldBackgroundColor,
                     ),
+                  ),
 
                   // Main Content Layer.
                   Positioned.fill(child: _buildCurrentTabContent()),

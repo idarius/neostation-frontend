@@ -442,12 +442,7 @@ class _SystemCardState extends State<SystemCard> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 8.r, vertical: 4.r),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.secondary,
-                  ],
-                ),
+                color: Theme.of(context).colorScheme.primary,
                 borderRadius: BorderRadius.circular(4.r),
               ),
               child: Text(

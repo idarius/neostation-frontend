@@ -369,14 +369,9 @@ class _SecondaryScreenState extends State<SecondaryScreen> {
     return Builder(
       builder: (context) {
         final bg = Theme.of(context).scaffoldBackgroundColor;
-        final primary = Theme.of(context).colorScheme.primary;
         return Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [bg, Color.lerp(bg, primary, 0.1)!],
-            ),
+            color: bg,
           ),
         );
       },

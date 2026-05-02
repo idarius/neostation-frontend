@@ -204,14 +204,7 @@ class InitialSetupWidget extends StatelessWidget {
       width: double.infinity,
       height: 64,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.primary.withValues(alpha: 0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: theme.colorScheme.primary,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(

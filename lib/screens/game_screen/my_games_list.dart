@@ -1947,14 +1947,9 @@ class _SystemGamesListState extends State<SystemGamesList> {
                 child: Builder(
                   builder: (context) {
                     final bg = Theme.of(context).scaffoldBackgroundColor;
-                    final primary = Theme.of(context).colorScheme.primary;
                     return Container(
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [bg, Color.lerp(bg, primary, 0.1)!],
-                        ),
+                        color: bg,
                       ),
                     );
                   },
@@ -2085,12 +2080,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
               width: 64.r,
               height: 64.r,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.secondary,
-                  ],
-                ),
+                color: Theme.of(context).colorScheme.primary,
                 borderRadius: BorderRadius.circular(32.r),
                 boxShadow: [
                   BoxShadow(

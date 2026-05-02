@@ -86,14 +86,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                     horizontal: 16.r,
                   ),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        theme.colorScheme.primary.withValues(alpha: 0.2),
-                        theme.colorScheme.primary.withValues(alpha: 0.05),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
                   ),
                   child: Row(
                     children: [

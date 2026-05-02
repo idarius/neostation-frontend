@@ -56,11 +56,7 @@ class AndroidAppsFooter extends CoreFooter {
         label: AppLocale.launch.getString(context),
         onTap: onLaunch,
         textColor: Colors.white,
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2ECC71), Color(0xFF1E8449)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        backgroundColor: const Color(0xFF2ECC71),
       ),
     ];
   }

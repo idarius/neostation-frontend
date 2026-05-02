@@ -84,14 +84,7 @@ class HeaderSortDropdownState extends State<HeaderSortDropdown> {
           SfxService().playNavSound();
           _showDropdown(context);
         },
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.secondary,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         textColor: Colors.white,
       ),
     );

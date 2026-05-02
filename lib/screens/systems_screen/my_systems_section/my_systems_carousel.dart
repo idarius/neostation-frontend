@@ -1120,12 +1120,7 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
                             vertical: 5.r,
                           ),
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                theme.colorScheme.primary,
-                                theme.colorScheme.secondary,
-                              ],
-                            ),
+                            color: theme.colorScheme.primary,
                             borderRadius: BorderRadius.circular(5.r),
                           ),
                           child: Text(
