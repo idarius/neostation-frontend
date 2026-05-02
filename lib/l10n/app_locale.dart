@@ -619,6 +619,19 @@ mixin AppLocale {
   static const String neoSyncSaveConflict = 'neo_sync_save_conflict';
   static const String neoSyncCloudSyncDisabled = 'neo_sync_cloud_sync_disabled';
   static const String neoSyncQuotaExceeded = 'neo_sync_quota_exceeded';
+
+  // ── Local / NAS sync provider ──────────────────────────────────────────────
+  static const String localSyncProviderName = 'local_sync_provider_name';
+  static const String localSyncProviderSubtitle = 'local_sync_provider_subtitle';
+  static const String localSyncStatusConnected = 'local_sync_status_connected';
+  static const String localSyncStatusUnconfigured =
+      'local_sync_status_unconfigured';
+  static const String localSyncStatusError = 'local_sync_status_error';
+  static const String localSyncBtnPickFolder = 'local_sync_btn_pick_folder';
+  static const String localSyncBtnTest = 'local_sync_btn_test';
+  static const String localSyncBtnList = 'local_sync_btn_list';
+  static const String localSyncRestartHint = 'local_sync_restart_hint';
+
   static const String packageNameMissing = 'package_name_missing';
   static const String failedToLaunchAndroidApp = 'failed_to_launch_android_app';
   static const String romFileNotFound = 'rom_file_not_found';

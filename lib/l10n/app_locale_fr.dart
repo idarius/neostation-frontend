@@ -629,6 +629,16 @@ const Map<String, dynamic> appLocaleFr = {
   AppLocale.neoSyncCloudSyncDisabled:
       'NeoSync : Synchronisation cloud désactivée',
   AppLocale.neoSyncQuotaExceeded: 'NeoSync : Quota de stockage dépassé',
+  AppLocale.localSyncProviderName: 'Local / NAS',
+  AppLocale.localSyncProviderSubtitle: 'Dossier, USB, NAS',
+  AppLocale.localSyncStatusConnected: 'Connecté',
+  AppLocale.localSyncStatusUnconfigured: 'Chemin non configuré',
+  AppLocale.localSyncStatusError: 'Erreur : {error}',
+  AppLocale.localSyncBtnPickFolder: 'Choisir un dossier',
+  AppLocale.localSyncBtnTest: 'Tester l\'accès',
+  AppLocale.localSyncBtnList: 'Lister les saves',
+  AppLocale.localSyncRestartHint:
+      'Redémarrer l\'application pour appliquer le nouveau chemin',
   AppLocale.packageNameMissing: 'Nom du paquet manquant',
   AppLocale.failedToLaunchAndroidApp: 'Échec du lancement de l’app Android',
   AppLocale.romFileNotFound: 'Fichier ROM non trouvé',
