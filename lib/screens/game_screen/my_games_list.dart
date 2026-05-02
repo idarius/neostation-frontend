@@ -2779,11 +2779,9 @@ class GameListView extends StatefulWidget {
 class _GameListViewState extends State<GameListView>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   late final CenteredScrollController _centeredScrollController;
-  // `late` (not `late final`) because `_updateFocusNodes` reassigns the list
-  // when the game count changes — fires during in-place L2/R2 system cycling
-  // since `_gameListKey` preserves this State across the empty→loaded
-  // transition. Upstream never triggered the path because the game count
-  // didn't change on a stable State.
+  // `late` (not `late final`) — `_updateFocusNodes` mutates the list when
+  // the game count changes (e.g., L2/R2 in-place system cycling preserves
+  // this State across empty→loaded transitions via `_gameListKey`).
   late List<FocusNode> _gameFocusNodes;
   late AnimationController _selectionController;
   late Animation<double> _selectionAnimation;
@@ -2890,13 +2888,17 @@ class _GameListViewState extends State<GameListView>
   }
 
   void _updateFocusNodes() {
-    for (final node in _gameFocusNodes) {
-      node.dispose();
+    final newCount = widget.games.length;
+    if (newCount < _gameFocusNodes.length) {
+      for (int i = newCount; i < _gameFocusNodes.length; i++) {
+        _gameFocusNodes[i].dispose();
+      }
+      _gameFocusNodes.removeRange(newCount, _gameFocusNodes.length);
+    } else {
+      for (int i = _gameFocusNodes.length; i < newCount; i++) {
+        _gameFocusNodes.add(FocusNode(skipTraversal: true));
+      }
     }
-    _gameFocusNodes = List.generate(
-      widget.games.length,
-      (_) => FocusNode(skipTraversal: true),
-    );
   }
 
   @override

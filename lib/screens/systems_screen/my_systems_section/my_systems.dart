@@ -798,6 +798,11 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
   /// by the listener; reading this is cheap and doesn't trigger rebuild.
   int get _selectedIndex => _selectionNotifier?.value ?? 0;
 
+  // Virtual grid cache — invalidated on systems/cols change (upstream perf).
+  List<List<int>>? _cachedVirtualGrid;
+  int? _cachedGridCols;
+  int? _cachedGridSystemCount;
+
   @override
   void initState() {
     super.initState();
@@ -943,6 +948,18 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
       useFluidShader: false,
       isOled: isOled,
     );
+  }
+
+  @override
+  void didUpdateWidget(SystemCardGridView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Invalidate virtual-grid cache when layout-defining inputs change
+    // (upstream perf — the grid layout is now memoized and only rebuilt on
+    // these inputs).
+    if (oldWidget.systems != widget.systems ||
+        oldWidget.crossAxisCount != widget.crossAxisCount) {
+      _cachedVirtualGrid = null;
+    }
   }
 
   @override
@@ -1094,6 +1111,12 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
   ///
   /// Returns a matrix where each cell [row][col] points to the item index.
   List<List<int>> _buildVirtualGrid(List<SystemInfo> cards, int cols) {
+    if (_cachedVirtualGrid != null &&
+        _cachedGridCols == cols &&
+        _cachedGridSystemCount == cards.length) {
+      return _cachedVirtualGrid!;
+    }
+
     final List<List<int>> grid = [];
 
     // 'Recent Games' cards expand to 3x2 on high-resolution displays.
@@ -1150,6 +1173,9 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
       }
     }
 
+    _cachedVirtualGrid = grid;
+    _cachedGridCols = cols;
+    _cachedGridSystemCount = cards.length;
     return grid;
   }
 

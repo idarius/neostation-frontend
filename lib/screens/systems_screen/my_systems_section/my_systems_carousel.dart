@@ -741,14 +741,11 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
     // SCENARIO A: Animated GIF background.
     if (hasCustomBg && ImageUtils.isGif(customBgPath)) {
       return Positioned.fill(
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12.r),
-          child: Container(
-            color: Theme.of(context).colorScheme.surface,
-            child: ShaderGifWidget(
-              imagePath: customBgPath,
-              key: ValueKey('${customBgPath}_${system.imageVersion}'),
-            ),
+        child: Container(
+          color: Theme.of(context).colorScheme.surface,
+          child: ShaderGifWidget(
+            imagePath: customBgPath,
+            key: ValueKey('${customBgPath}_${system.imageVersion}'),
           ),
         ),
       );
@@ -761,26 +758,15 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
     final hasActiveBg = activeBgPath != null && activeBgPath.isNotEmpty;
 
     return Positioned.fill(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12.r),
-        child: hasActiveBg
-            ? Image.file(
-                File(activeBgPath),
-                key: ValueKey('${activeBgPath}_${system.imageVersion}'),
-                fit: BoxFit.cover,
-                filterQuality: FilterQuality.medium,
-                isAntiAlias: true,
-                cacheWidth: 1024,
-                errorBuilder: (context, error, stackTrace) => Stack(
-                  children: [
-                    Container(color: Theme.of(context).colorScheme.surface),
-                    Container(
-                      color: system.color1AsColor?.withValues(alpha: 0.4),
-                    ),
-                  ],
-                ),
-              )
-            : Stack(
+      child: hasActiveBg
+          ? Image.file(
+              File(activeBgPath),
+              key: ValueKey('${activeBgPath}_${system.imageVersion}'),
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.medium,
+              isAntiAlias: true,
+              cacheWidth: 1024,
+              errorBuilder: (context, error, stackTrace) => Stack(
                 children: [
                   Container(color: Theme.of(context).colorScheme.surface),
                   Container(
@@ -788,7 +774,15 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
                   ),
                 ],
               ),
-      ),
+            )
+          : Stack(
+              children: [
+                Container(color: Theme.of(context).colorScheme.surface),
+                Container(
+                  color: system.color1AsColor?.withValues(alpha: 0.4),
+                ),
+              ],
+            ),
     );
   }
 
@@ -840,8 +834,15 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
 
     return PopScope(
       canPop: false,
-      child: Consumer2<SqliteConfigProvider, SqliteDatabaseProvider>(
-        builder: (context, configProvider, dbProvider, child) {
+      child: Selector2<SqliteConfigProvider, SqliteDatabaseProvider, int>(
+        selector: (_, config, db) => Object.hash(
+          config.detectedSystems.length,
+          config.hiddenSystemFolders.length,
+          config.totalGames,
+          config.config.hideRecentCard,
+          db.getRecentlyPlayedGames(1).firstOrNull?.romPath.hashCode,
+        ),
+        builder: (context, _, child) {
           final allSystems = _getSystemsList();
 
           if (allSystems.isEmpty) {
