@@ -47,18 +47,18 @@ void main() {
   }
 
   SystemModel searchSystem() => SystemModel(
-        id: 'search',
-        folderName: 'search',
-        realName: 'Search',
-        iconImage: '',
-        color: '#5C6BC0',
-        color1: '#5C6BC0',
-        color2: '#9FA8DA',
-        hideLogo: false,
-        imageVersion: 0,
-        romCount: 0,
-        detected: true,
-      );
+    id: 'search',
+    folderName: 'search',
+    realName: 'Search',
+    iconImage: '',
+    color: '#5C6BC0',
+    color1: '#5C6BC0',
+    color2: '#9FA8DA',
+    hideLogo: false,
+    imageVersion: 0,
+    romCount: 0,
+    detected: true,
+  );
 
   group('loadGamesForSystem(searchSystem, searchQuery)', () {
     test('returns empty list when searchQuery is null or empty', () async {
@@ -66,18 +66,31 @@ void main() {
       await seedGame(filename: 'mario.smc', systemId: 'snes');
       final result = await GameService.loadGamesForSystem(searchSystem());
       expect(result, isEmpty);
-      final result2 = await GameService.loadGamesForSystem(searchSystem(), searchQuery: '');
+      final result2 = await GameService.loadGamesForSystem(
+        searchSystem(),
+        searchQuery: '',
+      );
       expect(result2, isEmpty);
     });
 
     test('returns matches when searchQuery is provided', () async {
       await seedSystem('snes', 'snes');
-      await seedGame(filename: 'super_mario_world.smc', systemId: 'snes', scrapedRealName: 'Super Mario World');
+      await seedGame(
+        filename: 'super_mario_world.smc',
+        systemId: 'snes',
+        scrapedRealName: 'Super Mario World',
+      );
       await seedGame(filename: 'sonic.smc', systemId: 'snes');
-      final result = await GameService.loadGamesForSystem(searchSystem(), searchQuery: 'mario');
+      final result = await GameService.loadGamesForSystem(
+        searchSystem(),
+        searchQuery: 'mario',
+      );
       expect(result.length, 1);
       expect(result[0].romname, 'super_mario_world.smc');
-      expect(result[0].systemId, 'snes'); // crucial: per-game system id populated
+      expect(
+        result[0].systemId,
+        'snes',
+      ); // crucial: per-game system id populated
       expect(result[0].systemFolderName, 'snes');
     });
   });

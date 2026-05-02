@@ -386,10 +386,8 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => SystemGamesList(
-            system: searchSystem,
-            fileProvider: fileProvider,
-          ),
+          builder: (_) =>
+              SystemGamesList(system: searchSystem, fileProvider: fileProvider),
         ),
       );
     } finally {

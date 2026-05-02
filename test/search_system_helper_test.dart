@@ -5,11 +5,14 @@ void main() {
   // Required so rootBundle.loadString works in test environment.
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('returns a SystemModel with id="search" and folderName="search"', () async {
-    final sys = await SearchSystemHelper.getSearchSystemModel();
-    expect(sys.id, 'search');
-    expect(sys.folderName, 'search');
-  });
+  test(
+    'returns a SystemModel with id="search" and folderName="search"',
+    () async {
+      final sys = await SearchSystemHelper.getSearchSystemModel();
+      expect(sys.id, 'search');
+      expect(sys.folderName, 'search');
+    },
+  );
 
   test('uses indigo accent colors from the JSON', () async {
     final sys = await SearchSystemHelper.getSearchSystemModel();

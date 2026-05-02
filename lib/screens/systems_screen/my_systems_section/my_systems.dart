@@ -1055,10 +1055,8 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => SystemGamesList(
-            system: searchSystem,
-            fileProvider: fileProvider,
-          ),
+          builder: (_) =>
+              SystemGamesList(system: searchSystem, fileProvider: fileProvider),
         ),
       );
     } finally {

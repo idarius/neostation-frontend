@@ -47,25 +47,43 @@ void main() {
   }
 
   group('searchGames', () {
-    test('returns games whose display name contains the query (case-insensitive)', () async {
-      await seedSystem('snes', 'snes');
-      await seedGame(filename: 'super_mario_world.smc', systemId: 'snes', scrapedRealName: 'Super Mario World');
-      await seedGame(filename: 'sonic.smc', systemId: 'snes', scrapedRealName: 'Sonic');
-      final result = await SqliteService.searchGames('mario');
-      expect(result.length, 1);
-      expect(result[0].filename, 'super_mario_world.smc');
-    });
+    test(
+      'returns games whose display name contains the query (case-insensitive)',
+      () async {
+        await seedSystem('snes', 'snes');
+        await seedGame(
+          filename: 'super_mario_world.smc',
+          systemId: 'snes',
+          scrapedRealName: 'Super Mario World',
+        );
+        await seedGame(
+          filename: 'sonic.smc',
+          systemId: 'snes',
+          scrapedRealName: 'Sonic',
+        );
+        final result = await SqliteService.searchGames('mario');
+        expect(result.length, 1);
+        expect(result[0].filename, 'super_mario_world.smc');
+      },
+    );
 
     test('matches case-insensitively (uppercase query)', () async {
       await seedSystem('snes', 'snes');
-      await seedGame(filename: 'mario.smc', systemId: 'snes', scrapedRealName: 'Super Mario World');
+      await seedGame(
+        filename: 'mario.smc',
+        systemId: 'snes',
+        scrapedRealName: 'Super Mario World',
+      );
       final result = await SqliteService.searchGames('MARIO');
       expect(result.length, 1);
     });
 
     test('falls back to filename for non-scraped games', () async {
       await seedSystem('snes', 'snes');
-      await seedGame(filename: 'zelda.smc', systemId: 'snes'); // no scrape metadata
+      await seedGame(
+        filename: 'zelda.smc',
+        systemId: 'snes',
+      ); // no scrape metadata
       final result = await SqliteService.searchGames('zelda');
       expect(result.length, 1);
       expect(result[0].filename, 'zelda.smc');
@@ -73,7 +91,11 @@ void main() {
 
     test('returns empty list when nothing matches', () async {
       await seedSystem('snes', 'snes');
-      await seedGame(filename: 'mario.smc', systemId: 'snes', scrapedRealName: 'Super Mario World');
+      await seedGame(
+        filename: 'mario.smc',
+        systemId: 'snes',
+        scrapedRealName: 'Super Mario World',
+      );
       final result = await SqliteService.searchGames('xyzzz');
       expect(result, isEmpty);
     });
@@ -88,9 +110,24 @@ void main() {
 
     test('orders favorites first then alphabetically', () async {
       await seedSystem('snes', 'snes');
-      await seedGame(filename: 'b.smc', systemId: 'snes', scrapedRealName: 'B Mario', isFavorite: 0);
-      await seedGame(filename: 'c.smc', systemId: 'snes', scrapedRealName: 'C Mario', isFavorite: 1);
-      await seedGame(filename: 'a.smc', systemId: 'snes', scrapedRealName: 'A Mario', isFavorite: 0);
+      await seedGame(
+        filename: 'b.smc',
+        systemId: 'snes',
+        scrapedRealName: 'B Mario',
+        isFavorite: 0,
+      );
+      await seedGame(
+        filename: 'c.smc',
+        systemId: 'snes',
+        scrapedRealName: 'C Mario',
+        isFavorite: 1,
+      );
+      await seedGame(
+        filename: 'a.smc',
+        systemId: 'snes',
+        scrapedRealName: 'A Mario',
+        isFavorite: 0,
+      );
       final result = await SqliteService.searchGames('mario');
       expect(result.length, 3);
       expect(result[0].filename, 'c.smc'); // favorite first
@@ -110,7 +147,10 @@ void main() {
     test('default limit is 200', () async {
       await seedSystem('snes', 'snes');
       for (var i = 0; i < 250; i++) {
-        await seedGame(filename: 'mario_${i.toString().padLeft(3, '0')}.smc', systemId: 'snes');
+        await seedGame(
+          filename: 'mario_${i.toString().padLeft(3, '0')}.smc',
+          systemId: 'snes',
+        );
       }
       final result = await SqliteService.searchGames('mario');
       expect(result.length, 200);

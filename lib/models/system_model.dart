@@ -184,9 +184,7 @@ class SystemModel {
   /// True for the virtual `all`, `recent`, and `search` systems; false for
   /// everything else.
   bool get isMultiSystemMode =>
-      folderName == 'all' ||
-      folderName == 'recent' ||
-      folderName == 'search';
+      folderName == 'all' || folderName == 'recent' || folderName == 'search';
 
   /// Extracts the canonical folder name used for asset and scraper resolution.
   ///
