@@ -77,6 +77,9 @@ mixin AppLocale {
   static const String systemsSettingsSubtitle = 'systems_settings_subtitle';
   static const String hideRecentCard = 'hide_recent_card';
   static const String hideRecentCardSubtitle = 'hide_recent_card_subtitle';
+  static const String recentSystem = 'recent_system';
+  static const String hideRecentSystem = 'hide_recent_system';
+  static const String hideRecentSystemSubtitle = 'hide_recent_system_subtitle';
 
   // ---------------------------------------------------------------------------
   // General settings

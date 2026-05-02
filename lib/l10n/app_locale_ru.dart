@@ -56,6 +56,10 @@ const Map<String, dynamic> appLocaleRu = {
   AppLocale.hideRecentCard: 'Карточка недавних игр',
   AppLocale.hideRecentCardSubtitle:
       'Показать карточку недавних игр в сетке систем',
+  AppLocale.recentSystem: 'Недавние',
+  AppLocale.hideRecentSystem: 'Система "Недавние"',
+  AppLocale.hideRecentSystemSubtitle:
+      'Показывать систему "Недавние" в сетке консоли.',
   AppLocale.palettesSubtitle: 'Персонализируйте внешний вид вашей NeoStation',
   AppLocale.systemTheme: 'Системная',
 

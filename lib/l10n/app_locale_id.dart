@@ -56,6 +56,10 @@ const Map<String, dynamic> appLocaleId = {
   AppLocale.hideRecentCard: 'Kartu Terbaru',
   AppLocale.hideRecentCardSubtitle:
       'Tampilkan kartu game terbaru di grid sistem',
+  AppLocale.recentSystem: 'Terbaru',
+  AppLocale.hideRecentSystem: 'Sistem Terbaru',
+  AppLocale.hideRecentSystemSubtitle:
+      'Tampilkan sistem "Terbaru" di kisi Konsol.',
   AppLocale.palettesSubtitle: 'Personalisasi tampilan NeoStation',
   AppLocale.systemTheme: 'Tema Sistem',
 

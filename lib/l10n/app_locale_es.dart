@@ -57,6 +57,10 @@ const Map<String, dynamic> appLocaleEs = {
   AppLocale.hideRecentCard: 'Tarjeta de Recientes',
   AppLocale.hideRecentCardSubtitle:
       'Muestra la tarjeta de jugados recientemente en la grilla',
+  AppLocale.recentSystem: 'Reciente',
+  AppLocale.hideRecentSystem: 'Sistema Reciente',
+  AppLocale.hideRecentSystemSubtitle:
+      'Mostrar el sistema "Reciente" en la cuadrícula de Consola.',
   AppLocale.palettesSubtitle: 'Personaliza la apariencia de tu NeoStation',
   AppLocale.systemTheme: 'Sistema',
 

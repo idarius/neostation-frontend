@@ -57,6 +57,10 @@ const Map<String, dynamic> appLocaleDe = {
   AppLocale.hideRecentCard: 'Zuletzt gespielt',
   AppLocale.hideRecentCardSubtitle:
       'Karte der zuletzt gespielten Spiele im Raster anzeigen',
+  AppLocale.recentSystem: 'Kürzlich',
+  AppLocale.hideRecentSystem: 'Kürzlich-System',
+  AppLocale.hideRecentSystemSubtitle:
+      'Das System "Kürzlich" im Konsolenraster anzeigen.',
   AppLocale.palettesSubtitle: 'Personalisiere das Design von NeoStation',
   AppLocale.systemTheme: 'Systemdesign',
 
