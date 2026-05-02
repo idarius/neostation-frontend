@@ -285,6 +285,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
     _cleanupResources();
     _backButtonFocusNode.dispose();
     _searchDebounceTimer?.cancel();
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -1983,7 +1984,6 @@ class _SystemGamesListState extends State<SystemGamesList> {
                   child: TextField(
                     controller: _searchController,
                     focusNode: _searchFocusNode,
-                    autofocus: true,
                     style: TextStyle(fontSize: 18.sp),
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.search),
