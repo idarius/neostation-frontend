@@ -1387,6 +1387,11 @@ class SqliteService {
           'ALTER TABLE user_config ADD COLUMN hide_recent_system INTEGER DEFAULT 0',
         );
       }
+      if (!columns.contains('local_sync_path')) {
+        await db.execute(
+          'ALTER TABLE user_config ADD COLUMN local_sync_path TEXT',
+        );
+      }
     } catch (e) {
       _log.e('Minor fix ensuring user_config columns failed: $e');
       rethrow;
@@ -1559,7 +1564,8 @@ class SqliteService {
         active_sync_provider TEXT DEFAULT 'neosync',
         show_game_wheel INTEGER DEFAULT 1,
         video_delay_ms INTEGER DEFAULT 1500,
-        hide_recent_system INTEGER DEFAULT 0
+        hide_recent_system INTEGER DEFAULT 0,
+        local_sync_path TEXT
       );
       ''',
       '''
@@ -2257,6 +2263,7 @@ class SqliteService {
     int? hideRecentCard,
     int? hideRecentSystem,
     String? activeSyncProvider,
+    String? localSyncPath,
   }) async {
     final db = await instance.database;
 
@@ -2318,6 +2325,9 @@ class SqliteService {
     }
     if (activeSyncProvider != null) {
       newConfig['active_sync_provider'] = activeSyncProvider;
+    }
+    if (localSyncPath != null) {
+      newConfig['local_sync_path'] = localSyncPath;
     }
 
     await db.insert(

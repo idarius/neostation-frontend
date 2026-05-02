@@ -107,7 +107,8 @@ class DatabaseTestHelper {
         game_view_mode TEXT,
         rom_folders TEXT,
         video_delay_ms INTEGER DEFAULT 1500,
-        hide_recent_system INTEGER DEFAULT 0
+        hide_recent_system INTEGER DEFAULT 0,
+        local_sync_path TEXT
       )
     ''');
 
