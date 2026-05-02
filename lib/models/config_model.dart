@@ -187,14 +187,10 @@ class ConfigModel {
           (json['hideRecentCard'] ?? false).toString().toLowerCase() == 'true',
       hideRecentSystem:
           (json['hideRecentSystem'] ?? json['hide_recent_system'] ?? 0)
-                  is int
-              ? ((json['hideRecentSystem'] ?? json['hide_recent_system'] ?? 0)
-                      as int) ==
-                  1
-              : (json['hideRecentSystem'] ?? false)
-                      .toString()
-                      .toLowerCase() ==
-                  'true',
+                  .toString() ==
+              '1' ||
+          (json['hideRecentSystem'] ?? false).toString().toLowerCase() ==
+              'true',
       activeSyncProvider:
           (json['activeSyncProvider'] ??
                   json['active_sync_provider'] ??
