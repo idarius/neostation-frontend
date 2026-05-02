@@ -622,6 +622,15 @@ const Map<String, dynamic> appLocaleDe = {
   AppLocale.neoSyncCloudSyncDisabled:
       'NeoSync: Cloud-Synchronisation deaktiviert',
   AppLocale.neoSyncQuotaExceeded: 'NeoSync: Speicherlimit überschritten',
+  AppLocale.localSyncProviderName: 'Local / NAS',
+  AppLocale.localSyncProviderSubtitle: 'Folder, USB, NAS',
+  AppLocale.localSyncStatusConnected: 'Connected',
+  AppLocale.localSyncStatusUnconfigured: 'Path not configured',
+  AppLocale.localSyncStatusError: 'Error: {error}',
+  AppLocale.localSyncBtnPickFolder: 'Pick a folder',
+  AppLocale.localSyncBtnTest: 'Test access',
+  AppLocale.localSyncBtnList: 'List saves',
+  AppLocale.localSyncRestartHint: 'Restart the app to apply the new path',
   AppLocale.packageNameMissing: 'Paketname fehlt',
   AppLocale.failedToLaunchAndroidApp:
       'Android-App konnte nicht gestartet werden',
