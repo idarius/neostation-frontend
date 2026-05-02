@@ -157,6 +157,7 @@ class SqliteConfigService {
             1,
         activeSyncProvider:
             userConfig?['active_sync_provider']?.toString() ?? 'neosync',
+        localSyncPath: userConfig?['local_sync_path']?.toString(),
       );
     } catch (e) {
       _log.e('Error applying configuration in loadConfig: $e');
@@ -190,6 +191,7 @@ class SqliteConfigService {
         hideRecentCard: config.hideRecentCard ? 1 : 0,
         hideRecentSystem: config.hideRecentSystem ? 1 : 0,
         activeSyncProvider: config.activeSyncProvider,
+        localSyncPath: config.localSyncPath,
       );
 
       await SqliteService.saveUserRomFolders(config.romFolders);

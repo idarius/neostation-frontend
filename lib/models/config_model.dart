@@ -74,6 +74,10 @@ class ConfigModel {
   /// ID of the active sync provider (matches [ISyncProvider.providerId]).
   final String activeSyncProvider;
 
+  /// Absolute filesystem path where Local/NAS provider copies saves to.
+  /// Null/empty means the provider is registered but unconfigured.
+  final String? localSyncPath;
+
   const ConfigModel({
     this.romFolders = const [],
     this.detectedSystems = const [],
@@ -98,6 +102,7 @@ class ConfigModel {
     this.hideRecentCard = false,
     this.hideRecentSystem = false,
     this.activeSyncProvider = 'neosync',
+    this.localSyncPath,
   });
 
   /// Convenience getter that returns the primary ROM folder, if any are configured.
@@ -196,6 +201,8 @@ class ConfigModel {
                   json['active_sync_provider'] ??
                   'neosync')
               .toString(),
+      localSyncPath: (json['localSyncPath'] ?? json['local_sync_path'])
+          ?.toString(),
     );
   }
 
@@ -230,6 +237,7 @@ class ConfigModel {
       'hideRecentCard': hideRecentCard,
       'hideRecentSystem': hideRecentSystem,
       'activeSyncProvider': activeSyncProvider,
+      'localSyncPath': localSyncPath,
     };
   }
 
@@ -258,6 +266,7 @@ class ConfigModel {
     bool? hideRecentCard,
     bool? hideRecentSystem,
     String? activeSyncProvider,
+    String? localSyncPath,
   }) {
     return ConfigModel(
       romFolders: romFolders ?? this.romFolders,
@@ -283,6 +292,7 @@ class ConfigModel {
       hideRecentCard: hideRecentCard ?? this.hideRecentCard,
       hideRecentSystem: hideRecentSystem ?? this.hideRecentSystem,
       activeSyncProvider: activeSyncProvider ?? this.activeSyncProvider,
+      localSyncPath: localSyncPath ?? this.localSyncPath,
     );
   }
 
