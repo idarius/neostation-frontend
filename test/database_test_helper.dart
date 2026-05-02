@@ -71,7 +71,14 @@ class DatabaseTestHelper {
         play_time INTEGER DEFAULT 0,
         last_played TEXT,
         app_emulator_unique_id TEXT,
-        app_emulator_os_id INTEGER
+        app_emulator_os_id INTEGER,
+        cloud_sync_enabled INTEGER DEFAULT 1,
+        description TEXT,
+        year TEXT,
+        developer TEXT,
+        publisher TEXT,
+        genre TEXT,
+        players TEXT
       )
     ''');
 
