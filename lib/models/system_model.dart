@@ -180,6 +180,11 @@ class SystemModel {
     }
   }
 
+  /// Whether this system aggregates games from multiple physical systems.
+  /// True for the virtual `all` and `recent` systems; false for everything else.
+  bool get isMultiSystemMode =>
+      folderName == 'all' || folderName == 'recent';
+
   /// Extracts the canonical folder name used for asset and scraper resolution.
   ///
   /// Derives the name from the [iconImage] path (e.g., 'ps1' from '.../ps1-icon.png').
