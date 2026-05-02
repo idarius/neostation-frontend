@@ -3582,6 +3582,7 @@ class SqliteService {
     String query, {
     int limit = 200,
   }) async {
+    if (query.isEmpty) return <DatabaseGameModel>[];
     final db = await instance.database;
     final results = await db.rawQuery(
       '''

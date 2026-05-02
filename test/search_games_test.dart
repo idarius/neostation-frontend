@@ -78,6 +78,14 @@ void main() {
       expect(result, isEmpty);
     });
 
+    test('returns empty list for empty query (no full-library scan)', () async {
+      await seedSystem('snes', 'snes');
+      await seedGame(filename: 'mario.smc', systemId: 'snes');
+      await seedGame(filename: 'sonic.smc', systemId: 'snes');
+      final result = await SqliteService.searchGames('');
+      expect(result, isEmpty);
+    });
+
     test('orders favorites first then alphabetically', () async {
       await seedSystem('snes', 'snes');
       await seedGame(filename: 'b.smc', systemId: 'snes', scrapedRealName: 'B Mario', isFavorite: 0);
