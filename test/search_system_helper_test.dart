@@ -20,8 +20,8 @@ void main() {
   test('caches the SystemModel after first load', () async {
     final a = await SearchSystemHelper.getSearchSystemModel();
     final b = await SearchSystemHelper.getSearchSystemModel();
-    // Cached instance returned (no localization context = same realName)
-    expect(identical(a, b) || a.realName == b.realName, isTrue);
+    // Without a context, the helper returns the cached instance directly.
+    expect(identical(a, b), isTrue);
   });
 
   test('falls back to JSON name when no context is given', () async {
