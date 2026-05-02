@@ -36,7 +36,8 @@ class _LocalSyncContentState extends State<LocalSyncContent> {
   String? _listingResult;
 
   LocalStorageProvider? get _provider =>
-      SyncManager.instance['local_storage'] as LocalStorageProvider?;
+      SyncManager.instance[LocalStorageProvider.kProviderId]
+          as LocalStorageProvider?;
 
   @override
   void initState() {
