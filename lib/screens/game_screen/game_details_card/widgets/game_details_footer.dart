@@ -494,20 +494,6 @@ class GameDetailsFooter extends StatelessWidget {
                         },
                       )
                     : Icon(statusIcon, color: statusColor, size: 16.r),
-                if (hasConflict) ...[
-                  SizedBox(width: 4.r),
-                  Image.asset(
-                    'assets/images/gamepad/Xbox_L-click.png',
-                    width: 16.r,
-                    height: 16.r,
-                    color: Theme.of(context).colorScheme.tertiary,
-                    errorBuilder: (context, error, stackTrace) => Icon(
-                      Icons.radio_button_checked,
-                      color: Theme.of(context).colorScheme.tertiary,
-                      size: 16.r,
-                    ),
-                  ),
-                ],
               ],
             ),
             SizedBox(height: 2.r),

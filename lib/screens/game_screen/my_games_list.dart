@@ -25,14 +25,13 @@ import '../../providers/file_provider.dart';
 import '../../providers/neo_assets_provider.dart';
 import '../../providers/sqlite_config_provider.dart';
 import '../../providers/sqlite_database_provider.dart';
-import '../../models/neo_sync_models.dart';
 import '../../models/system_model.dart';
 import '../../models/game_model.dart';
 import 'game_details_card/game_details_card_list.dart';
-import 'game_details_card/widgets/conflict_resolution_dialog.dart';
 import 'game_details_card/random_game_dialog.dart';
 import 'music/music_list.dart';
 import 'music/music_player.dart';
+import 'system_cycle_helper.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../utils/game_utils.dart';
 import '../../providers/system_background_provider.dart';
@@ -133,6 +132,11 @@ class _SystemGamesListState extends State<SystemGamesList> {
 
   // Navigation & State orchestration.
   bool _isLoading = true;
+  // Gate for the loading splash — only flips true after ~150 ms so that fast
+  // SQLite reloads (e.g. L2/R2 cycle on small libraries) don't flash the
+  // "Chargement des jeux" UI.
+  bool _showLoadingSplash = false;
+  Timer? _loadingSplashTimer;
   bool _isLoadingGames = false; // Prevents redundant reload triggers.
   int _selectedGameIndex = 0;
   late GamepadNavigation
@@ -159,6 +163,13 @@ class _SystemGamesListState extends State<SystemGamesList> {
   SecondaryDisplayState? _secondaryDisplayState;
 
   bool _canPop = false;
+  bool _isCyclingSystem = false; // Debounces L2/R2 system swap.
+
+  // Override for in-place L2/R2 system cycling. When set, overrides
+  // [widget.system] without remounting the State — keeps gamepad nav,
+  // listeners, timers and secondary display alive between cycles.
+  SystemModel? _systemOverride;
+  SystemModel get _effectiveSystem => _systemOverride ?? widget.system;
 
   // View keys for scroll synchronization.
   final GlobalKey<_GameListViewState> _gameListKey =
@@ -212,6 +223,11 @@ class _SystemGamesListState extends State<SystemGamesList> {
     super.initState();
     _fileProvider = widget.fileProvider;
     _backButtonFocusNode = FocusNode(skipTraversal: true);
+    _loadingSplashTimer = Timer(const Duration(milliseconds: 150), () {
+      if (mounted && _isLoading) {
+        setState(() => _showLoadingSplash = true);
+      }
+    });
     _loadGames();
     _initializeGamepad();
 
@@ -244,6 +260,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
     _databaseProvider.removeListener(_onDatabaseUpdated);
     MusicPlayerService().removeListener(_onMusicPlayerStateChanged);
 
+    _loadingSplashTimer?.cancel();
     _secondaryDisplayState?.dispose();
 
     _cleanupResources();
@@ -285,7 +302,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
   /// Triggers UI refresh upon music player state transitions.
   void _onMusicPlayerStateChanged() {
     if (!mounted ||
-        widget.system.folderName != 'music' ||
+        _effectiveSystem.folderName != 'music' ||
         _selectedGame == null) {
       return;
     }
@@ -304,7 +321,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
 
   /// Maps the controller 'X' button to contextual actions (Loop for music, Info/Scrape for games).
   void _handleXButton() {
-    if (widget.system.folderName == 'music') {
+    if (_effectiveSystem.folderName == 'music') {
       // Logic for track looping and playlist prioritization.
       final service = MusicPlayerService();
       final isLooping = service.isCurrentTrackLooping;
@@ -402,10 +419,10 @@ class _SystemGamesListState extends State<SystemGamesList> {
       onFavorite: _toggleFavorite, // Button Y.
       onXButton: _handleXButton, // Button X.
       onSettings: _handleStartButton, // Button Start.
-      onLeftTrigger: _handleConflictResolution, // Resolve metadata conflicts.
-      onRightTrigger: null,
+      onLeftTrigger: () => _cycleToNeighbourSystem(forward: false), // L2.
+      onRightTrigger: () => _cycleToNeighbourSystem(forward: true), // R2.
       onSelectButton: () {
-        if (widget.system.folderName == 'music') {
+        if (_effectiveSystem.folderName == 'music') {
           final service = MusicPlayerService();
           service.toggleShuffle();
           AppNotification.showNotification(
@@ -620,9 +637,9 @@ class _SystemGamesListState extends State<SystemGamesList> {
     if (_secondaryDisplayState == null || _isNavigatingBack) return;
 
     final systemFolderName =
-        widget.system.isMultiSystemMode && game.systemFolderName != null
+        _effectiveSystem.isMultiSystemMode && game.systemFolderName != null
         ? game.systemFolderName!
-        : widget.system.primaryFolderName;
+        : _effectiveSystem.primaryFolderName;
 
     // Media resolution hierarchy.
     final screenshotPath = game.getScreenshotPath(
@@ -645,13 +662,13 @@ class _SystemGamesListState extends State<SystemGamesList> {
     final isVideoMuted = !configProvider!.config.videoSound;
     final isScraperLoggedIn = await ScreenScraperService.hasSavedCredentials();
 
-    final isMusicSystem = widget.system.folderName == 'music';
+    final isMusicSystem = _effectiveSystem.folderName == 'music';
 
     // State optimization: Skip updates if metadata remains identical.
     final currentState = _secondaryDisplayState?.value;
     final bool shouldUpdate =
         currentState == null ||
-        currentState.systemName != widget.system.realName ||
+        currentState.systemName != _effectiveSystem.realName ||
         currentState.gameId !=
             (isMusicSystem
                 ? MusicPlayerService().activeTrack?.romPath
@@ -677,7 +694,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
           !isMusicSystem && File(screenshotPath).existsSync();
 
       await _secondaryDisplayState?.updateState(
-        systemName: widget.system.realName,
+        systemName: _effectiveSystem.realName,
         gameFanart: hasFanart ? fanartPath : null,
         gameScreenshot: hasScreenshot ? screenshotPath : null,
         clearFanart: !hasFanart,
@@ -780,7 +797,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
     final config = context.read<SqliteConfigProvider>().config;
 
     // Suppress ducking within the Music Player system itself.
-    if (widget.system.folderName == 'music') return;
+    if (_effectiveSystem.folderName == 'music') return;
 
     if (!config.videoSound) {
       MusicPlayerService().setDucked(false);
@@ -801,9 +818,9 @@ class _SystemGamesListState extends State<SystemGamesList> {
   }
 
   void _updateBackground(GameModel game) {
-    if (!mounted || widget.system.isMultiSystemMode) return;
+    if (!mounted || _effectiveSystem.isMultiSystemMode) return;
 
-    final systemFolderName = widget.system.primaryFolderName;
+    final systemFolderName = _effectiveSystem.primaryFolderName;
 
     // Resolve game background: Prioritize high-resolution fanart, fallback to screenshot, then system default.
     String imagePath = game.getImagePath(
@@ -824,9 +841,9 @@ class _SystemGamesListState extends State<SystemGamesList> {
     } else {
       // Hardware-specific fallback if no game-specific art is resolved.
       final sysId =
-          widget.system.isMultiSystemMode && game.systemFolderName != null
+          _effectiveSystem.isMultiSystemMode && game.systemFolderName != null
           ? game.systemFolderName!
-          : widget.system.id;
+          : _effectiveSystem.id;
       final path =
           'assets/images/systems/logos/$sysId.webp'; // Correcting to logo fallback for grid consistency.
       imageProvider = AssetImage(path);
@@ -863,14 +880,14 @@ class _SystemGamesListState extends State<SystemGamesList> {
       String? systemId;
 
       // In 'Global Library' mode, resolve the game's native hardware system ID.
-      if (widget.system.isMultiSystemMode &&
+      if (_effectiveSystem.isMultiSystemMode &&
           _selectedGame!.systemFolderName != null) {
         final originalSystem = await SystemRepository.getSystemByFolderName(
           _selectedGame!.systemFolderName!,
         );
         systemId = originalSystem?.id;
       } else {
-        systemId = widget.system.id;
+        systemId = _effectiveSystem.id;
       }
 
       if (systemId == null) {
@@ -922,9 +939,9 @@ class _SystemGamesListState extends State<SystemGamesList> {
 
     // Restore secondary display to original system branding.
     final configProvider = context.read<SqliteConfigProvider>();
-    final folder = widget.system.primaryFolderName;
+    final folder = _effectiveSystem.primaryFolderName;
     final systemLogo = 'assets/images/systems/logos/$folder.webp';
-    final String? customBg = widget.system.customBackgroundPath;
+    final String? customBg = _effectiveSystem.customBackgroundPath;
     final bool hasCustomBg = customBg != null && customBg.isNotEmpty;
     final String? systemBackground = hasCustomBg ? customBg : null;
 
@@ -932,7 +949,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
     final isOled = themeProvider.isOled;
 
     await _secondaryDisplayState?.updateState(
-      systemName: widget.system.realName,
+      systemName: _effectiveSystem.realName,
       isGameSelected: false,
       isVideoMuted: !configProvider.config.videoSound,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor.toARGB32(),
@@ -942,8 +959,8 @@ class _SystemGamesListState extends State<SystemGamesList> {
       clearSystemBackground: systemBackground == null,
       isBackgroundAsset: false,
       useShader: !hasCustomBg,
-      shaderColor1: widget.system.color1AsColor?.toARGB32(),
-      shaderColor2: widget.system.color2AsColor?.toARGB32(),
+      shaderColor1: _effectiveSystem.color1AsColor?.toARGB32(),
+      shaderColor2: _effectiveSystem.color2AsColor?.toARGB32(),
       useFluidShader: false,
       isOled: isOled,
       clearFanart: true,
@@ -996,7 +1013,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
     if (_selectedGame != null) {
       try {
         final updatedGames = await GameService.loadGamesForSystem(
-          widget.system,
+          _effectiveSystem,
         );
         if (!mounted) return;
 
@@ -1024,7 +1041,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
   Future<void> _toggleFavorite() async {
     if (_selectedGame == null) return;
 
-    if (widget.system.folderName == 'music') {
+    if (_effectiveSystem.folderName == 'music') {
       try {
         await GameService.toggleFavorite(_selectedGame!);
         if (!mounted) return;
@@ -1095,7 +1112,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
   /// preserving the user's current scroll/focus index for a seamless experience.
   void _reorderGamesListKeepingVisualPosition() {
     if (_selectedGame == null) return;
-    if (widget.system.folderName == 'recent') return;
+    if (_effectiveSystem.folderName == 'recent') return;
 
     final oldIndex = _selectedGameIndex;
 
@@ -1129,7 +1146,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
   /// Sorts the list and re-anchors focus to a specific ROM.
   /// Primarily used after scraping to follow a game to its new alphabetical position.
   void _reorderGamesListFollowingGame(String romname) {
-    if (widget.system.folderName == 'recent') return;
+    if (_effectiveSystem.folderName == 'recent') return;
     setState(() {
       final sortedGames = List<GameModel>.from(_games);
       sortedGames.sort((a, b) {
@@ -1159,7 +1176,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
     if (_selectedGame == null) return;
 
     // Special handling for the Integrated Music Player.
-    if (widget.system.folderName == 'music') {
+    if (_effectiveSystem.folderName == 'music') {
       final service = MusicPlayerService();
       final isPlaying = service.isPlaying;
       final isHearingCurrent =
@@ -1186,9 +1203,9 @@ class _SystemGamesListState extends State<SystemGamesList> {
     setState(() => _isGameLaunching = true);
 
     // Resolve targeted hardware system for the launch.
-    SystemModel systemToLaunch = widget.system;
+    SystemModel systemToLaunch = _effectiveSystem;
 
-    if (widget.system.isMultiSystemMode &&
+    if (_effectiveSystem.isMultiSystemMode &&
         _selectedGame!.systemFolderName != null) {
       final availableSystems = context
           .read<SqliteConfigProvider>()
@@ -1199,7 +1216,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
           _log.w(
             'Could not find system for folder: ${_selectedGame!.systemFolderName}',
           );
-          return widget.system;
+          return _effectiveSystem;
         },
       );
 
@@ -1509,31 +1526,52 @@ class _SystemGamesListState extends State<SystemGamesList> {
     }
   }
 
-  /// Triggers cloud sync conflict resolution via UI prompts.
-  void _handleConflictResolution() {
-    if (_selectedGame == null) return;
+  /// L2/R2 navigation: swaps the displayed system to the cycle neighbour with
+  /// wrap-around — IN PLACE, without remounting the State. Keeps gamepad nav,
+  /// provider listeners, timers and secondary display alive across cycles so
+  /// rapid trigger presses feel fluid (no widget tree teardown per press).
+  ///
+  /// Excludes the `android` system from the cycle since it lives in a different
+  /// screen ([AndroidAppsGrid]) — see [SystemCycleHelper.getOrderedSystems].
+  Future<void> _cycleToNeighbourSystem({required bool forward}) async {
+    if (_isCyclingSystem || !mounted) return;
+    _isCyclingSystem = true;
 
-    final syncProvider = context.read<SyncManager>().active!;
-    final gameState = syncProvider.getGameSyncState(_selectedGame!.romname);
+    try {
+      final target = await SystemCycleHelper.getNeighbour(
+        context,
+        _effectiveSystem.folderName,
+        forward: forward,
+      );
+      if (!mounted || target == null) return;
 
-    if (gameState != null && gameState.status == GameSyncStatus.conflict) {
-      _gamepadNav.deactivate();
+      // Reset preview/media state before swapping the system reference.
+      _resetVideoState();
+      _saveDetectionTimer?.cancel();
+      _musicExtractionTimer?.cancel();
 
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return ConflictResolutionDialog(
-            game: _selectedGame!,
-            gameState: gameState,
-            syncProvider: syncProvider,
-          );
-        },
-      ).then((_) async {
-        if (mounted) {
-          _gamepadNav.activate();
+      // Re-arm the loading-splash timer so the splash still gates >150 ms loads.
+      _loadingSplashTimer?.cancel();
+      _loadingSplashTimer = Timer(const Duration(milliseconds: 150), () {
+        if (mounted && _isLoading) {
+          setState(() => _showLoadingSplash = true);
         }
       });
+
+      setState(() {
+        _systemOverride = target;
+        _games = [];
+        _selectedGame = null;
+        _selectedGameIndex = 0;
+        _isLoading = true;
+        _showLoadingSplash = false;
+      });
+
+      await _loadGames();
+    } finally {
+      if (mounted) {
+        _isCyclingSystem = false;
+      }
     }
   }
 
@@ -1551,8 +1589,8 @@ class _SystemGamesListState extends State<SystemGamesList> {
       builder: (BuildContext context) {
         return RandomGameDialog(
           games: _games,
-          systemFolderName: widget.system.primaryFolderName,
-          systemRealName: widget.system.realName,
+          systemFolderName: _effectiveSystem.primaryFolderName,
+          systemRealName: _effectiveSystem.realName,
           fileProvider: _fileProvider,
           onPlayGame: (selectedGame) {
             final gameIndex = _games.indexWhere(
@@ -1596,13 +1634,13 @@ class _SystemGamesListState extends State<SystemGamesList> {
     }
 
     try {
-      final games = await GameService.loadGamesForSystem(widget.system);
+      final games = await GameService.loadGamesForSystem(_effectiveSystem);
       if (!mounted) return;
 
       _log.i(
-        'SystemGamesList: Loaded ${games.length} games for ${widget.system.folderName}',
+        'SystemGamesList: Loaded ${games.length} games for ${_effectiveSystem.folderName}',
       );
-      if (widget.system.folderName == 'music' && games.isNotEmpty) {
+      if (_effectiveSystem.folderName == 'music' && games.isNotEmpty) {
         _log.i(
           'SystemGamesList: First 3 music tracks: ${games.take(3).map((g) => g.name).toList()}',
         );
@@ -1611,7 +1649,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
         _games = games;
 
         // Music system specialization: Anchor initial focus to the currently active track.
-        if (widget.system.folderName == 'music') {
+        if (_effectiveSystem.folderName == 'music') {
           final musicService = MusicPlayerService();
           if (musicService.isStarted && musicService.currentTrack != null) {
             final playingTrackPath = musicService.currentTrack?.romPath;
@@ -1630,7 +1668,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
         }
 
         // Persistent Selection Logic: Retain current index if the game still exists post-reload.
-        if (_selectedGame != null && widget.system.folderName != 'music') {
+        if (_selectedGame != null && _effectiveSystem.folderName != 'music') {
           final selectedIndex = games.indexWhere(
             (game) => game.romname == _selectedGame!.romname,
           );
@@ -1658,8 +1696,12 @@ class _SystemGamesListState extends State<SystemGamesList> {
     } catch (e) {
       _log.e('Error loading games: $e');
     } finally {
+      _loadingSplashTimer?.cancel();
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _showLoadingSplash = false;
+        });
         _isLoadingGames = false;
       }
     }
@@ -1814,9 +1856,9 @@ class _SystemGamesListState extends State<SystemGamesList> {
   /// Resolves the absolute filesystem path for the targeted game video.
   String _getVideoPath(GameModel game) {
     final systemFolderName =
-        widget.system.isMultiSystemMode && game.systemFolderName != null
+        _effectiveSystem.isMultiSystemMode && game.systemFolderName != null
         ? game.systemFolderName!
-        : widget.system.primaryFolderName;
+        : _effectiveSystem.primaryFolderName;
 
     return game.getVideoPath(systemFolderName, _fileProvider);
   }
@@ -1858,7 +1900,9 @@ class _SystemGamesListState extends State<SystemGamesList> {
             // Content Layer: Loading, Empty, or Game Grid.
             SizedBox(
               child: _isLoading
-                  ? _buildLoadingState()
+                  ? (_showLoadingSplash
+                        ? _buildLoadingState()
+                        : const SizedBox.shrink())
                   : _games.isEmpty
                   ? _buildEmptyState()
                   : _buildGamesList(),
@@ -1998,7 +2042,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
   /// specialized view for systems with zero detected media files.
   /// includes controls for recursive scanning and directory management.
   Widget _buildEmptyState() {
-    bool currentScanValue = widget.system.recursiveScan;
+    bool currentScanValue = _effectiveSystem.recursiveScan;
 
     return Center(
       child: Container(
@@ -2046,7 +2090,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
                   .getString(context)
                   .replaceFirst(
                     '{name}',
-                    widget.system.shortName ?? widget.system.realName,
+                    _effectiveSystem.shortName ?? _effectiveSystem.realName,
                   ),
               style: TextStyle(
                 fontSize: 16.r,
@@ -2127,7 +2171,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
                               context,
                             ).colorScheme.primary,
                             onChanged: (value) async {
-                              final oldSystem = widget.system;
+                              final oldSystem = _effectiveSystem;
                               setStateBuilder(() {
                                 currentScanValue = value;
                               });
@@ -2369,9 +2413,9 @@ class _SystemGamesListState extends State<SystemGamesList> {
     return Column(
       children: [
         Expanded(
-          child: widget.system.folderName == 'music'
+          child: _effectiveSystem.folderName == 'music'
               ? MusicList(
-                  system: widget.system,
+                  system: _effectiveSystem,
                   tracks: _games,
                   selectedIndex: _selectedGameIndex,
                   onTrackSelected: (track) {
@@ -2381,19 +2425,19 @@ class _SystemGamesListState extends State<SystemGamesList> {
                     });
                     _performBackgroundOperationsForSelectedGame();
                   },
-                  systemColor: widget.system.colorAsColor,
+                  systemColor: _effectiveSystem.colorAsColor,
                   onBack: _goBack,
                   onRandom: _showRandomGameDialog,
                   isNavigatingFast: _isNavigatingFast,
                 )
               : GameListView(
                   key: _gameListKey,
-                  system: widget.system,
+                  system: _effectiveSystem,
                   games: _games,
                   selectedIndex: _selectedGameIndex,
-                  systemColor: widget.system.colorAsColor,
+                  systemColor: _effectiveSystem.colorAsColor,
                   onGameSelected: _selectGame,
-                  isAllMode: widget.system.isMultiSystemMode,
+                  isAllMode: _effectiveSystem.isMultiSystemMode,
                   isNavigatingFast: _isNavigatingFast,
                   onGamepadReactivated: _reactivateGamepadNavigation,
                   onBack: _goBack,
@@ -2458,11 +2502,11 @@ class _SystemGamesListState extends State<SystemGamesList> {
       );
     }
 
-    if (widget.system.folderName == 'music') {
+    if (_effectiveSystem.folderName == 'music') {
       return Padding(
         padding: EdgeInsets.all(8.r),
         child: MusicPlayer(
-          systemColor: widget.system.colorAsColor,
+          systemColor: _effectiveSystem.colorAsColor,
           onFavoriteToggled: () {
             // Re-sort the collection when favorite status is toggled via touch in MusicPlayer.
             _reorderGamesListKeepingVisualPosition();
@@ -2475,12 +2519,12 @@ class _SystemGamesListState extends State<SystemGamesList> {
     return Consumer<SyncManager>(
       builder: (context, syncManager, child) => GameDetailsCardList(
         game: _selectedGame!,
-        system: widget.system,
+        system: _effectiveSystem,
         fileProvider: _fileProvider,
         showVideo: _showVideo,
         videoController: _videoController,
         isVideoLoading: _isVideoLoading,
-        isAllMode: widget.system.isMultiSystemMode,
+        isAllMode: _effectiveSystem.isMultiSystemMode,
         retroAchievementsProvider: _retroAchievementsProvider,
         syncProvider: syncManager.active!,
         localizedDescription: _localizedDescription,
@@ -2538,7 +2582,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
 
       // Fetch latest metadata from local storage.
       final updatedGame = await GameService.getGameDetails(
-        widget.system,
+        _effectiveSystem,
         _selectedGame!.romname,
       );
 
@@ -2616,7 +2660,12 @@ class GameListView extends StatefulWidget {
 class _GameListViewState extends State<GameListView>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   late final CenteredScrollController _centeredScrollController;
-  late final List<FocusNode> _gameFocusNodes;
+  // `late` (not `late final`) because `_updateFocusNodes` reassigns the list
+  // when the game count changes — fires during in-place L2/R2 system cycling
+  // since `_gameListKey` preserves this State across the empty→loaded
+  // transition. Upstream never triggered the path because the game count
+  // didn't change on a stable State.
+  late List<FocusNode> _gameFocusNodes;
   late AnimationController _selectionController;
   late Animation<double> _selectionAnimation;
 
