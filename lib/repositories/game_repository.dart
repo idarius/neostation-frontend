@@ -61,6 +61,11 @@ class GameRepository {
     excludeFolders: excludeFolders,
   );
 
+  static Future<List<DatabaseGameModel>> searchGames(
+    String query, {
+    int limit = 200,
+  }) => SqliteService.searchGames(query, limit: limit);
+
   static Future<List<DatabaseGameModel>> getGamesBySystem(String systemId) =>
       SqliteService.getGamesBySystem(systemId);
 
