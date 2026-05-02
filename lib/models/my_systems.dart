@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localization/flutter_localization.dart';
+
 import 'system_model.dart';
+import '../l10n/app_locale.dart';
 import '../models/game_model.dart';
 import '../providers/file_provider.dart';
 
@@ -175,6 +178,30 @@ class SystemInfo {
       customLogoPath: (metadata as dynamic).customLogoPath,
       hideLogo: (metadata as dynamic).hideLogo ?? false,
       imageVersion: version,
+      isGame: false,
+    );
+  }
+
+  /// Creates a SystemInfo for the 'recent' virtual system card.
+  ///
+  /// The card mirrors the visual treatment of the 'all' system: a gradient
+  /// from `recent.json`'s `colors` field with the localized short name as
+  /// label. No image asset is required — rendering relies on the SystemCard
+  /// widget's color-only fallback path.
+  factory SystemInfo.fromRecentVirtualSystem(BuildContext context) {
+    return SystemInfo(
+      svgSrc: 'assets/images/icons/clock-bulk.png',
+      title: AppLocale.recentSystem.getString(context),
+      shortName: AppLocale.recentSystem.getString(context),
+      totalStorage: '',
+      numOfRoms: 0,
+      color: const Color(0xFF26A69A),
+      color1: '#26A69A',
+      color2: '#80CBC4',
+      percentage: 0,
+      folderName: 'recent',
+      primaryFolderName: 'recent',
+      imageVersion: 0,
       isGame: false,
     );
   }
