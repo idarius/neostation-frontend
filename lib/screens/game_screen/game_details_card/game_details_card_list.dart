@@ -1261,6 +1261,14 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
                 await FileImage(imageFile).evict();
               }
             }
+
+            // Image.file(..., cacheWidth: N) wraps FileImage in ResizeImage,
+            // and the eviction above only removes the bare FileImage entry,
+            // not the ResizeImage-keyed entry that's actually displayed.
+            // A hard clear is the only reliable way to drop those without
+            // tracking every cacheWidth value used in the widget tree.
+            PaintingBinding.instance.imageCache.clear();
+            PaintingBinding.instance.imageCache.clearLiveImages();
           } catch (e) {
             _log.e('Image cache eviction failed: $e');
           }

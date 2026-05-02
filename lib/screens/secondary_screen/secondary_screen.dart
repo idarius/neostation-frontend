@@ -26,6 +26,11 @@ class _SecondaryScreenState extends State<SecondaryScreen> {
   /// Replaces the old defensive role of the hardcoded 500ms timer.
   int _videoGen = 0;
 
+  /// Tracks the last observed mediaRevision so the secondary engine can
+  /// clear its own image cache when the primary signals a rescrape happened.
+  /// (Primary's imageCache.clear() does not propagate across engines.)
+  int _lastMediaRevision = 0;
+
   @override
   void initState() {
     super.initState();
@@ -44,6 +49,16 @@ class _SecondaryScreenState extends State<SecondaryScreen> {
   void _onStateChanged() {
     final state = _secondaryDisplayState?.value;
     if (state == null) return;
+
+    // Detect a rescrape signal from the primary engine. Each rescrape bumps
+    // mediaRevision; we drop the local image cache so widgets re-decoding
+    // from disk get the fresh bytes (FileImage paths don't change after
+    // rescrape, so the cache otherwise hands back stale entries).
+    if (state.mediaRevision > _lastMediaRevision) {
+      _lastMediaRevision = state.mediaRevision;
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
+    }
 
     if (state.isGameLaunching) {
       _stopVideo();
