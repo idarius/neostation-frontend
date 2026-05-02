@@ -56,11 +56,10 @@ class GameRepository {
   static Future<List<DatabaseGameModel>> getRecentlyPlayedGames({
     int limit = 20,
     Set<String> excludeFolders = const {'android'},
-  }) =>
-      SqliteService.getRecentlyPlayedGames(
-        limit: limit,
-        excludeFolders: excludeFolders,
-      );
+  }) => SqliteService.getRecentlyPlayedGames(
+    limit: limit,
+    excludeFolders: excludeFolders,
+  );
 
   static Future<List<DatabaseGameModel>> getGamesBySystem(String systemId) =>
       SqliteService.getGamesBySystem(systemId);
