@@ -803,9 +803,22 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
   int? _cachedGridCols;
   int? _cachedGridSystemCount;
 
+  /// Cached conversion of widget.systems to SystemInfo list, rebuilt only on systems change.
+  late List<SystemInfo> _systemCards;
+
+  /// Cached ThemeData with scrollbar overrides — rebuilt only in didChangeDependencies.
+  ThemeData? _cachedThemeData;
+  ScrollBehavior? _cachedScrollBehavior;
+
+  List<SystemInfo> _toSystemCards(List<dynamic> systems) => systems.map((s) {
+    if (s is SystemInfo) return s;
+    return SystemInfo.fromSystemMetadata(s);
+  }).toList();
+
   @override
   void initState() {
     super.initState();
+    _systemCards = _toSystemCards(widget.systems);
     _initializeGamepad();
 
     if (Platform.isAndroid) {
@@ -951,20 +964,30 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
   }
 
   @override
-  void didUpdateWidget(SystemCardGridView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Invalidate virtual-grid cache when layout-defining inputs change
-    // (upstream perf — the grid layout is now memoized and only rebuilt on
-    // these inputs).
-    if (oldWidget.systems != widget.systems ||
-        oldWidget.crossAxisCount != widget.crossAxisCount) {
-      _cachedVirtualGrid = null;
-    }
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
+    // Cache theme objects (upstream perf — avoid rebuilding ThemeData /
+    // ScrollBehavior on every build).
+    final theme = Theme.of(context);
+    _cachedThemeData = theme.copyWith(
+      scrollbarTheme: ScrollbarThemeData(
+        thumbColor: WidgetStateProperty.all(
+          theme.colorScheme.onSurface.withValues(alpha: 0.1),
+        ),
+        trackColor: WidgetStateProperty.all(
+          theme.colorScheme.onSurface.withValues(alpha: 0.05),
+        ),
+        thickness: WidgetStateProperty.all(6),
+        radius: const Radius.circular(3),
+      ),
+    );
+    _cachedScrollBehavior =
+        ScrollConfiguration.of(context).copyWith(scrollbars: false);
+
+    // IndexedStack tab visibility — push/pop our gamepad nav layer in sync
+    // with TabActiveScope so layers don't accumulate when other tabs are
+    // visible.
     final isActive = TabActiveScope.of(context);
     if (isActive && !_layerPushed) {
       _pushMyLayer();
@@ -983,6 +1006,19 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
       _selectionNotifier?.removeListener(_onSelectedIndexChanged);
       _selectionNotifier = notifier;
       _selectionNotifier!.addListener(_onSelectedIndexChanged);
+    }
+  }
+
+  @override
+  void didUpdateWidget(SystemCardGridView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Invalidate virtual-grid cache when layout-defining inputs change
+    // (upstream perf — the grid layout is now memoized and only rebuilt on
+    // these inputs).
+    if (oldWidget.systems != widget.systems ||
+        oldWidget.crossAxisCount != widget.crossAxisCount) {
+      _cachedVirtualGrid = null;
+      _systemCards = _toSystemCards(widget.systems);
     }
   }
 
@@ -1181,9 +1217,7 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
 
   /// Resolve the next focused index based on the virtual spatial grid.
   void _navigateVirtual(String direction) {
-    final cards = widget.systems.map((s) {
-      return s is SystemInfo ? s : SystemInfo.fromSystemMetadata(s);
-    }).toList();
+    final cards = _systemCards;
     final cols = widget.crossAxisCount;
     final current = _selectedIndex;
 
@@ -1316,11 +1350,7 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
   void _ensureSelectedItemVisibleUniversal() {
     if (!_scrollController.hasClients || widget.systems.isEmpty) return;
 
-    final cards = widget.systems.map((system) {
-      return system is SystemInfo
-          ? system
-          : SystemInfo.fromSystemMetadata(system);
-    }).toList();
+    final cards = _systemCards;
     final cols = widget.crossAxisCount;
     final grid = _buildVirtualGrid(cards, cols);
 
@@ -1376,27 +1406,12 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
       });
     }
 
-    final systemCards = widget.systems.map((system) {
-      if (system is SystemInfo) return system;
-      return SystemInfo.fromSystemMetadata(system);
-    }).toList();
-
     return Theme(
-      data: Theme.of(context).copyWith(
-        scrollbarTheme: ScrollbarThemeData(
-          thumbColor: WidgetStateProperty.all(
-            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-          ),
-          trackColor: WidgetStateProperty.all(
-            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-          ),
-          thickness: WidgetStateProperty.all(6),
-          radius: const Radius.circular(3),
-        ),
-      ),
+      data: _cachedThemeData ?? Theme.of(context),
       child: ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-        child: _buildWideCardGrid(context, systemCards),
+        behavior: _cachedScrollBehavior ??
+            ScrollConfiguration.of(context).copyWith(scrollbars: false),
+        child: _buildWideCardGrid(context, _systemCards),
       ),
     );
   }
@@ -1530,6 +1545,11 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
           ),
           child: SizedBox(
             height: totalHeight,
+            // The highlight overlay is built separately via a Selector (see
+            // _buildHighlightOverlay) so selection changes don't repaint
+            // surrounding cards — equivalent perf goal to upstream's inline
+            // RepaintBoundary, but kept here for consistency with the
+            // self-aware-cards architecture.
             child: Stack(children: [...cardWidgets, highlightOverlay]),
           ),
         );
