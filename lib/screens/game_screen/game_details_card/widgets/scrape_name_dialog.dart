@@ -92,7 +92,6 @@ class _ScrapeNameDialogState extends State<_ScrapeNameDialog> {
         constraints: BoxConstraints(maxWidth: 360.w),
         child: TextFormField(
           controller: _controller,
-          autofocus: true,
           maxLines: 1,
           textInputAction: TextInputAction.search,
           onFieldSubmitted: (_) {
