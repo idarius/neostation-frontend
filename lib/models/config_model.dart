@@ -68,6 +68,9 @@ class ConfigModel {
   /// Whether to hide the "Recently Played" card from the main dashboard.
   final bool hideRecentCard;
 
+  /// Whether to hide the "Recently Played" virtual system from the system grid.
+  final bool hideRecentSystem;
+
   /// ID of the active sync provider (matches [ISyncProvider.providerId]).
   final String activeSyncProvider;
 
@@ -93,6 +96,7 @@ class ConfigModel {
     this.systemSortOrder = 'asc',
     this.appLanguage = 'es',
     this.hideRecentCard = false,
+    this.hideRecentSystem = false,
     this.activeSyncProvider = 'neosync',
   });
 
@@ -181,6 +185,16 @@ class ConfigModel {
                   .toString() ==
               '1' ||
           (json['hideRecentCard'] ?? false).toString().toLowerCase() == 'true',
+      hideRecentSystem:
+          (json['hideRecentSystem'] ?? json['hide_recent_system'] ?? 0)
+                  is int
+              ? ((json['hideRecentSystem'] ?? json['hide_recent_system'] ?? 0)
+                      as int) ==
+                  1
+              : (json['hideRecentSystem'] ?? false)
+                      .toString()
+                      .toLowerCase() ==
+                  'true',
       activeSyncProvider:
           (json['activeSyncProvider'] ??
                   json['active_sync_provider'] ??
@@ -218,6 +232,7 @@ class ConfigModel {
       'systemSortOrder': systemSortOrder,
       'appLanguage': appLanguage,
       'hideRecentCard': hideRecentCard,
+      'hideRecentSystem': hideRecentSystem,
       'activeSyncProvider': activeSyncProvider,
     };
   }
@@ -245,6 +260,7 @@ class ConfigModel {
     String? systemSortOrder,
     String? appLanguage,
     bool? hideRecentCard,
+    bool? hideRecentSystem,
     String? activeSyncProvider,
   }) {
     return ConfigModel(
@@ -269,6 +285,7 @@ class ConfigModel {
       systemSortOrder: systemSortOrder ?? this.systemSortOrder,
       appLanguage: appLanguage ?? this.appLanguage,
       hideRecentCard: hideRecentCard ?? this.hideRecentCard,
+      hideRecentSystem: hideRecentSystem ?? this.hideRecentSystem,
       activeSyncProvider: activeSyncProvider ?? this.activeSyncProvider,
     );
   }
