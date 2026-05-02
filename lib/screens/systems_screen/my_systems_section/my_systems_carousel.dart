@@ -373,7 +373,8 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
   /// Pushes the global search SystemGamesList. Triggered by the Y button
   /// on the Console carousel (no card on the carousel for this virtual system).
   Future<void> _openSearch() async {
-    if (!mounted) return;
+    if (!mounted || _isNavigating) return;
+    _isNavigating = true;
 
     _gamepadNav.deactivate();
     try {
@@ -392,7 +393,10 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
         ),
       );
     } finally {
-      if (mounted) _gamepadNav.activate();
+      if (mounted) {
+        _isNavigating = false;
+        _gamepadNav.activate();
+      }
     }
   }
 
