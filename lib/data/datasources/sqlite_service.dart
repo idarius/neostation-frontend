@@ -1382,6 +1382,11 @@ class SqliteService {
           'ALTER TABLE user_config ADD COLUMN video_delay_ms INTEGER DEFAULT 1500',
         );
       }
+      if (!columns.contains('hide_recent_system')) {
+        await db.execute(
+          'ALTER TABLE user_config ADD COLUMN hide_recent_system INTEGER DEFAULT 0',
+        );
+      }
     } catch (e) {
       _log.e('Minor fix ensuring user_config columns failed: $e');
       rethrow;
@@ -1553,7 +1558,8 @@ class SqliteService {
         hide_recent_card INTEGER DEFAULT 0,
         active_sync_provider TEXT DEFAULT 'neosync',
         show_game_wheel INTEGER DEFAULT 1,
-        video_delay_ms INTEGER DEFAULT 1500
+        video_delay_ms INTEGER DEFAULT 1500,
+        hide_recent_system INTEGER DEFAULT 0
       );
       ''',
       '''
@@ -2249,6 +2255,7 @@ class SqliteService {
     String? appLanguage,
     String? activeTheme,
     int? hideRecentCard,
+    int? hideRecentSystem,
     String? activeSyncProvider,
   }) async {
     final db = await instance.database;
@@ -2305,6 +2312,9 @@ class SqliteService {
     }
     if (hideRecentCard != null) {
       newConfig['hide_recent_card'] = hideRecentCard;
+    }
+    if (hideRecentSystem != null) {
+      newConfig['hide_recent_system'] = hideRecentSystem;
     }
     if (activeSyncProvider != null) {
       newConfig['active_sync_provider'] = activeSyncProvider;

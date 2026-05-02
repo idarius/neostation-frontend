@@ -149,6 +149,12 @@ class SqliteConfigService {
             (int.tryParse(userConfig?['hide_recent_card']?.toString() ?? '0') ??
                 0) ==
             1,
+        hideRecentSystem:
+            (int.tryParse(
+                  userConfig?['hide_recent_system']?.toString() ?? '0',
+                ) ??
+                0) ==
+            1,
         activeSyncProvider:
             userConfig?['active_sync_provider']?.toString() ?? 'neosync',
       );
@@ -182,6 +188,7 @@ class SqliteConfigService {
         systemSortOrder: config.systemSortOrder,
         appLanguage: config.appLanguage,
         hideRecentCard: config.hideRecentCard ? 1 : 0,
+        hideRecentSystem: config.hideRecentSystem ? 1 : 0,
         activeSyncProvider: config.activeSyncProvider,
       );
 
