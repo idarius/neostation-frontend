@@ -122,7 +122,7 @@ class GameDetailsFooter extends StatelessWidget {
                               SizedBox(height: 2.r),
                               Text(
                                 game.romname,
-                                maxLines: 2,
+                                maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.72),
