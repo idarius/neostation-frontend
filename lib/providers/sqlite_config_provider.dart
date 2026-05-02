@@ -1060,6 +1060,14 @@ class SqliteConfigProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Updates the Local/NAS sync target path and persists it.
+  /// Pass an empty string to clear the path.
+  Future<void> updateLocalSyncPath(String? path) async {
+    _config = _config.copyWith(localSyncPath: path);
+    await SqliteConfigService.saveConfig(_config);
+    notifyListeners();
+  }
+
   Future<void> _loadAvailableEmulators() async {
     _availableEmulators = await SqliteConfigService.loadAvailableEmulators();
   }
