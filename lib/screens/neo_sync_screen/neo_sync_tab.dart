@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localization/flutter_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:neostation/l10n/app_locale.dart';
 import 'package:neostation/utils/gamepad_nav.dart';
 import 'package:neostation/services/game_service.dart';
 import '../app_screen.dart';
+import 'local_sync_screen/local_sync_content.dart';
 import 'login_screen/neo_sync_content.dart';
 
 class NeoSyncTab extends StatefulWidget {
@@ -13,7 +16,9 @@ class NeoSyncTab extends StatefulWidget {
 }
 
 class _NeoSyncTabState extends State<NeoSyncTab> {
-  bool _neoSyncSelected = false;
+  /// Provider id whose content screen is currently displayed.
+  /// Null = provider selector is visible.
+  String? _selectedProviderId;
   int _selectedIndex = 0;
   late GamepadNavigation _gamepadNav;
 
@@ -23,7 +28,7 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
   /// confirms NeoSync (`_selectCurrent`) to cede focus to NeoSyncContent.
   bool _layerPushed = false;
 
-  static const int _cardCount = 3;
+  static const int _cardCount = 4;
 
   @override
   void initState() {
@@ -49,7 +54,7 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
     final isActive = TabActiveScope.of(context);
     // Only show the provider selector layer while the user hasn't confirmed
     // NeoSync — once they do, NeoSyncContent owns input.
-    final shouldPush = isActive && !_neoSyncSelected;
+    final shouldPush = isActive && _selectedProviderId == null;
     if (shouldPush && !_layerPushed) {
       _pushMyLayer();
     } else if (!shouldPush && _layerPushed) {
@@ -93,13 +98,25 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
   void _selectCurrent() {
     if (_selectedIndex == 0) {
       _popMyLayer();
-      setState(() => _neoSyncSelected = true);
+      setState(() => _selectedProviderId = 'neosync');
+      return;
     }
+    if (_selectedIndex == 1) {
+      _popMyLayer();
+      setState(() => _selectedProviderId = 'local_storage');
+      return;
+    }
+    // Indices 2 (RomM) and 3 (GDrive) are still inactive — no-op.
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_neoSyncSelected) return const NeoSyncContent();
+    if (_selectedProviderId == 'neosync') return const NeoSyncContent();
+    if (_selectedProviderId == 'local_storage') {
+      return LocalSyncContent(
+        onBack: () => setState(() => _selectedProviderId = null),
+      );
+    }
     return _buildProviderSelector(context);
   }
 
@@ -147,21 +164,35 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
               _ProviderCard(
                 index: 1,
                 selectedIndex: _selectedIndex,
-                icon: Icons.storage_rounded,
-                name: 'Romm.app',
-                subtitle: 'ROM manager',
-                isActive: false,
-                onTap: () => setState(() => _selectedIndex = 1),
+                icon: Icons.folder_shared_rounded,
+                name: AppLocale.localSyncProviderName.getString(context),
+                subtitle:
+                    AppLocale.localSyncProviderSubtitle.getString(context),
+                isActive: true,
+                onTap: () {
+                  setState(() => _selectedIndex = 1);
+                  _selectCurrent();
+                },
               ),
               SizedBox(width: 14.r),
               _ProviderCard(
                 index: 2,
                 selectedIndex: _selectedIndex,
+                icon: Icons.storage_rounded,
+                name: 'Romm.app',
+                subtitle: 'ROM manager',
+                isActive: false,
+                onTap: () => setState(() => _selectedIndex = 2),
+              ),
+              SizedBox(width: 14.r),
+              _ProviderCard(
+                index: 3,
+                selectedIndex: _selectedIndex,
                 icon: Icons.add_to_drive_rounded,
                 name: 'Google Drive',
                 subtitle: 'Google storage',
                 isActive: false,
-                onTap: () => setState(() => _selectedIndex = 2),
+                onTap: () => setState(() => _selectedIndex = 3),
               ),
             ],
           ),
