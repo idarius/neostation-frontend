@@ -539,6 +539,25 @@ class _SystemGamesListState extends State<SystemGamesList> {
     _updateMusicDucking();
   }
 
+  /// Frees maximum RAM before handing off to the emulator.
+  /// Play time tracking continues unaffected in GameService.
+  void _freeMemoryForGameplay() {
+    // Clear all cached images — system backgrounds, logos, screenshots.
+    imageCache.clear();
+    imageCache.clearLiveImages();
+
+    // Release game list from memory. Reloaded on game close.
+    setState(() {
+      _games = [];
+      _gameIndexMap = {};
+    });
+
+    // Clear the system background image provider.
+    if (mounted) {
+      context.read<SystemBackgroundProvider>().clear();
+    }
+  }
+
   /// Moves focus to the previous game in the list.
   void _navigateUp() {
     if (_games.isEmpty) return;
@@ -1045,32 +1064,41 @@ class _SystemGamesListState extends State<SystemGamesList> {
       setState(() {
         _isGameLaunching = false;
       });
-      _updateSecondaryDisplay(_selectedGame!);
+      if (_selectedGame != null) _updateSecondaryDisplay(_selectedGame!);
     }
 
     _gamepadNav.activate();
 
-    // Reload metadata to reflect updated session playtimes.
-    if (_selectedGame != null) {
-      try {
-        final updatedGames = await GameService.loadGamesForSystem(
-          _effectiveSystem,
-        );
-        if (!mounted) return;
+    // Reload games list (was cleared to free RAM during gameplay) using
+    // _effectiveSystem so L2/R2-cycled state is preserved AND with the
+    // current search query so search-mode results don't reset to empty.
+    try {
+      final updatedGames = await GameService.loadGamesForSystem(
+        _effectiveSystem,
+        searchQuery: _effectiveSystem.folderName == 'search'
+            ? _searchController.text.trim()
+            : null,
+      );
+      if (!mounted) return;
 
-        final gameIndex = updatedGames.indexWhere(
-          (game) => game.romname == _selectedGame!.romname,
-        );
+      final previousRomname = _selectedGame?.romname;
+      final gameIndex = previousRomname != null
+          ? updatedGames.indexWhere((g) => g.romname == previousRomname)
+          : -1;
+
+      setState(() {
+        _games = updatedGames;
+        _gameIndexMap = {
+          for (int i = 0; i < updatedGames.length; i++) updatedGames[i]: i,
+        };
         if (gameIndex != -1) {
-          setState(() {
-            _games = updatedGames;
-            _selectedGame = updatedGames[gameIndex];
-          });
+          _selectedGame = updatedGames[gameIndex];
+          _selectedGameIndex = gameIndex;
         }
-        _databaseProvider.refresh();
-      } catch (e) {
-        _log.e('Error refreshing game data: $e');
-      }
+      });
+      _databaseProvider.refresh();
+    } catch (e) {
+      _log.e('Error refreshing game data after gameplay: $e');
     }
 
     if (_refreshAchievementsCallback != null) {
@@ -1285,6 +1313,9 @@ class _SystemGamesListState extends State<SystemGamesList> {
     // CRITICAL: Deactivate local input to avoid conflicts with external processes.
     _gamepadNav.deactivate();
 
+    // Free maximum RAM before handing off to the emulator.
+    _freeMemoryForGameplay();
+
     try {
       if (!mounted) return;
 
@@ -1299,6 +1330,8 @@ class _SystemGamesListState extends State<SystemGamesList> {
         syncProvider: syncProvider,
         onGameClosed: _reactivateGamepadNavigation,
         onLaunchFailed: (ctx, result) async {
+          // Restore memory on failed launch.
+          if (mounted) _loadGames();
           _log.e('SystemGamesList: Game launch failed');
           if (mounted && _isGameLaunching) {
             setState(() => _isGameLaunching = false);
@@ -1968,30 +2001,31 @@ class _SystemGamesListState extends State<SystemGamesList> {
                 child: Builder(
                   builder: (context) {
                     final bg = Theme.of(context).scaffoldBackgroundColor;
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: bg,
-                      ),
-                    );
+                    return Container(decoration: BoxDecoration(color: bg));
                   },
                 ),
               ),
 
             // Content Layer: Loading, Empty, or Game Grid.
-            Padding(
-              padding: EdgeInsets.only(
-                top: _effectiveSystem.folderName == 'search' ? 80.h : 0,
+            // Hidden during game launch (upstream b953dd0 — prevents the
+            // empty-state widget from rendering behind the launch dialog).
+            // Padded down in search mode so the sticky search bar doesn't
+            // overlap the first row.
+            if (!_isGameLaunching)
+              Padding(
+                padding: EdgeInsets.only(
+                  top: _effectiveSystem.folderName == 'search' ? 80.h : 0,
+                ),
+                child: SizedBox(
+                  child: _isLoading
+                      ? (_showLoadingSplash
+                            ? _buildLoadingState()
+                            : const SizedBox.shrink())
+                      : _games.isEmpty
+                      ? _buildEmptyState()
+                      : _buildGamesList(),
+                ),
               ),
-              child: SizedBox(
-                child: _isLoading
-                    ? (_showLoadingSplash
-                          ? _buildLoadingState()
-                          : const SizedBox.shrink())
-                    : _games.isEmpty
-                    ? _buildEmptyState()
-                    : _buildGamesList(),
-              ),
-            ),
 
             // Search bar overlay (sticky top, only in search mode).
             if (_effectiveSystem.folderName == 'search')
@@ -2025,7 +2059,8 @@ class _SystemGamesListState extends State<SystemGamesList> {
               ),
 
             // Navigation Layer: Visual alphabetical feedback for rapid scrolling.
-            if (_currentLetter != null) _buildLetterIndicator(),
+            if (_currentLetter != null && !_isGameLaunching)
+              _buildLetterIndicator(),
           ],
         ),
       ),
@@ -2045,10 +2080,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
             decoration: BoxDecoration(
               color: _letterIndicatorBg,
               borderRadius: BorderRadius.circular(24.r),
-              border: Border.all(
-                color: _letterIndicatorBorder,
-                width: 2.r,
-              ),
+              border: Border.all(color: _letterIndicatorBorder, width: 2.r),
               boxShadow: [
                 BoxShadow(
                   color: _letterIndicatorShadow,
@@ -2065,10 +2097,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
                   shadows: [
-                    Shadow(
-                      color: _letterIndicatorTextShadow,
-                      blurRadius: 10.r,
-                    ),
+                    Shadow(color: _letterIndicatorTextShadow, blurRadius: 10.r),
                   ],
                 ),
               ),
