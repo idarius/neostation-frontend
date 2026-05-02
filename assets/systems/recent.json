@@ -1,0 +1,33 @@
+{
+  "system": {
+    "id": "recent",
+    "name": "Recently Played",
+    "short_name": "Recent",
+    "details": {
+      "manufacturer": "",
+      "release_date": "2026-05-02",
+      "description": "Last 20 games launched, most recent first.",
+      "type": "virtual"
+    },
+    "ids": {
+      "screenscraper": null,
+      "retroachievements": null
+    },
+    "folders": [
+      "recent"
+    ],
+    "colors": [
+      "#26A69A",
+      "#80CBC4"
+    ],
+    "extensions": []
+  },
+  "emulators": [],
+  "neosync": {
+    "sync": false,
+    "android_sync_folder": [],
+    "windows_sync_folder": [],
+    "linux_sync_folder": [],
+    "macos_sync_folder": []
+  }
+}
