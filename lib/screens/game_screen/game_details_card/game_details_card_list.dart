@@ -222,6 +222,15 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
     }
   }
 
+  /// Resolves the actual app_systems row id for ScreenScraper / scrape-state
+  /// lookups. In multi-system mode (all / recent) the list-level system has a
+  /// virtual id that does not map to ScreenScraper, so we fall back to the
+  /// per-game id sourced from the user_roms join.
+  String? get _effectiveAppSystemId {
+    if (widget.isAllMode && _game.systemId != null) return _game.systemId;
+    return widget.system.id;
+  }
+
   /// Predicate indicating if RetroAchievements integration is technically feasible for this hardware.
   bool get _hasRetroAchievements =>
       _effectiveSystem.raId != null &&
@@ -936,11 +945,12 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
         description == AppLocale.noDescription.getString(context) ||
         description.trim().isEmpty;
 
-    if (widget.system.id == null) return;
+    final effectiveSystemId = _effectiveAppSystemId;
+    if (effectiveSystemId == null) return;
 
     final scrapeState = await ScraperRepository.getScrapeState(
       _game.romname,
-      widget.system.id!,
+      effectiveSystemId,
     );
 
     if (!mounted) return;
@@ -958,7 +968,7 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
 
     final resetName = await ScreenScraperService.getCleanRomName(
       _game.romname,
-      widget.system.id,
+      effectiveSystemId,
     );
 
     if (!mounted) return;
@@ -1171,7 +1181,8 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
       }
     }
 
-    if (widget.system.id == null) {
+    final effectiveSystemId = _effectiveAppSystemId;
+    if (effectiveSystemId == null) {
       if (!mounted) return;
       AppNotification.showNotification(
         context,
@@ -1215,7 +1226,7 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
           : widget.system.primaryFolderName;
 
       final result = await ScreenScraperService.scrapeSingleGame(
-        appSystemId: widget.system.id!,
+        appSystemId: effectiveSystemId,
         romName: _game.romname,
         systemFolder: targetSystemFolder,
         romPath: _game.romPath ?? '',
