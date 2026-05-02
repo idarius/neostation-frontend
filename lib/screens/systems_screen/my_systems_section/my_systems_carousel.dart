@@ -26,6 +26,7 @@ import 'package:neostation/providers/neo_assets_provider.dart';
 import 'package:neostation/providers/theme_provider.dart';
 import '../../game_screen/my_games_list.dart';
 import '../../../services/recent_system_helper.dart';
+import '../../../services/search_system_helper.dart';
 import '../../../widgets/shaders/shader_gif_widget.dart';
 import '../../../widgets/shaders/music_card_shader_background.dart';
 import '../../../utils/image_utils.dart';
@@ -237,6 +238,7 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
       onNavigateLeft: _navigatePrevious,
       onNavigateRight: _navigateNext,
       onSelectItem: _selectCurrentSystem,
+      onFavorite: _openSearch,
       onSettings: _openSystemSettingsFromCarousel,
       onXButton: () {
         HeaderSortDropdown.globalKey.currentState?.showDropdown();
@@ -365,6 +367,32 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
 
     if (_currentIndex >= 0 && _currentIndex < allSystems.length) {
       _navigateToSystem(context, allSystems[_currentIndex], fileProvider);
+    }
+  }
+
+  /// Pushes the global search SystemGamesList. Triggered by the Y button
+  /// on the Console carousel (no card on the carousel for this virtual system).
+  Future<void> _openSearch() async {
+    if (!mounted) return;
+
+    _gamepadNav.deactivate();
+    try {
+      final fileProvider = Provider.of<FileProvider>(context, listen: false);
+      final searchSystem = await SearchSystemHelper.getSearchSystemModel(
+        context.mounted ? context : null,
+      );
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SystemGamesList(
+            system: searchSystem,
+            fileProvider: fileProvider,
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) _gamepadNav.activate();
     }
   }
 

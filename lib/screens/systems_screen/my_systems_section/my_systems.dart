@@ -27,6 +27,7 @@ import 'package:neostation/sync/sync_manager.dart';
 import 'package:neostation/providers/theme_provider.dart';
 import '../../game_screen/android_apps/android_apps_grid.dart';
 import '../../../services/recent_system_helper.dart';
+import '../../../services/search_system_helper.dart';
 import 'package:neostation/widgets/header_sort_dropdown.dart';
 import 'package:neostation/widgets/systems_grid_footer.dart';
 
@@ -1001,6 +1002,7 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
       },
       onSelectItem: () => widget.onEnterPressed?.call(),
       onSettings: () => widget.onEscapePressed?.call(),
+      onFavorite: _openSearch,
       onXButton: () {
         HeaderSortDropdown.globalKey.currentState?.showDropdown();
       },
@@ -1034,6 +1036,35 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
   void _cleanupGamepad() {
     _popMyLayer();
     _gamepadNav.dispose();
+  }
+
+  /// Pushes the global search SystemGamesList. Triggered by the Y button
+  /// on the Console grid (no card on the grid for this virtual system).
+  Future<void> _openSearch() async {
+    if (MySystems.isNavigating) return;
+    MySystems.isNavigating = true;
+
+    GamepadNavigationManager.deactivateAll();
+
+    try {
+      final fileProvider = Provider.of<FileProvider>(context, listen: false);
+      final searchSystem = await SearchSystemHelper.getSearchSystemModel(
+        context.mounted ? context : null,
+      );
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SystemGamesList(
+            system: searchSystem,
+            fileProvider: fileProvider,
+          ),
+        ),
+      );
+    } finally {
+      MySystems.isNavigating = false;
+      if (mounted) GamepadNavigationManager.reactivate();
+    }
   }
 
   void _navigateGrid(String direction) {
