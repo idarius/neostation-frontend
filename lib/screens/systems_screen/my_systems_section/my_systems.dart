@@ -26,6 +26,7 @@ import 'package:neostation/widgets/system_emulator_settings_dialog.dart';
 import 'package:neostation/sync/sync_manager.dart';
 import 'package:neostation/providers/theme_provider.dart';
 import '../../game_screen/android_apps/android_apps_grid.dart';
+import '../../../services/recent_system_helper.dart';
 import 'package:neostation/widgets/header_sort_dropdown.dart';
 import 'package:neostation/widgets/systems_grid_footer.dart';
 
@@ -361,6 +362,9 @@ class MySystems extends StatelessWidget {
     // 2. Aggregate all logical systems into a unified list.
     final allSystems = [
       ...recentGames, // Priority display for recently played titles.
+      // Recent virtual system card — opens the 20-most-recent list.
+      if (!configProvider.config.hideRecentSystem)
+        SystemInfo.fromRecentVirtualSystem(context),
       // Map detected physical systems to localized UI models.
       ...configProvider.detectedSystems
           .where((s) => !hiddenFolders.contains(s.folderName))
@@ -573,6 +577,19 @@ class MySystems extends StatelessWidget {
             MaterialPageRoute(builder: (context) => targetScreen),
           );
         }
+      } else if (systemInfo.folderName == 'recent') {
+        final recentSystem = await RecentSystemHelper.getRecentSystemModel(
+          context.mounted ? context : null,
+        );
+        if (!context.mounted) return;
+        final targetScreen = SystemGamesList(
+          system: recentSystem,
+          fileProvider: fileProvider,
+        );
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => targetScreen),
+        );
       } else if (systemInfo.folderName == 'android') {
         final systemMeta = configProvider.detectedSystems.firstWhere(
           (system) => system.folderName == 'android',

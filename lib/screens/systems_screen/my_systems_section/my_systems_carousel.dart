@@ -25,6 +25,7 @@ import 'package:neostation/sync/sync_manager.dart';
 import 'package:neostation/providers/neo_assets_provider.dart';
 import 'package:neostation/providers/theme_provider.dart';
 import '../../game_screen/my_games_list.dart';
+import '../../../services/recent_system_helper.dart';
 import '../../../widgets/shaders/shader_gif_widget.dart';
 import '../../../widgets/shaders/music_card_shader_background.dart';
 import '../../../utils/image_utils.dart';
@@ -323,6 +324,9 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
 
     return [
       ...recentGames, // Priority display for recent activity.
+      // Recent virtual system card — opens the 20-most-recent list.
+      if (!configProvider.config.hideRecentSystem)
+        SystemInfo.fromRecentVirtualSystem(context),
       // Filter out systems hidden by user configuration.
       ...configProvider.detectedSystems
           .where((s) => !hiddenFolders.contains(s.folderName))
@@ -444,6 +448,19 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
           fileProvider: fileProvider,
         );
 
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => targetScreen),
+        );
+      } else if (systemInfo.folderName == 'recent') {
+        final recentSystem = await RecentSystemHelper.getRecentSystemModel(
+          context.mounted ? context : null,
+        );
+        if (!context.mounted) return;
+        final targetScreen = SystemGamesList(
+          system: recentSystem,
+          fileProvider: fileProvider,
+        );
         await Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => targetScreen),
