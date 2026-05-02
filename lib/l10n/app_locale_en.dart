@@ -56,6 +56,7 @@ const Map<String, dynamic> appLocaleEn = {
   AppLocale.hideRecentCardSubtitle:
       'Show the recently played card in the systems grid',
   AppLocale.recentSystem: 'Recent',
+  AppLocale.searchSystem: 'Search',
   AppLocale.hideRecentSystem: 'Recent System',
   AppLocale.hideRecentSystemSubtitle:
       'Show the "Recent" system in the Console grid.',

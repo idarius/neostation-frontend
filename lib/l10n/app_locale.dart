@@ -80,6 +80,7 @@ mixin AppLocale {
   static const String recentSystem = 'recent_system';
   static const String hideRecentSystem = 'hide_recent_system';
   static const String hideRecentSystemSubtitle = 'hide_recent_system_subtitle';
+  static const String searchSystem = 'search_system';
 
   // ---------------------------------------------------------------------------
   // General settings

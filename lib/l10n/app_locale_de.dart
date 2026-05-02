@@ -58,6 +58,7 @@ const Map<String, dynamic> appLocaleDe = {
   AppLocale.hideRecentCardSubtitle:
       'Karte der zuletzt gespielten Spiele im Raster anzeigen',
   AppLocale.recentSystem: 'Kürzlich',
+  AppLocale.searchSystem: 'Suche',
   AppLocale.hideRecentSystem: 'Kürzlich-System',
   AppLocale.hideRecentSystemSubtitle:
       'Das System "Kürzlich" im Konsolenraster anzeigen.',

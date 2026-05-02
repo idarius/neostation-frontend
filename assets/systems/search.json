@@ -1,0 +1,33 @@
+{
+  "system": {
+    "id": "search",
+    "name": "Search",
+    "short_name": "Search",
+    "details": {
+      "manufacturer": "",
+      "release_date": "2026-05-02",
+      "description": "Live substring search across all systems.",
+      "type": "virtual"
+    },
+    "ids": {
+      "screenscraper": null,
+      "retroachievements": null
+    },
+    "folders": [
+      "search"
+    ],
+    "colors": [
+      "#5C6BC0",
+      "#9FA8DA"
+    ],
+    "extensions": []
+  },
+  "emulators": [],
+  "neosync": {
+    "sync": false,
+    "android_sync_folder": [],
+    "windows_sync_folder": [],
+    "linux_sync_folder": [],
+    "macos_sync_folder": []
+  }
+}

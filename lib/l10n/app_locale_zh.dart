@@ -54,6 +54,7 @@ const Map<String, dynamic> appLocaleZh = {
   AppLocale.hideRecentCard: '最近游戏卡片',
   AppLocale.hideRecentCardSubtitle: '在系统网格中显示最近游玩卡片',
   AppLocale.recentSystem: '最近',
+  AppLocale.searchSystem: '搜索',
   AppLocale.hideRecentSystem: '最近系统',
   AppLocale.hideRecentSystemSubtitle: '在控制台网格中显示"最近"系统。',
   AppLocale.palettesSubtitle: '个性化您的 NeoStation 外观',

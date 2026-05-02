@@ -54,6 +54,7 @@ const Map<String, dynamic> appLocaleJa = {
   AppLocale.hideRecentCard: '最近のゲームカード',
   AppLocale.hideRecentCardSubtitle: 'システムグリッドに最近プレイしたカードを表示する',
   AppLocale.recentSystem: '最近',
+  AppLocale.searchSystem: '検索',
   AppLocale.hideRecentSystem: '最近システム',
   AppLocale.hideRecentSystemSubtitle: 'コンソールグリッドに「最近」システムを表示します。',
   AppLocale.palettesSubtitle: 'NeoStationの外観をカスタマイズ',

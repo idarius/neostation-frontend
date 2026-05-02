@@ -57,6 +57,7 @@ const Map<String, dynamic> appLocaleRu = {
   AppLocale.hideRecentCardSubtitle:
       'Показать карточку недавних игр в сетке систем',
   AppLocale.recentSystem: 'Недавние',
+  AppLocale.searchSystem: 'Поиск',
   AppLocale.hideRecentSystem: 'Система "Недавние"',
   AppLocale.hideRecentSystemSubtitle:
       'Показывать систему "Недавние" в сетке консоли.',

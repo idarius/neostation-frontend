@@ -57,6 +57,7 @@ const Map<String, dynamic> appLocaleId = {
   AppLocale.hideRecentCardSubtitle:
       'Tampilkan kartu game terbaru di grid sistem',
   AppLocale.recentSystem: 'Terbaru',
+  AppLocale.searchSystem: 'Cari',
   AppLocale.hideRecentSystem: 'Sistem Terbaru',
   AppLocale.hideRecentSystemSubtitle:
       'Tampilkan sistem "Terbaru" di kisi Konsol.',

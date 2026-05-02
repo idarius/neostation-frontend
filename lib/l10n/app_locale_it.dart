@@ -58,6 +58,7 @@ const Map<String, dynamic> appLocaleIt = {
   AppLocale.hideRecentCardSubtitle:
       'Mostra la scheda dei giochi recenti nella griglia',
   AppLocale.recentSystem: 'Recente',
+  AppLocale.searchSystem: 'Cerca',
   AppLocale.hideRecentSystem: 'Sistema Recente',
   AppLocale.hideRecentSystemSubtitle:
       'Mostra il sistema "Recente" nella griglia Console.',
