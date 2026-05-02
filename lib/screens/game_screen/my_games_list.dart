@@ -620,7 +620,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
     if (_secondaryDisplayState == null || _isNavigatingBack) return;
 
     final systemFolderName =
-        widget.system.folderName == 'all' && game.systemFolderName != null
+        widget.system.isMultiSystemMode && game.systemFolderName != null
         ? game.systemFolderName!
         : widget.system.primaryFolderName;
 
@@ -801,7 +801,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
   }
 
   void _updateBackground(GameModel game) {
-    if (!mounted || widget.system.folderName == 'all') return;
+    if (!mounted || widget.system.isMultiSystemMode) return;
 
     final systemFolderName = widget.system.primaryFolderName;
 
@@ -824,7 +824,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
     } else {
       // Hardware-specific fallback if no game-specific art is resolved.
       final sysId =
-          widget.system.folderName == 'all' && game.systemFolderName != null
+          widget.system.isMultiSystemMode && game.systemFolderName != null
           ? game.systemFolderName!
           : widget.system.id;
       final path =
@@ -863,7 +863,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
       String? systemId;
 
       // In 'Global Library' mode, resolve the game's native hardware system ID.
-      if (widget.system.folderName == 'all' &&
+      if (widget.system.isMultiSystemMode &&
           _selectedGame!.systemFolderName != null) {
         final originalSystem = await SystemRepository.getSystemByFolderName(
           _selectedGame!.systemFolderName!,
@@ -1186,7 +1186,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
     // Resolve targeted hardware system for the launch.
     SystemModel systemToLaunch = widget.system;
 
-    if (widget.system.folderName == 'all' &&
+    if (widget.system.isMultiSystemMode &&
         _selectedGame!.systemFolderName != null) {
       final availableSystems = context
           .read<SqliteConfigProvider>()
@@ -1812,7 +1812,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
   /// Resolves the absolute filesystem path for the targeted game video.
   String _getVideoPath(GameModel game) {
     final systemFolderName =
-        widget.system.folderName == 'all' && game.systemFolderName != null
+        widget.system.isMultiSystemMode && game.systemFolderName != null
         ? game.systemFolderName!
         : widget.system.primaryFolderName;
 
@@ -2391,7 +2391,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
                   selectedIndex: _selectedGameIndex,
                   systemColor: widget.system.colorAsColor,
                   onGameSelected: _selectGame,
-                  isAllMode: widget.system.folderName == 'all',
+                  isAllMode: widget.system.isMultiSystemMode,
                   isNavigatingFast: _isNavigatingFast,
                   onGamepadReactivated: _reactivateGamepadNavigation,
                   onBack: _goBack,
@@ -2478,7 +2478,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
         showVideo: _showVideo,
         videoController: _videoController,
         isVideoLoading: _isVideoLoading,
-        isAllMode: widget.system.folderName == 'all',
+        isAllMode: widget.system.isMultiSystemMode,
         retroAchievementsProvider: _retroAchievementsProvider,
         syncProvider: syncManager.active!,
         localizedDescription: _localizedDescription,
