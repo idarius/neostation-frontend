@@ -2896,6 +2896,13 @@ class _GameListViewState extends State<GameListView>
     }
 
     if (oldWidget.selectedIndex != widget.selectedIndex) {
+      // Detect wrap-around (UP from index 0 → last, DOWN from last → 0).
+      // Animating ~200 cells in one shot looks janky; snap instead.
+      final indexDelta =
+          (widget.selectedIndex - oldWidget.selectedIndex).abs();
+      final isWrap =
+          widget.games.length > 1 && indexDelta > widget.games.length ~/ 2;
+
       // Dynamic duration adjustment based on navigation speed (isNavigatingFast).
       final animationDuration = widget.isNavigatingFast
           ? const Duration(milliseconds: 120)
@@ -2911,19 +2918,29 @@ class _GameListViewState extends State<GameListView>
       final double end = widget.selectedIndex.toDouble();
 
       _selectionController.duration = animationDuration;
-      _selectionAnimation = Tween<double>(
-        begin: begin,
-        end: end,
-      ).animate(CurvedAnimation(parent: _selectionController, curve: curve));
-
-      _selectionController.forward(from: 0);
+      if (isWrap) {
+        // Snap the highlight overlay to the new position without sliding.
+        _selectionAnimation = AlwaysStoppedAnimation(end);
+      } else {
+        _selectionAnimation = Tween<double>(begin: begin, end: end).animate(
+          CurvedAnimation(parent: _selectionController, curve: curve),
+        );
+        _selectionController.forward(from: 0);
+      }
 
       _centeredScrollController.updateSelectedIndex(widget.selectedIndex);
-      _centeredScrollController.scrollToIndex(
-        widget.selectedIndex,
-        duration: scrollDuration,
-        curve: curve,
-      );
+      if (isWrap) {
+        _centeredScrollController.scrollToIndex(
+          widget.selectedIndex,
+          immediate: true,
+        );
+      } else {
+        _centeredScrollController.scrollToIndex(
+          widget.selectedIndex,
+          duration: scrollDuration,
+          curve: curve,
+        );
+      }
     }
   }
 
