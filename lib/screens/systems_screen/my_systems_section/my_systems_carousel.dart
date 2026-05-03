@@ -96,6 +96,9 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
   /// Cache for computed TextPainter widths in the system indicator bar.
   final Map<String, double> _itemWidthCache = {};
 
+  /// Cache for File.existsSync() results keyed by path — avoids sync I/O on every build.
+  final Map<String, bool> _fileExistsCache = {};
+
   /// Tracks the last index for which _updateBackground was scheduled, to avoid
   /// firing redundant postFrameCallbacks on every build.
   int _lastBackgroundBuildIndex = -1;
@@ -1123,7 +1126,8 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
         (system.isGame && customWheelPath != null && customWheelPath.isNotEmpty)
         ? File(customWheelPath)
         : null;
-    final hasWheelFile = wheelFile != null && wheelFile.existsSync();
+    final hasWheelFile = wheelFile != null &&
+        _fileExistsCache.putIfAbsent(customWheelPath!, () => wheelFile.existsSync());
     final theme = Theme.of(context);
 
     return GestureDetector(

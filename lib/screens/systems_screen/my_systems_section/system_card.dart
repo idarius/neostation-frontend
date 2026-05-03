@@ -58,6 +58,11 @@ class _SystemCardState extends State<SystemCard> {
 
   String? _themeBackgroundPath;
   String? _themeLogoPath;
+  String _lastThemeFolder = '';
+
+  /// Cached wheel file and existence check — computed once, not on every build.
+  File? _cachedWheelFile;
+  bool _cachedHasWheelFile = false;
 
   /// Hierarchy for music cover resolution:
   /// Active Instance Art > Cached Resolved Art > Last Known Picture.
@@ -75,16 +80,36 @@ class _SystemCardState extends State<SystemCard> {
     );
     _musicPlayerService.addListener(_handleMusicStateChanged);
     _handleMusicStateChanged();
+    _resolveWheelFile();
+  }
+
+  void _resolveWheelFile() {
+    final customWheelPath = widget.info.customWheelImage;
+    if (widget.info.isGame &&
+        customWheelPath != null &&
+        customWheelPath.isNotEmpty) {
+      _cachedWheelFile = File(customWheelPath);
+      _cachedHasWheelFile = _cachedWheelFile!.existsSync();
+    } else {
+      _cachedWheelFile = null;
+      _cachedHasWheelFile = false;
+    }
   }
 
   @override
   void didUpdateWidget(SystemCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Reset asset caches if the underlying system context changes.
-    if (oldWidget.info.folderName != widget.info.folderName ||
-        oldWidget.info.primaryFolderName != widget.info.primaryFolderName) {
+    final folderChanged =
+        oldWidget.info.folderName != widget.info.folderName ||
+        oldWidget.info.primaryFolderName != widget.info.primaryFolderName;
+    if (folderChanged) {
       _themeBackgroundPath = null;
       _themeLogoPath = null;
+      _lastThemeFolder = '';
+    }
+    if (oldWidget.info.customWheelImage != widget.info.customWheelImage ||
+        folderChanged) {
+      _resolveWheelFile();
     }
   }
 
@@ -165,8 +190,10 @@ class _SystemCardState extends State<SystemCard> {
 
   @override
   Widget build(BuildContext context) {
-    // Re-bind to theme provider to ensure assets refresh on theme changes.
-    context.select<NeoAssetsProvider, String>((p) => p.activeThemeFolder);
+    // Subscribe to theme folder changes — only re-resolve assets when theme actually changes.
+    final themeFolder = context.select<NeoAssetsProvider, String>(
+      (p) => p.activeThemeFolder,
+    );
 
     // Self-aware selection state. `context.select` listens to the selection
     // notifier but only triggers a rebuild of THIS card when its own
@@ -177,7 +204,8 @@ class _SystemCardState extends State<SystemCard> {
       (n) => n.value == widget.index,
     );
 
-    if (!widget.info.isGame) {
+    if (!widget.info.isGame && themeFolder != _lastThemeFolder) {
+      _lastThemeFolder = themeFolder;
       final neoAssets = context.read<NeoAssetsProvider>();
       final folderName =
           widget.info.primaryFolderName ?? widget.info.folderName ?? '';
@@ -194,44 +222,39 @@ class _SystemCardState extends State<SystemCard> {
 
     return MouseRegion(
       cursor: SystemMouseCursors.basic,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return Container(
-            margin: EdgeInsets.all(4.r),
-            clipBehavior: Clip.antiAliasWithSaveLayer,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
-                  blurRadius: 2.r,
-                  offset: Offset(2.0.r, 2.0.r),
-                ),
-              ],
+      child: Container(
+        margin: EdgeInsets.all(4.r),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 2.r,
+              offset: Offset(2.0.r, 2.0.r),
             ),
-            child: InkWell(
-              focusNode: _focusNode,
-              onTap: () {
-                SfxService().playNavSound();
-                widget.onTap?.call();
-              },
-              canRequestFocus: false,
-              focusColor: Colors.transparent,
-              hoverColor: Colors.transparent,
-              highlightColor: Colors.transparent,
-              splashColor: Colors.transparent,
-              child: Stack(
-                key: _contentStackKey,
-                children: [
-                  _buildSystemBackground(),
-                  _buildMainBodyContent(context, true, isSelected),
-                  if (widget.info.isGame)
-                    _buildRecentFooter(context, isSelected),
-                ],
-              ),
-            ),
-          );
-        },
+          ],
+        ),
+        child: InkWell(
+          focusNode: _focusNode,
+          onTap: () {
+            SfxService().playNavSound();
+            widget.onTap?.call();
+          },
+          canRequestFocus: false,
+          focusColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          splashColor: Colors.transparent,
+          child: Stack(
+            key: _contentStackKey,
+            children: [
+              _buildSystemBackground(),
+              _buildMainBodyContent(context, true, isSelected),
+              if (widget.info.isGame) _buildRecentFooter(context, isSelected),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -417,12 +440,6 @@ class _SystemCardState extends State<SystemCard> {
     bool isSelected,
   ) {
     final isGame = widget.info.isGame;
-    final customWheelPath = widget.info.customWheelImage;
-    final wheelFile =
-        (isGame && customWheelPath != null && customWheelPath.isNotEmpty)
-        ? File(customWheelPath)
-        : null;
-
     final resolvedLogoFolder = widget.info.primaryFolderName?.isNotEmpty == true
         ? widget.info.primaryFolderName!
         : (widget.info.folderName?.isNotEmpty == true
@@ -464,10 +481,10 @@ class _SystemCardState extends State<SystemCard> {
             right: 60.r,
             bottom: 45.r,
             child: Center(
-              child: wheelFile == null
+              child: !_cachedHasWheelFile
                   ? const SizedBox.shrink()
                   : Image.file(
-                      wheelFile,
+                      _cachedWheelFile!,
                       fit: BoxFit.contain,
                       filterQuality: FilterQuality.medium,
                       cacheWidth: 512,
