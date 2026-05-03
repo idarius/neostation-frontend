@@ -37,7 +37,9 @@ class UpdateService {
       final currentVersion = await _getAppVersion();
 
       // 2. Poll GitHub API for the latest release metadata.
-      final response = await http.get(Uri.parse(_githubApiUrl));
+      final response = await http
+          .get(Uri.parse(_githubApiUrl))
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode != 200) {
         _log.e('UpdateService: API failure (Status: ${response.statusCode})');

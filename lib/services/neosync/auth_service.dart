@@ -110,15 +110,17 @@ class AuthService extends ChangeNotifier {
       final baseUrl = AppConfig.authBaseUrl;
       _log.i('Attempting registration to: $baseUrl/register');
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': username,
-          'email': email,
-          'password': password,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/register'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'username': username,
+              'email': email,
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
 
       final data = jsonDecode(response.body);
 
@@ -152,11 +154,13 @@ class AuthService extends ChangeNotifier {
       final baseUrl = AppConfig.authBaseUrl;
       _log.i('Attempting login to: $baseUrl/login');
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 30));
 
       final data = jsonDecode(response.body);
 
@@ -213,11 +217,13 @@ class AuthService extends ChangeNotifier {
     if (_busy) return _busyError();
     _busy = true;
     try {
-      final response = await http.post(
-        Uri.parse('${AppConfig.authBaseUrl}/verify-email'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'token': token}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('${AppConfig.authBaseUrl}/verify-email'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'token': token}),
+          )
+          .timeout(const Duration(seconds: 30));
 
       final data = jsonDecode(response.body);
 
@@ -245,11 +251,13 @@ class AuthService extends ChangeNotifier {
     String email,
   ) async {
     try {
-      final response = await http.post(
-        Uri.parse('${AppConfig.authBaseUrl}/check-email-status'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('${AppConfig.authBaseUrl}/check-email-status'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email}),
+          )
+          .timeout(const Duration(seconds: 30));
 
       final data = jsonDecode(response.body);
 
@@ -273,11 +281,13 @@ class AuthService extends ChangeNotifier {
   /// Triggers a resend of the account verification email to the specified address.
   Future<Map<String, dynamic>> resendVerificationEmail(String email) async {
     try {
-      final response = await http.post(
-        Uri.parse('${AppConfig.authBaseUrl}/resend-verification'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('${AppConfig.authBaseUrl}/resend-verification'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email}),
+          )
+          .timeout(const Duration(seconds: 30));
 
       final data = jsonDecode(response.body);
 
@@ -310,13 +320,15 @@ class AuthService extends ChangeNotifier {
         return {'success': false, 'message': 'Not authenticated'};
       }
 
-      final response = await http.get(
-        Uri.parse('${AppConfig.authBaseUrl}/auth/me'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
+      final response = await http
+          .get(
+            Uri.parse('${AppConfig.authBaseUrl}/auth/me'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 30));
 
       final data = jsonDecode(response.body);
 
@@ -345,11 +357,13 @@ class AuthService extends ChangeNotifier {
     if (_busy) return _busyError();
     _busy = true;
     try {
-      final response = await http.post(
-        Uri.parse('${AppConfig.authBaseUrl}/forgot-password'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('${AppConfig.authBaseUrl}/forgot-password'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email}),
+          )
+          .timeout(const Duration(seconds: 30));
 
       final data = jsonDecode(response.body);
 
@@ -382,11 +396,13 @@ class AuthService extends ChangeNotifier {
     if (_busy) return _busyError();
     _busy = true;
     try {
-      final response = await http.post(
-        Uri.parse('${AppConfig.authBaseUrl}/reset-password'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'token': token, 'new_password': newPassword}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('${AppConfig.authBaseUrl}/reset-password'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'token': token, 'new_password': newPassword}),
+          )
+          .timeout(const Duration(seconds: 30));
 
       final data = jsonDecode(response.body);
 

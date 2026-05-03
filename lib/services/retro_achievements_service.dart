@@ -31,10 +31,15 @@ class RetroAchievementsService {
             queryParameters: {'u': effectiveUsername, 'y': effectiveApiKey},
           );
 
-      final response = await http.get(
-        url,
-        headers: {'User-Agent': 'NeoStation/1.0', 'Accept': 'application/json'},
-      );
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'User-Agent': 'NeoStation/1.0',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -91,10 +96,15 @@ class RetroAchievementsService {
         '$_baseUrl/API_GetUserProfile.php',
       ).replace(queryParameters: {'u': username, 'y': _apiKey});
 
-      final response = await http.get(
-        url,
-        headers: {'User-Agent': 'NeoStation/1.0', 'Accept': 'application/json'},
-      );
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'User-Agent': 'NeoStation/1.0',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -139,16 +149,18 @@ class RetroAchievementsService {
         },
       );
 
-      final response = await http.get(
-        url,
-        headers: {
-          'User-Agent': 'NeoStation/1.0',
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-      );
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'User-Agent': 'NeoStation/1.0',
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -206,16 +218,18 @@ class RetroAchievementsService {
         '$_baseUrl/API_GetGameInfoAndUserProgress.php',
       ).replace(queryParameters: queryParams);
 
-      final response = await http.get(
-        url,
-        headers: {
-          'User-Agent': 'NeoStation/1.0',
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-      );
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'User-Agent': 'NeoStation/1.0',
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -254,16 +268,18 @@ class RetroAchievementsService {
             },
           );
 
-      final response = await http.get(
-        url,
-        headers: {
-          'User-Agent': 'NeoStation/1.0',
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-      );
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'User-Agent': 'NeoStation/1.0',
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -298,16 +314,18 @@ class RetroAchievementsService {
         },
       );
 
-      final response = await http.get(
-        url,
-        headers: {
-          'User-Agent': 'NeoStation/1.0',
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-      );
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'User-Agent': 'NeoStation/1.0',
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -336,10 +354,15 @@ class RetroAchievementsService {
         '$_baseUrl/API_GetGameList.php',
       ).replace(queryParameters: {'i': consoleId.toString(), 'y': _apiKey});
 
-      final response = await http.get(
-        url,
-        headers: {'User-Agent': 'NeoStation/1.0', 'Accept': 'application/json'},
-      );
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'User-Agent': 'NeoStation/1.0',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

@@ -81,11 +81,9 @@ class BillingService extends ChangeNotifier {
         'email': email,
       };
 
-      final response = await http.post(
-        uri,
-        headers: headers,
-        body: jsonEncode(body),
-      );
+      final response = await http
+          .post(uri, headers: headers, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 30));
 
       final data = jsonDecode(response.body);
 
@@ -124,11 +122,9 @@ class BillingService extends ChangeNotifier {
 
       final body = {'user_id': userId};
 
-      final response = await http.post(
-        uri,
-        headers: headers,
-        body: jsonEncode(body),
-      );
+      final response = await http
+          .post(uri, headers: headers, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return {'success': true};
@@ -160,7 +156,9 @@ class BillingService extends ChangeNotifier {
       final baseUrl = AppConfig.billingBaseUrl;
       final uri = Uri.parse('$baseUrl/plans');
 
-      final response = await http.get(uri, headers: headers);
+      final response = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

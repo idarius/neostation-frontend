@@ -161,7 +161,9 @@ class NeoAssetsService {
     if (_cachedThemes != null) return _cachedThemes!;
 
     try {
-      final response = await http.get(Uri.parse(_manifestUrl));
+      final response = await http
+          .get(Uri.parse(_manifestUrl))
+          .timeout(const Duration(seconds: 30));
       if (response.statusCode != 200) {
         _log.w(
           'Failed to fetch neostation-assets manifest: ${response.statusCode}',
@@ -246,7 +248,9 @@ class NeoAssetsService {
       if (await file.exists()) return localPath;
 
       await file.parent.create(recursive: true);
-      final response = await http.get(Uri.parse(url));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 30));
       if (response.statusCode != 200) return null;
 
       await file.writeAsBytes(response.bodyBytes);
@@ -327,9 +331,9 @@ class NeoAssetsService {
     String themeFolder,
   ) async {
     try {
-      final response = await http.get(
-        Uri.parse(getThemeMetadataUrl(themeFolder)),
-      );
+      final response = await http
+          .get(Uri.parse(getThemeMetadataUrl(themeFolder)))
+          .timeout(const Duration(seconds: 30));
       if (response.statusCode != 200) {
         _log.w(
           'Failed to fetch theme metadata for "$themeFolder": ${response.statusCode}',

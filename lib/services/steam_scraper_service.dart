@@ -92,7 +92,7 @@ class SteamScraperService {
   ) async {
     try {
       final url = Uri.parse('$_steamApiUrl?appids=$appId&l=$lang');
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(const Duration(seconds: 30));
 
       if (response.statusCode != 200) {
         _log.e(
@@ -215,7 +215,9 @@ class SteamScraperService {
       if (await file.exists()) return;
 
       await file.parent.create(recursive: true);
-      final response = await http.get(Uri.parse(url));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         await file.writeAsBytes(response.bodyBytes);

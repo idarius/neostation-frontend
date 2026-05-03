@@ -67,11 +67,9 @@ class NeoSyncService extends ChangeNotifier {
         requestBody['local_modified_at_timestamp'] = timestampMillis;
       }
 
-      final response = await http.post(
-        uri,
-        headers: headers,
-        body: jsonEncode(requestBody),
-      );
+      final response = await http
+          .post(uri, headers: headers, body: jsonEncode(requestBody))
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -291,7 +289,9 @@ class NeoSyncService extends ChangeNotifier {
       final baseUrl = AppConfig.neoSyncBaseUrl;
       final uri = Uri.parse('$baseUrl/api/v1/files');
 
-      final response = await http.get(uri, headers: headers);
+      final response = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -329,7 +329,9 @@ class NeoSyncService extends ChangeNotifier {
       final baseUrl = AppConfig.neoSyncBaseUrl;
       final uri = Uri.parse('$baseUrl/api/v1/files/$fileId');
 
-      final response = await http.delete(uri, headers: headers);
+      final response = await http
+          .delete(uri, headers: headers)
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         return {'success': true};
@@ -361,7 +363,9 @@ class NeoSyncService extends ChangeNotifier {
       final baseUrl = AppConfig.neoSyncBaseUrl;
       final uri = Uri.parse('$baseUrl/api/v1/quota');
 
-      final response = await http.get(uri, headers: headers);
+      final response = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -401,11 +405,9 @@ class NeoSyncService extends ChangeNotifier {
 
       final requestBody = {'file_id': fileId};
 
-      final response = await http.post(
-        uri,
-        headers: headers,
-        body: jsonEncode(requestBody),
-      );
+      final response = await http
+          .post(uri, headers: headers, body: jsonEncode(requestBody))
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -415,7 +417,9 @@ class NeoSyncService extends ChangeNotifier {
           throw Exception('No download URL in response');
         }
 
-        final fileResponse = await http.get(Uri.parse(downloadUrl));
+        final fileResponse = await http
+            .get(Uri.parse(downloadUrl))
+            .timeout(const Duration(seconds: 30));
 
         if (fileResponse.statusCode == 200) {
           return {'success': true, 'data': fileResponse.bodyBytes};
