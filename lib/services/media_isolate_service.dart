@@ -48,7 +48,10 @@ class MediaResponse {
 }
 
 /// Enumeration of supported media types for integrity validation.
-enum MediaType { video, screenshot }
+///
+/// `generic` is used for plain existence checks where the caller wants
+/// `File.existsSync()` semantics with no minimum-size threshold.
+enum MediaType { video, screenshot, generic }
 
 /// Service that coordinates a background Isolate for non-blocking file system checks.
 ///
@@ -233,6 +236,7 @@ void _processMediaRequest(MediaRequest request) {
         } else if (request.type == MediaType.screenshot && fileSize < 100) {
           exists = false;
         }
+        // MediaType.generic: no size threshold — pure existsSync semantics.
       } catch (e) {
         exists = false;
       }

@@ -251,6 +251,54 @@ class MediaCacheService {
     return results;
   }
 
+  /// Batch-checks the existence of an arbitrary list of file paths.
+  ///
+  /// Designed for hot UI paths (per-scroll-step background and secondary
+  /// display sync) that previously did multiple synchronous
+  /// `File.existsSync()` on the main thread. Cached results within the
+  /// 30 s TTL bypass the isolate; uncached paths are batched into a
+  /// single `MediaIsolateService.checkMultipleFiles` call.
+  ///
+  /// Empty or whitespace-only paths are mapped to `false` without any
+  /// isolate traffic.
+  Future<Map<String, bool>> checkPathsExistence(List<String> paths) async {
+    final result = <String, bool>{};
+    final filesToCheck = <String, MediaType>{};
+
+    for (final path in paths) {
+      if (path.trim().isEmpty) {
+        result[path] = false;
+        continue;
+      }
+
+      final cached = _getCachedResult(path);
+      if (cached != null && !cached.isExpired) {
+        result[path] = cached.exists;
+        _updateAccessOrder(path);
+      } else {
+        filesToCheck[path] = MediaType.generic;
+      }
+    }
+
+    if (filesToCheck.isNotEmpty) {
+      final isolateResults = await MediaIsolateService.instance
+          .checkMultipleFiles(filesToCheck);
+
+      for (final entry in isolateResults.entries) {
+        final cacheEntry = MediaCacheEntry(
+          exists: entry.value.exists,
+          fileSize: entry.value.fileSize,
+          timestamp: DateTime.now(),
+          error: entry.value.error,
+        );
+        _updateCache(entry.key, cacheEntry);
+        result[entry.key] = entry.value.exists;
+      }
+    }
+
+    return result;
+  }
+
   MediaCacheEntry? _getCachedResult(String filePath) {
     return _cache[filePath];
   }
