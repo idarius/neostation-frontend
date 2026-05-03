@@ -269,29 +269,60 @@ class SmbSyncProvider extends ChangeNotifier implements ISyncProvider {
     if (!isAuthenticated) return const [];
     try {
       final cfg = _config!;
-      final searchPath = gameId != null
-          ? (cfg.subdirectory.isEmpty
-              ? gameId
-              : '${cfg.subdirectory}/$gameId')
-          : cfg.subdirectory;
+      if (gameId != null) {
+        final searchPath = cfg.subdirectory.isEmpty
+            ? gameId
+            : '${cfg.subdirectory}/$gameId';
+        final entries = await _connection!.listDirectory(searchPath);
+        return entries.where((e) => !e.isDir).map((e) => SyncFile(
+              id: '$gameId/${e.name}',
+              fileName: e.name,
+              fileSize: e.size,
+              uploadedAt: e.modifiedAt,
+              modifiedAt: e.modifiedAt,
+              gameId: gameId,
+            )).toList();
+      }
+      return _recursiveListSaves(cfg.subdirectory, '');
+    } on SmbException {
+      return const [];
+    }
+  }
 
-      final entries = await _connection!.listDirectory(searchPath);
-      final files = <SyncFile>[];
-      for (final e in entries) {
-        if (e.isDir) continue;
+  /// Recursively walks [basePath]/[relativePath] and returns every regular
+  /// file found, with `id` set to the path relative to [basePath].
+  Future<List<SyncFile>> _recursiveListSaves(
+    String basePath,
+    String relativePath,
+  ) async {
+    final fullPath = relativePath.isEmpty
+        ? basePath
+        : (basePath.isEmpty ? relativePath : '$basePath/$relativePath');
+    final entries = await _connection!.listDirectory(fullPath);
+    final files = <SyncFile>[];
+    for (final e in entries) {
+      final entryRelative = relativePath.isEmpty
+          ? e.name
+          : '$relativePath/${e.name}';
+      if (e.isDir) {
+        files.addAll(await _recursiveListSaves(basePath, entryRelative));
+      } else {
+        // Treat the first path segment as the gameId for SyncFile metadata.
+        final firstSlash = entryRelative.indexOf('/');
+        final gameId = firstSlash > 0
+            ? entryRelative.substring(0, firstSlash)
+            : '';
         files.add(SyncFile(
-          id: gameId != null ? '$gameId/${e.name}' : e.name,
+          id: entryRelative,
           fileName: e.name,
           fileSize: e.size,
           uploadedAt: e.modifiedAt,
           modifiedAt: e.modifiedAt,
-          gameId: gameId,
+          gameId: gameId.isEmpty ? null : gameId,
         ));
       }
-      return files;
-    } on SmbException {
-      return const [];
     }
+    return files;
   }
 
   @override
