@@ -30,6 +30,7 @@ import android.view.Display
 import com.hcoderlee.subscreen.sub_screen.MultiDisplayFlutterActivity
 import com.hcoderlee.subscreen.sub_screen.FlutterPresentation
 import androidx.core.content.FileProvider
+import com.neogamelab.neostation.smb.SmbClientPlugin
 
 class MainActivity: MultiDisplayFlutterActivity(), GamepadsCompatibleActivity {
     private val CHANNEL = "com.neogamelab.neostation/game"
@@ -270,6 +271,9 @@ class MainActivity: MultiDisplayFlutterActivity(), GamepadsCompatibleActivity {
                 else -> result.notImplemented()
             }
         }
+
+        // SMB plugin (JCIFS-NG backed method channel fr.idarius.idastation/smb)
+        flutterEngine.plugins.add(SmbClientPlugin())
     }
 
     private fun setSecondaryDisplayVisible(visible: Boolean) {
