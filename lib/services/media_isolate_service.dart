@@ -147,7 +147,6 @@ class MediaIsolateService {
         const Duration(seconds: 10),
         onTimeout: () {
           responsePort.close();
-          _pendingRequests.remove(id);
           return MediaResponse(
             id: id,
             exists: false,
@@ -156,16 +155,36 @@ class MediaIsolateService {
         },
       );
 
+      // Complete the parallel _pendingRequests completer so any code that
+      // awaits it (or the outer listener fallback at _mainReceivePort) does
+      // not leak the Completer<MediaResponse> on timeout/early return.
+      final pending = _pendingRequests.remove(id);
+      if (pending != null && !pending.isCompleted) {
+        pending.complete(result);
+      }
       return result;
     } catch (e) {
-      _pendingRequests.remove(id);
       responsePort.close();
+
+      final pending = _pendingRequests.remove(id);
+      if (pending != null && !pending.isCompleted) {
+        pending.complete(
+          MediaResponse(
+            id: id,
+            exists: false,
+            error: 'Error verifying file: $e',
+          ),
+        );
+      }
 
       return MediaResponse(
         id: id,
         exists: false,
         error: 'Error verifying file: $e',
       );
+    } finally {
+      // Defensive: any path leaving the function must release the map slot.
+      _pendingRequests.remove(id);
     }
   }
 
