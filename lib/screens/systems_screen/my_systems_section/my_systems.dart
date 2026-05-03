@@ -1060,7 +1060,6 @@ class _SystemCardGridViewState extends State<SystemCardGridView> {
     _secondaryDisplayState?.removeListener(_onSecondaryStateChanged);
     _cleanupGamepad();
     _scrollController.dispose();
-    _secondaryDisplayState?.dispose();
     super.dispose();
   }
 

@@ -145,7 +145,6 @@ class _SecondaryScreenState extends State<SecondaryScreen> {
   @override
   void dispose() {
     _secondaryDisplayState?.removeListener(_onStateChanged);
-    _secondaryDisplayState?.dispose();
     _stopVideo();
     super.dispose();
   }

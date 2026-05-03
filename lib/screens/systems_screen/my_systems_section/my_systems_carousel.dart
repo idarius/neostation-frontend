@@ -161,7 +161,6 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
     _secondaryDisplayState?.removeListener(_onSecondaryStateChanged);
     _cleanupGamepad();
     _scrollController.dispose();
-    _secondaryDisplayState?.dispose();
     super.dispose();
   }
 

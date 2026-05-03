@@ -72,7 +72,6 @@ class _SetupWizardState extends State<SetupWizard> {
   @override
   void dispose() {
     _gamepadNav?.dispose();
-    _secondaryDisplayState?.dispose();
     super.dispose();
   }
 
