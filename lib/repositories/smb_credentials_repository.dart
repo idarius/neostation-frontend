@@ -5,7 +5,8 @@ import 'package:neostation/models/smb_credentials_model.dart';
 /// Repository for SMB credentials.
 ///
 /// Splits storage between SQLite (non-secret config) and flutter_secure_storage
-/// (password, encrypted via Android Keystore).
+/// (password, encrypted via Android EncryptedSharedPreferences which is
+/// itself sealed with a key from the Android Keystore).
 class SmbCredentialsRepository {
   static const _passwordKey = 'smb_password';
 

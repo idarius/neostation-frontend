@@ -325,8 +325,14 @@ class _SmbSyncContentState extends State<SmbSyncContent> {
                   _field(AppLocale.smbSyncFormSubdir, _subdirCtrl,
                       hint: 'idastation_saves'),
                   _field(AppLocale.smbSyncFormUser, _userCtrl),
-                  _field(AppLocale.smbSyncFormPassword, _passCtrl,
-                      obscure: true),
+                  _field(
+                    AppLocale.smbSyncFormPassword,
+                    _passCtrl,
+                    obscure: true,
+                    hint: _provider?.hasStoredPassword == true
+                        ? '••••••• (laisser vide pour conserver)'
+                        : null,
+                  ),
                   _field(AppLocale.smbSyncFormDomain, _domainCtrl),
                   SizedBox(height: 8.r),
                   Wrap(

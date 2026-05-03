@@ -128,7 +128,18 @@ class SmbClientPlugin : FlutterPlugin, MethodCallHandler {
 
         Thread {
             try {
-                val dir = SmbFile(conn.rootUrl + sanitize(path), conn.context)
+                // JCIFS-NG requires a trailing slash on directory URLs; without
+                // it, SmbFile may interpret the path as a file and dir.exists()
+                // / dir.isDirectory return false even when the directory does
+                // exist. Always normalize to a directory URL here.
+                val sanitizedPath = sanitize(path).let {
+                    when {
+                        it.isEmpty() -> ""
+                        it.endsWith("/") -> it
+                        else -> "$it/"
+                    }
+                }
+                val dir = SmbFile(conn.rootUrl + sanitizedPath, conn.context)
                 if (!dir.exists() || !dir.isDirectory) {
                     runOnMain { result.success(emptyList<Map<String, Any>>()) }
                     return@Thread

@@ -77,12 +77,20 @@ class SmbSyncProvider extends ChangeNotifier implements ISyncProvider {
 
   @override
   Future<void> initialize() async {
+    // ignore: avoid_print
+    print('[SMB] initialize() — loading config from SQLite...');
     final cfg = await _repository.loadConfig();
+    // ignore: avoid_print
+    print('[SMB] config loaded: ${cfg == null ? "null" : "host=${cfg.host} share=${cfg.share} user=${cfg.username}"}');
     if (cfg == null) {
       _status = SyncProviderStatus.disconnected;
       return;
     }
+    // ignore: avoid_print
+    print('[SMB] loading password from secure_storage...');
     final pw = await _repository.loadPassword();
+    // ignore: avoid_print
+    print('[SMB] password loaded: ${pw == null ? "null (BUG)" : "OK (${pw.length} chars)"}');
     if (pw == null) {
       // Config exists but no password (rare: secure storage cleared
       // independently). Treat as needing login.
@@ -98,7 +106,11 @@ class SmbSyncProvider extends ChangeNotifier implements ISyncProvider {
       _status = SyncProviderStatus.disconnected;
       return;
     }
-    await _doConnect();
+    // ignore: avoid_print
+    print('[SMB] reconnecting with stored credentials...');
+    final r = await _doConnect();
+    // ignore: avoid_print
+    print('[SMB] _doConnect result: success=${r.success} message=${r.message}');
   }
 
   @override
@@ -129,7 +141,18 @@ class SmbSyncProvider extends ChangeNotifier implements ISyncProvider {
     notifyListeners();
   }
 
+  /// True iff a non-empty password is currently held in memory (typically
+  /// loaded at startup from secure storage). Used by the UI form to detect
+  /// when the password field can be left empty (= keep the saved one).
+  bool get hasStoredPassword => _password != null && _password!.isNotEmpty;
+
   /// Persists new credentials and reconnects without app restart.
+  ///
+  /// If [password] is empty AND a stored password is already in memory, the
+  /// stored password is preserved (the UI can leave the password field blank
+  /// to mean "keep my saved password"). If [password] is non-empty, it
+  /// replaces the stored one.
+  ///
   /// Returns the result of the new connection attempt.
   Future<SyncResult> updateCredentials({
     required SmbCredentialsModel config,
@@ -138,11 +161,15 @@ class SmbSyncProvider extends ChangeNotifier implements ISyncProvider {
     // Disconnect existing.
     _disconnectQuietly();
 
+    // Resolve effective password: keep the stored one if the form was empty.
+    final effectivePassword =
+        password.isEmpty && hasStoredPassword ? _password! : password;
+
     // Persist new (atomic from caller's perspective — both halves saved
     // before reconnect).
-    await _repository.save(config: config, password: password);
+    await _repository.save(config: config, password: effectivePassword);
     _config = config;
-    _password = password;
+    _password = effectivePassword;
 
     if (!config.enabled) {
       _status = SyncProviderStatus.disconnected;
