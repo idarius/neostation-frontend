@@ -125,89 +125,89 @@ class _GameDetailsGameInfoTabState extends State<GameDetailsGameInfoTab> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header Section: Title and metadata summary pills.
-            Padding(
-              padding: EdgeInsets.fromLTRB(8.r, 8.r, 8.r, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+                Padding(
+                  padding: EdgeInsets.fromLTRB(8.r, 8.r, 8.r, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        size: 13.r,
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: Theme.of(context).colorScheme.onSurface,
+                            size: 13.r,
+                          ),
+                          SizedBox(width: 6.r),
+                          Text(
+                            AppLocale.gameInfo.getString(context),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 12.r,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                          if (!showScrapeView &&
+                              !widget.isScrapingGame &&
+                              (widget.game.developer.isNotEmpty ||
+                                  widget.game.players.isNotEmpty ||
+                                  widget.game.year.isNotEmpty))
+                            Row(
+                              children: [
+                                if (widget.game.developer.isNotEmpty)
+                                  _InfoPill(
+                                    icon: Icons.business,
+                                    text: widget.game.developer,
+                                  ),
+                                if (widget.game.players.isNotEmpty)
+                                  _InfoPill(
+                                    icon: Icons.people,
+                                    text: widget.game.players,
+                                  ),
+                                if (widget.game.year.isNotEmpty)
+                                  _InfoPill(
+                                    icon: Icons.calendar_today,
+                                    text:
+                                        RegExp(
+                                          r'\d{4}',
+                                        ).stringMatch(widget.game.year) ??
+                                        widget.game.year,
+                                  ),
+                              ],
+                            ),
+                        ],
                       ),
-                      SizedBox(width: 6.r),
-                      Text(
-                        AppLocale.gameInfo.getString(context),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 12.r,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Divider(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.1),
+                        height: 10.r,
                       ),
-                      const Spacer(),
-                      if (!showScrapeView &&
-                          !widget.isScrapingGame &&
-                          (widget.game.developer.isNotEmpty ||
-                              widget.game.players.isNotEmpty ||
-                              widget.game.year.isNotEmpty))
-                        Row(
-                          children: [
-                            if (widget.game.developer.isNotEmpty)
-                              _InfoPill(
-                                icon: Icons.business,
-                                text: widget.game.developer,
-                              ),
-                            if (widget.game.players.isNotEmpty)
-                              _InfoPill(
-                                icon: Icons.people,
-                                text: widget.game.players,
-                              ),
-                            if (widget.game.year.isNotEmpty)
-                              _InfoPill(
-                                icon: Icons.calendar_today,
-                                text:
-                                    RegExp(
-                                      r'\d{4}',
-                                    ).stringMatch(widget.game.year) ??
-                                    widget.game.year,
-                              ),
-                          ],
-                        ),
                     ],
                   ),
-                  Divider(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.1),
-                    height: 10.r,
-                  ),
-                ],
-              ),
-            ),
-
-            // Content Section: Dynamic switching between scraping, missing, and resolved states.
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.all(8.r),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    if (widget.isScrapingGame &&
-                        !widget.isSecondaryScreenActive) {
-                      return _buildScrapingProgressView();
-                    }
-
-                    return showScrapeView
-                        ? _buildNonScrapedView()
-                        : _buildScrapedView(description, screenshotPath);
-                  },
                 ),
-              ),
+
+                // Content Section: Dynamic switching between scraping, missing, and resolved states.
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.all(8.r),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (widget.isScrapingGame &&
+                            !widget.isSecondaryScreenActive) {
+                          return _buildScrapingProgressView();
+                        }
+
+                        return showScrapeView
+                            ? _buildNonScrapedView()
+                            : _buildScrapedView(description, screenshotPath);
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
         ),
       ),
     );
@@ -277,58 +277,60 @@ class _GameDetailsGameInfoTabState extends State<GameDetailsGameInfoTab> {
   /// Renders a placeholder view for games missing local metadata assets.
   Widget _buildNonScrapedView() {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            AppLocale.incompleteMetadata.getString(context),
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 20.r,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 12.r),
-          SizedBox(
-            width: 300.r,
-            child: Text(
-              AppLocale.scrapeToDownload.getString(context),
-              textAlign: TextAlign.center,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              AppLocale.incompleteMetadata.getString(context),
               style: TextStyle(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.7),
-                fontSize: 12.r,
-                height: 1.5,
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 16.r,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ),
-          SizedBox(height: 32.r),
-          FutureBuilder<bool>(
-            future: ScreenScraperService.hasSavedCredentials(),
-            builder: (context, snapshot) {
-              if (widget.system.folderName == 'android-apps') {
-                return Text(
-                  AppLocale.scrapingUnavailableAndroid.getString(context),
-                  style: TextStyle(fontSize: 10.r, color: Colors.grey),
-                );
-              }
-              final hasCredentials = snapshot.data ?? false;
-              if (!hasCredentials) {
-                return Text(
-                  AppLocale.loginToScrape.getString(context),
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                    fontSize: 10.r,
-                    fontStyle: FontStyle.italic,
-                  ),
-                );
-              }
+            SizedBox(height: 8.r),
+            SizedBox(
+              width: 300.r,
+              child: Text(
+                AppLocale.scrapeToDownload.getString(context),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
+                  fontSize: 12.r,
+                  height: 1.5,
+                ),
+              ),
+            ),
+            SizedBox(height: 16.r),
+            FutureBuilder<bool>(
+              future: ScreenScraperService.hasSavedCredentials(),
+              builder: (context, snapshot) {
+                if (widget.system.folderName == 'android-apps') {
+                  return Text(
+                    AppLocale.scrapingUnavailableAndroid.getString(context),
+                    style: TextStyle(fontSize: 10.r, color: Colors.grey),
+                  );
+                }
+                final hasCredentials = snapshot.data ?? false;
+                if (!hasCredentials) {
+                  return Text(
+                    AppLocale.loginToScrape.getString(context),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                      fontSize: 10.r,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  );
+                }
 
-              return const SizedBox.shrink();
-            },
-          ),
-        ],
+                return const SizedBox.shrink();
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
