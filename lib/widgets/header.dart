@@ -34,6 +34,7 @@ class HeaderState extends State<Header> {
   bool _isTelevision = false;
   String _currentTime = '';
   Timer? _timeUpdateTimer;
+  Timer? _initialDelayTimer;
   late final List<FocusNode> _tabFocusNodes;
 
   @override
@@ -52,6 +53,7 @@ class HeaderState extends State<Header> {
 
   @override
   void dispose() {
+    _initialDelayTimer?.cancel();
     _timeUpdateTimer?.cancel();
     for (final node in _tabFocusNodes) {
       node.dispose();
@@ -75,19 +77,18 @@ class HeaderState extends State<Header> {
     final now = DateTime.now();
     final secondsUntilNextMinute = 60 - now.second;
 
-    // Create initial timer that fires at the start of the next minute
-    Future.delayed(Duration(seconds: secondsUntilNextMinute), () {
-      if (mounted) {
-        _updateTime();
-        // Then create a periodic timer every 60 seconds
-        _timeUpdateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
-          if (mounted) {
-            _updateTime();
-          } else {
-            timer.cancel();
-          }
-        });
-      }
+    // Cancellable initial timer — disposed in dispose() so it doesn't
+    // fire _updateTime() against an unmounted state.
+    _initialDelayTimer = Timer(Duration(seconds: secondsUntilNextMinute), () {
+      if (!mounted) return;
+      _updateTime();
+      _timeUpdateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+        if (mounted) {
+          _updateTime();
+        } else {
+          timer.cancel();
+        }
+      });
     });
   }
 
