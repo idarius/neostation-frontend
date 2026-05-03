@@ -21,7 +21,13 @@ import '../../app_screen.dart';
 import 'package:neostation/utils/centered_scroll_controller.dart';
 
 class NeoSyncContent extends StatefulWidget {
-  const NeoSyncContent({super.key});
+  /// Called when the user wants to leave this content screen (gamepad B,
+  /// keyboard Esc, or the on-screen back arrow). Optional — when null,
+  /// pressing back outside dialog mode is a no-op (legacy upstream
+  /// behavior). Fork-private addition.
+  final VoidCallback? onBack;
+
+  const NeoSyncContent({super.key, this.onBack});
 
   @override
   NeoSyncContentState createState() => NeoSyncContentState();
@@ -61,7 +67,11 @@ class NeoSyncContentState extends State<NeoSyncContent>
   void _handleDialogBack() {
     if (_isDialogMode) {
       Navigator.of(context).pop(false);
+      return;
     }
+    // Fork-private: when an onBack callback is provided (e.g. from
+    // NeoSyncTab to return to the 4-card provider selector), call it.
+    widget.onBack?.call();
   }
 
   // Métodos para billing

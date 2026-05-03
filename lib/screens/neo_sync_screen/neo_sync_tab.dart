@@ -111,7 +111,14 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_selectedProviderId == 'neosync') return const NeoSyncContent();
+    if (_selectedProviderId == 'neosync') {
+      return NeoSyncContent(
+        onBack: () {
+          setState(() => _selectedProviderId = null);
+          _pushMyLayer();
+        },
+      );
+    }
     if (_selectedProviderId == 'smb') {
       return SmbSyncContent(
         onBack: () {
