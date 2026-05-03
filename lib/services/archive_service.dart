@@ -13,6 +13,17 @@ import 'package:neostation/services/logger_service.dart';
 class ArchiveService {
   static final _log = LoggerService.instance;
 
+  /// Guards against zip-slip: refuses paths that, after canonicalization,
+  /// land outside [rootDir]. A crafted archive entry like
+  /// `../../../home/user/.bashrc` would otherwise let extraction overwrite
+  /// arbitrary user files.
+  static bool _isWithinRoot(String rootDir, String candidatePath) {
+    final canonicalRoot = path.canonicalize(rootDir);
+    final canonicalCandidate = path.canonicalize(candidatePath);
+    return canonicalCandidate == canonicalRoot ||
+        path.isWithin(canonicalRoot, canonicalCandidate);
+  }
+
   /// Extracts a ROM from a ZIP or 7z archive into a temporary system-specific directory.
   ///
   /// The extraction target is located at `user-data/temp/[systemFolderName]/[archiveName]`.
@@ -91,6 +102,18 @@ class ArchiveService {
         final file = archive.getFile(largestIndex);
         final outPath = path.join(tempDirPath, file.name);
 
+        if (!_isWithinRoot(tempDirPath, outPath)) {
+          _log.w(
+            'Refusing to extract 7z entry outside temp dir: '
+            'entry="${file.name}" target="$outPath" root="$tempDirPath"',
+          );
+          archive.dispose();
+          if (isTempFile) {
+            await File(pathToExtract).delete();
+          }
+          return null;
+        }
+
         final outFile = File(outPath);
         if (!await outFile.parent.exists()) {
           await outFile.parent.create(recursive: true);
@@ -133,6 +156,16 @@ class ArchiveService {
 
       if (largestFile != null) {
         final filePath = path.join(tempDirPath, largestFile.name);
+
+        if (!_isWithinRoot(tempDirPath, filePath)) {
+          _log.w(
+            'Refusing to extract ZIP entry outside temp dir: '
+            'entry="${largestFile.name}" target="$filePath" '
+            'root="$tempDirPath"',
+          );
+          return null;
+        }
+
         final outFile = File(filePath);
         await outFile.create(recursive: true);
 
