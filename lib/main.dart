@@ -12,7 +12,6 @@ import 'package:neostation/services/neosync/neo_sync_service.dart';
 import 'package:neostation/services/neosync/billing_service.dart';
 import 'package:neostation/sync/sync_manager.dart';
 import 'package:neostation/sync/providers/neo_sync_adapter.dart';
-import 'package:neostation/sync/providers/local_storage_provider.dart';
 import 'package:neostation/services/notification_service.dart';
 import 'package:neostation/services/game_service.dart';
 import 'package:neostation/repositories/config_repository.dart';
@@ -292,12 +291,6 @@ void main() async {
 
   final neoSyncAdapter = NeoSyncAdapter(neoSyncProvider);
   SyncManager.instance.register(neoSyncAdapter);
-
-  SyncManager.instance.register(
-    LocalStorageProvider(
-      targetPath: sqliteConfigProvider.config.localSyncPath,
-    ),
-  );
 
   SyncManager.instance.restoreActive(
     sqliteConfigProvider.config.activeSyncProvider,
