@@ -95,15 +95,33 @@ class UpdateService {
     }
   }
 
-  /// Performs a semantic comparison between two version strings.
+  /// Extracts a leading integer from a version segment, tolerating
+  /// pre-release / build suffixes ("3-rc1" → 3, "5+build7" → 5, "" → 0).
+  static int _parseVersionSegment(String raw) {
+    final m = RegExp(r'^(\d+)').firstMatch(raw.trim());
+    if (m == null) return 0;
+    return int.tryParse(m.group(1)!) ?? 0;
+  }
+
+  /// Performs a semantic-ish comparison between two version strings.
+  ///
+  /// Tolerant to non-numeric tails (`-rc1`, `+build7`, etc.) which would
+  /// otherwise crash `int.parse(...)` and silently disable update checks.
+  /// Missing trailing segments compare as 0.
   static bool _isNewerVersion(String current, String latest) {
     try {
-      final currentParts = current.split('.').map(int.parse).toList();
-      final latestParts = latest.split('.').map(int.parse).toList();
+      final currentParts = current.split('.');
+      final latestParts = latest.split('.');
 
       for (int i = 0; i < 3; i++) {
-        if (latestParts[i] > currentParts[i]) return true;
-        if (latestParts[i] < currentParts[i]) return false;
+        final c = i < currentParts.length
+            ? _parseVersionSegment(currentParts[i])
+            : 0;
+        final l = i < latestParts.length
+            ? _parseVersionSegment(latestParts[i])
+            : 0;
+        if (l > c) return true;
+        if (l < c) return false;
       }
 
       return false; // Versions are identical or current is newer.
