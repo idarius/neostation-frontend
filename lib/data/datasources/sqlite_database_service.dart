@@ -375,13 +375,18 @@ class SqliteDatabaseService {
   }
 
   /// Retrieves the current ROM count for all detected systems.
+  ///
+  /// One aggregate SQL query (`SELECT app_system_id, COUNT(*) GROUP BY ...`)
+  /// is issued instead of one full row fetch per system; large libraries
+  /// (3+ k ROMs across 10+ systems) drop from N+1 round-trips with full
+  /// payload reads to a single index scan.
   static Future<Map<String, int>> getRomCounts() async {
     try {
       final detectedSystems = await SqliteService.getUserDetectedSystems();
+      final countsById = await SqliteService.getRomCountsBySystemId();
       final counts = <String, int>{};
       for (final system in detectedSystems) {
-        final games = await SqliteService.getGamesBySystem(system.id!);
-        counts[system.folderName] = games.length;
+        counts[system.folderName] = countsById[system.id] ?? 0;
       }
       return counts;
     } catch (e) {

@@ -2379,7 +2379,11 @@ class SqliteService {
   /// Returns the (single-row) SMB credentials, or null if not configured.
   static Future<Map<String, dynamic>?> getSmbCredentials() async {
     final db = await instance.database;
-    final rows = await db.query('smb_credentials', where: 'id = ?', whereArgs: [1]);
+    final rows = await db.query(
+      'smb_credentials',
+      where: 'id = ?',
+      whereArgs: [1],
+    );
     if (rows.isEmpty) return null;
     return rows.first;
   }
@@ -2395,19 +2399,15 @@ class SqliteService {
     bool enabled = true,
   }) async {
     final db = await instance.database;
-    await db.insert(
-      'smb_credentials',
-      {
-        'id': 1,
-        'host': host,
-        'share': share,
-        'subdirectory': subdirectory,
-        'username': username,
-        'domain': domain,
-        'enabled': enabled ? 1 : 0,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('smb_credentials', {
+      'id': 1,
+      'host': host,
+      'share': share,
+      'subdirectory': subdirectory,
+      'username': username,
+      'domain': domain,
+      'enabled': enabled ? 1 : 0,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   /// Clears the SMB credentials row. Password also needs to be cleared via
@@ -2869,6 +2869,26 @@ class SqliteService {
     );
     if (results.isEmpty) return 0;
     return int.tryParse(results.first['count']?.toString() ?? '0') ?? 0;
+  }
+
+  /// Returns ROM counts grouped by `app_system_id` in a single SQL pass.
+  ///
+  /// Replaces the per-system N+1 fetch (`getGamesBySystem` × N just to read
+  /// `.length`) with one aggregate query. Systems with zero ROMs are absent
+  /// from the result map; callers should default to 0.
+  static Future<Map<String, int>> getRomCountsBySystemId() async {
+    final db = await instance.database;
+    final rows = await db.rawQuery(
+      'SELECT app_system_id, COUNT(*) AS count '
+      'FROM user_roms GROUP BY app_system_id',
+    );
+    final out = <String, int>{};
+    for (final row in rows) {
+      final id = row['app_system_id']?.toString();
+      if (id == null) continue;
+      out[id] = int.tryParse(row['count']?.toString() ?? '0') ?? 0;
+    }
+    return out;
   }
 
   /// Retrieves all valid physical folder names (primary and aliases) for a system.
