@@ -70,6 +70,7 @@ class ThemeProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -159,5 +160,17 @@ class ThemeProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// Resolves the absolute path to the main logo asset for the current theme.
   String getCurrentLogoPath() {
     return AppPalettes.getLogoPathByName(_currentThemeName);
+  }
+
+  /// Set in [dispose] to short-circuit [notifyListeners] callbacks that
+  /// resolve after the notifier has been torn down (late `await`s, async
+  /// callbacks, etc.). Without this guard a setState-after-dispose throws
+  /// in release builds and is silently swallowed in debug.
+  bool _disposed = false;
+
+  @override
+  void notifyListeners() {
+    if (_disposed) return;
+    super.notifyListeners();
   }
 }

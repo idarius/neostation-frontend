@@ -493,10 +493,23 @@ class NotificationService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _shouldAutoReconnect = false;
     disconnect();
     _reconnectTimer?.cancel();
     _connectionCheckTimer?.cancel();
     super.dispose();
+  }
+
+  /// Set in [dispose] to short-circuit [notifyListeners] callbacks that
+  /// resolve after the notifier has been torn down (late `await`s, async
+  /// callbacks, etc.). Without this guard a setState-after-dispose throws
+  /// in release builds and is silently swallowed in debug.
+  bool _disposed = false;
+
+  @override
+  void notifyListeners() {
+    if (_disposed) return;
+    super.notifyListeners();
   }
 }

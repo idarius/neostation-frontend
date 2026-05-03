@@ -694,6 +694,7 @@ class MusicPlayerService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     if (_currentHandle != null) SoLoud.instance.stop(_currentHandle!);
     if (_currentSource != null) SoLoud.instance.disposeSource(_currentSource!);
     _isInitialized = false;
@@ -770,5 +771,17 @@ class MusicPlayerService extends ChangeNotifier {
       _logger.e("Error processing SAF path in MusicPlayer: $e");
       return trackPath;
     }
+  }
+
+  /// Set in [dispose] to short-circuit [notifyListeners] callbacks that
+  /// resolve after the notifier has been torn down (late `await`s, async
+  /// callbacks, etc.). Without this guard a setState-after-dispose throws
+  /// in release builds and is silently swallowed in debug.
+  bool _disposed = false;
+
+  @override
+  void notifyListeners() {
+    if (_disposed) return;
+    super.notifyListeners();
   }
 }
