@@ -11,12 +11,14 @@ class SystemsGridFooter extends CoreFooter {
   final SystemInfo system;
   final VoidCallback onEnter;
   final VoidCallback onSettings;
+  final VoidCallback? onSearch;
 
   const SystemsGridFooter({
     super.key,
     required this.system,
     required this.onEnter,
     required this.onSettings,
+    this.onSearch,
   });
 
   @override
@@ -108,6 +110,21 @@ class SystemsGridFooter extends CoreFooter {
           textColor: theme.colorScheme.surface,
         ),
       if (!system.isGame) SizedBox(width: 8.r),
+      // Search shortcut (Y button) — opens the global game search across systems.
+      if (onSearch != null) ...[
+        GamepadControl(
+          label: AppLocale.searchSystem.getString(context),
+          iconPath: 'assets/images/gamepad/Xbox_Y_button.png',
+          onTap: onSearch,
+          textColor: Colors.white,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF5C6BC0), Color(0xFF3949AB)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        SizedBox(width: 8.r),
+      ],
       // Enter/Play button
       GamepadControl(
         label: system.isGame

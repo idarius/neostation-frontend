@@ -441,6 +441,10 @@ class MySystems extends StatelessWidget {
                 SfxService().playEnterSound();
                 _openSystemSettings(context, current, configProvider);
               },
+              onSearch: () {
+                SfxService().playEnterSound();
+                _openSearch(context);
+              },
             );
           },
         ),
@@ -635,6 +639,35 @@ class MySystems extends StatelessWidget {
       if (context.mounted) {
         Provider.of<SqliteDatabaseProvider>(context, listen: false).refresh();
       }
+    }
+  }
+
+  /// Pushes the global search SystemGamesList. Same nav semantics as
+  /// _SystemCardGridViewState._openSearch (Y button), reused by the
+  /// SystemsGridFooter onSearch callback so the touch / mouse path matches
+  /// the gamepad path.
+  Future<void> _openSearch(BuildContext context) async {
+    if (MySystems.isNavigating) return;
+    MySystems.isNavigating = true;
+
+    GamepadNavigationManager.deactivateAll();
+
+    try {
+      final fileProvider = Provider.of<FileProvider>(context, listen: false);
+      final searchSystem = await SearchSystemHelper.getSearchSystemModel(
+        context.mounted ? context : null,
+      );
+      if (!context.mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              SystemGamesList(system: searchSystem, fileProvider: fileProvider),
+        ),
+      );
+    } finally {
+      MySystems.isNavigating = false;
+      if (context.mounted) GamepadNavigationManager.reactivate();
     }
   }
 
