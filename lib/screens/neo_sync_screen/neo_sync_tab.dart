@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:neostation/l10n/app_locale.dart';
+import 'package:neostation/models/sync_models.dart';
+import 'package:neostation/sync/i_sync_provider.dart';
+import 'package:neostation/sync/sync_manager.dart';
 import 'package:neostation/utils/gamepad_nav.dart';
 import 'package:neostation/services/game_service.dart';
 import '../app_screen.dart';
@@ -33,6 +36,11 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
   @override
   void initState() {
     super.initState();
+    // Default the gamepad cursor to the currently active provider so users
+    // land on the card that's actually doing the sync work, instead of always
+    // starting on NeoSync regardless of their config.
+    _selectedIndex = _indexForProviderId(SyncManager.instance.activeProviderId);
+    SyncManager.instance.addListener(_onSyncManagerChanged);
     _gamepadNav = GamepadNavigation(
       onNavigateLeft: _moveLeft,
       onNavigateRight: _moveRight,
@@ -46,6 +54,20 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
       if (!mounted) return;
       _gamepadNav.initialize();
     });
+  }
+
+  static int _indexForProviderId(String providerId) {
+    switch (providerId) {
+      case 'smb':
+        return 1;
+      case 'neosync':
+      default:
+        return 0;
+    }
+  }
+
+  void _onSyncManagerChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -80,6 +102,7 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
 
   @override
   void dispose() {
+    SyncManager.instance.removeListener(_onSyncManagerChanged);
     _popMyLayer();
     _gamepadNav.dispose();
     super.dispose();
@@ -136,6 +159,9 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
 
   Widget _buildProviderSelector(BuildContext context) {
     final theme = Theme.of(context);
+    final activeId = SyncManager.instance.activeProviderId;
+    final neosyncStatus = SyncManager.instance['neosync']?.status;
+    final smbStatus = SyncManager.instance['smb']?.status;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -169,6 +195,8 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
                 name: 'NeoSync',
                 subtitle: 'Cloud save backup',
                 isActive: true,
+                isConnected: neosyncStatus == SyncProviderStatus.connected,
+                isCurrentActive: activeId == 'neosync',
                 onTap: () {
                   setState(() => _selectedIndex = 0);
                   _selectCurrent();
@@ -183,6 +211,8 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
                 subtitle:
                     AppLocale.smbSyncProviderSubtitle.getString(context),
                 isActive: true,
+                isConnected: smbStatus == SyncProviderStatus.connected,
+                isCurrentActive: activeId == 'smb',
                 onTap: () {
                   setState(() => _selectedIndex = 1);
                   _selectCurrent();
@@ -259,6 +289,8 @@ class _ProviderCard extends StatefulWidget {
   final String name;
   final String subtitle;
   final bool isActive;
+  final bool isConnected;
+  final bool isCurrentActive;
   final VoidCallback onTap;
 
   const _ProviderCard({
@@ -268,6 +300,8 @@ class _ProviderCard extends StatefulWidget {
     required this.name,
     required this.subtitle,
     required this.isActive,
+    this.isConnected = false,
+    this.isCurrentActive = false,
     required this.onTap,
   });
 
@@ -355,33 +389,41 @@ class _ProviderCardState extends State<_ProviderCard>
               scale: _scaleAnim.value,
               child: Opacity(
                 opacity: widget.isActive ? 1.0 : 0.70,
-                child: Container(
-                  width: 120.r,
-                  height: 145.r,
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(16.r),
-                    border: Border.all(
-                      color: showActive
-                          ? accent.withValues(alpha: 0.9)
-                          : _isSelected
-                          ? theme.colorScheme.onSurface.withValues(alpha: 0.35)
-                          : theme.colorScheme.onSurface.withValues(alpha: 0.20),
-                      width: showActive ? 1.5.r : 1.r,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(
-                          alpha: _isSelected ? 0.22 : 0.10,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 120.r,
+                      height: 145.r,
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(16.r),
+                        border: Border.all(
+                          color: widget.isCurrentActive
+                              ? accent.withValues(alpha: 0.9)
+                              : showActive
+                                  ? accent.withValues(alpha: 0.9)
+                                  : _isSelected
+                                      ? theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.35)
+                                      : theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.20),
+                          width:
+                              (showActive || widget.isCurrentActive) ? 1.5.r : 1.r,
                         ),
-                        blurRadius: _isSelected ? 12.r : 4.r,
-                        offset: Offset(0, _isSelected ? 4.r : 2.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: _isSelected ? 0.22 : 0.10,
+                            ),
+                            blurRadius: _isSelected ? 12.r : 4.r,
+                            offset: Offset(0, _isSelected ? 4.r : 2.r),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.all(14.r),
-                    child: Column(
+                      child: Padding(
+                        padding: EdgeInsets.all(14.r),
+                        child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
@@ -448,6 +490,29 @@ class _ProviderCardState extends State<_ProviderCard>
                               ),
                             ),
                           )
+                        else if (widget.isCurrentActive)
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 7.r,
+                              vertical: 2.r,
+                            ),
+                            decoration: BoxDecoration(
+                              color: accent.withValues(alpha: 0.20),
+                              borderRadius: BorderRadius.circular(20.r),
+                              border: Border.all(
+                                color: accent.withValues(alpha: 0.45),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Text(
+                              'Active',
+                              style: TextStyle(
+                                fontSize: 8.r,
+                                color: accent,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          )
                         else if (_isSelected)
                           Container(
                             padding: EdgeInsets.symmetric(
@@ -472,6 +537,32 @@ class _ProviderCardState extends State<_ProviderCard>
                       ],
                     ),
                   ),
+                ),
+                if (widget.isConnected)
+                  Positioned(
+                    top: 6.r,
+                    right: 6.r,
+                    child: Container(
+                      width: 10.r,
+                      height: 10.r,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4CAF50),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: theme.scaffoldBackgroundColor,
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                const Color(0xFF4CAF50).withValues(alpha: 0.45),
+                            blurRadius: 4.r,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  ],
                 ),
               ),
             ),
