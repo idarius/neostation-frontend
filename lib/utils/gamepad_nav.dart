@@ -446,12 +446,17 @@ class GamepadNavigation {
     if (!_isActive) return;
 
     // ANDROID: Handle text field focus by restricting navigation.
-    // Allow tab switching and back button to ensure the user can always exit a focused state.
+    // Allow tab switching, back button, and confirm so the user can always
+    // exit a focused state OR validate the input via the gamepad. Consumers
+    // that bind onSelectItem (button A) are responsible for routing it
+    // appropriately when a TextField is focused (e.g., the search bar
+    // defocuses the field instead of launching the selected game).
     if (isAndroid && _isTextFieldFocused()) {
       final allowedWhileTyping = {
         GamepadInputType.buttonLB,
         GamepadInputType.buttonRB,
         GamepadInputType.buttonB,
+        GamepadInputType.buttonA,
       };
       if (!allowedWhileTyping.contains(event.inputType)) return;
     }

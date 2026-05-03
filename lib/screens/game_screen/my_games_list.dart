@@ -1202,6 +1202,14 @@ class _SystemGamesListState extends State<SystemGamesList> {
 
   /// Orchestrates the complex sequence for launching a game through an external emulator.
   Future<void> _selectCurrentGame() async {
+    // In search mode, if the search TextField has focus, A defocuses it
+    // (dismissing the virtual keyboard) instead of launching a game — lets
+    // the user transition from typing to navigating with the D-pad.
+    if (_effectiveSystem.folderName == 'search' && _searchFocusNode.hasFocus) {
+      _searchFocusNode.unfocus();
+      return;
+    }
+
     if (_selectedGame == null) return;
 
     // Special handling for the Integrated Music Player.
@@ -1987,6 +1995,8 @@ class _SystemGamesListState extends State<SystemGamesList> {
                     controller: _searchController,
                     focusNode: _searchFocusNode,
                     style: TextStyle(fontSize: 18.sp),
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) => _searchFocusNode.unfocus(),
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.search),
                       hintText: AppLocale.searchEmptyHint.getString(context),
