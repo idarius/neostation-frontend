@@ -114,7 +114,14 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
     if (_selectedProviderId == 'neosync') return const NeoSyncContent();
     if (_selectedProviderId == 'smb') {
       return SmbSyncContent(
-        onBack: () => setState(() => _selectedProviderId = null),
+        onBack: () {
+          setState(() => _selectedProviderId = null);
+          // Re-push the provider-selector gamepad layer so D-pad / A / B
+          // resume working on the 4-card grid. Without this, the user is
+          // stuck in a touch-only state after returning from a content
+          // screen via the back arrow.
+          _pushMyLayer();
+        },
       );
     }
     return _buildProviderSelector(context);

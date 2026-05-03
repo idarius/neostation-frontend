@@ -6,9 +6,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:neostation/l10n/app_locale.dart';
 import 'package:neostation/models/smb_credentials_model.dart';
 import 'package:neostation/providers/sqlite_config_provider.dart';
+import 'package:neostation/services/game_service.dart';
 import 'package:neostation/sync/providers/smb_sync_provider.dart';
 import 'package:neostation/models/sync_models.dart';
 import 'package:neostation/sync/sync_manager.dart';
+import 'package:neostation/utils/gamepad_nav.dart';
 import 'package:provider/provider.dart';
 
 /// Final SMB content screen (Phase 2): credential form, status pill, and
@@ -24,6 +26,8 @@ class SmbSyncContent extends StatefulWidget {
 }
 
 class _SmbSyncContentState extends State<SmbSyncContent> {
+  static const _layerKey = 'smb_sync_content';
+
   final _hostCtrl = TextEditingController();
   final _shareCtrl = TextEditingController();
   final _subdirCtrl = TextEditingController(text: 'idastation_saves');
@@ -35,6 +39,9 @@ class _SmbSyncContentState extends State<SmbSyncContent> {
   String? _resultMessage;
   Color? _resultColor;
 
+  late GamepadNavigation _nav;
+  bool _layerPushed = false;
+
   SmbSyncProvider? get _provider =>
       SyncManager.instance[SmbSyncProvider.kProviderId] as SmbSyncProvider?;
 
@@ -43,10 +50,20 @@ class _SmbSyncContentState extends State<SmbSyncContent> {
     super.initState();
     _provider?.addListener(_onProviderChanged);
     _populateFromProvider();
+    // Minimal gamepad layer: B = back. Other inputs (D-pad, A) fall
+    // through; the form is text-heavy and best driven by touch/keyboard.
+    _nav = GamepadNavigation(onBack: widget.onBack);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _pushLayer();
+      _nav.initialize();
+    });
   }
 
   @override
   void dispose() {
+    _popLayer();
+    _nav.dispose();
     _provider?.removeListener(_onProviderChanged);
     _hostCtrl.dispose();
     _shareCtrl.dispose();
@@ -55,6 +72,22 @@ class _SmbSyncContentState extends State<SmbSyncContent> {
     _passCtrl.dispose();
     _domainCtrl.dispose();
     super.dispose();
+  }
+
+  void _pushLayer() {
+    if (_layerPushed) return;
+    _layerPushed = true;
+    GamepadNavigationManager.pushLayer(
+      _layerKey,
+      onActivate: () => _nav.activate(),
+      onDeactivate: () => _nav.deactivate(),
+    );
+  }
+
+  void _popLayer() {
+    if (!_layerPushed) return;
+    _layerPushed = false;
+    GamepadNavigationManager.popLayer(_layerKey);
   }
 
   void _onProviderChanged() {
