@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import 'package:neostation/l10n/app_locale.dart';
 import 'package:neostation/services/logger_service.dart';
+import 'package:neostation/services/media_cache_service.dart';
 import 'package:neostation/sync/sync_manager.dart';
 import 'package:neostation/providers/theme_provider.dart';
 import 'package:neostation/services/sfx_service.dart';
@@ -558,6 +559,10 @@ class _SystemGamesListState extends State<SystemGamesList> {
     imageCache.clear();
     imageCache.clearLiveImages();
 
+    // The media-existence cache pinned a "file exists" snapshot per path;
+    // a save-state on game close may invalidate it for upcoming reloads.
+    MediaCacheService.instance.clearCache();
+
     // Release game list from memory. Reloaded on game close.
     setState(() {
       _games = [];
@@ -691,7 +696,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
 
     // Suppress expensive operations (video, isolates) during rapid scrolling.
     if (_isNavigatingFast && !force) {
-      _updateBackground(_selectedGame!);
+      unawaited(_updateBackground(_selectedGame!));
       _updateSecondaryDisplay(_selectedGame!);
       return;
     }
@@ -699,7 +704,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
     _detectGameSavesForSelectedGame();
     _loadLocalizedDescription();
     _startVideoTimer();
-    _updateBackground(_selectedGame!);
+    unawaited(_updateBackground(_selectedGame!));
     _updateSecondaryDisplay(_selectedGame!);
     _updateMusicDucking();
   }
@@ -728,6 +733,13 @@ class _SystemGamesListState extends State<SystemGamesList> {
     final videoPath = _getVideoPath(game);
     final videoExists = await _fileProvider.fileExists(videoPath);
 
+    final imageExistence = await MediaCacheService.instance.checkPathsExistence(
+      [fanartPath, screenshotPath],
+    );
+    if (!mounted || _isNavigatingBack || _selectedGame != game) return;
+    final fanartExists = imageExistence[fanartPath] ?? false;
+    final screenshotExists = imageExistence[screenshotPath] ?? false;
+
     final configProvider = mounted
         ? context.read<SqliteConfigProvider>()
         : null;
@@ -746,24 +758,19 @@ class _SystemGamesListState extends State<SystemGamesList> {
                 ? MusicPlayerService().activeTrack?.romPath
                 : game.romPath) ||
         currentState.gameFanart !=
-            (isMusicSystem
-                ? null
-                : (File(fanartPath).existsSync() ? fanartPath : null)) ||
+            (isMusicSystem ? null : (fanartExists ? fanartPath : null)) ||
         currentState.gameScreenshot !=
             (isMusicSystem
                 ? null
-                : (File(screenshotPath).existsSync()
-                      ? screenshotPath
-                      : null)) ||
+                : (screenshotExists ? screenshotPath : null)) ||
         currentState.gameVideo !=
             (isMusicSystem ? null : (videoExists ? videoPath : null)) ||
         currentState.isVideoMuted != isVideoMuted ||
         currentState.isGameLaunching != _isGameLaunching;
 
     if (shouldUpdate && !_isNavigatingBack) {
-      final bool hasFanart = !isMusicSystem && File(fanartPath).existsSync();
-      final bool hasScreenshot =
-          !isMusicSystem && File(screenshotPath).existsSync();
+      final bool hasFanart = !isMusicSystem && fanartExists;
+      final bool hasScreenshot = !isMusicSystem && screenshotExists;
 
       await _secondaryDisplayState?.updateState(
         systemName: _effectiveSystem.realName,
@@ -889,22 +896,39 @@ class _SystemGamesListState extends State<SystemGamesList> {
     MusicPlayerService().setDucked(shouldDuck);
   }
 
-  void _updateBackground(GameModel game) {
+  Future<void> _updateBackground(GameModel game) async {
     if (!mounted || _effectiveSystem.isMultiSystemMode) return;
 
     final systemFolderName = _effectiveSystem.primaryFolderName;
 
-    // Resolve game background: Prioritize high-resolution fanart, fallback to screenshot, then system default.
-    String imagePath = game.getImagePath(
+    // Resolve game background: prioritize high-resolution fanart, fallback to screenshot, then system default.
+    final fanartPath = game.getImagePath(
       systemFolderName,
       'fanarts',
       _fileProvider,
     );
-    bool exists = File(imagePath).existsSync();
+    final screenshotPath = game.getScreenshotPath(
+      systemFolderName,
+      _fileProvider,
+    );
 
-    if (!exists) {
-      imagePath = game.getScreenshotPath(systemFolderName, _fileProvider);
-      exists = File(imagePath).existsSync();
+    final existence = await MediaCacheService.instance.checkPathsExistence([
+      fanartPath,
+      screenshotPath,
+    ]);
+    if (!mounted || _selectedGame != game) return;
+
+    String imagePath;
+    bool exists;
+    if (existence[fanartPath] ?? false) {
+      imagePath = fanartPath;
+      exists = true;
+    } else if (existence[screenshotPath] ?? false) {
+      imagePath = screenshotPath;
+      exists = true;
+    } else {
+      imagePath = fanartPath;
+      exists = false;
     }
 
     final ImageProvider imageProvider;
@@ -2315,6 +2339,11 @@ class _SystemGamesListState extends State<SystemGamesList> {
         _reorderGamesListFollowingGame(updatedGame.romname);
 
         if (mounted && _selectedGame != null) {
+          // A rescrape may rewrite the same paths with new content; existing
+          // "exists=true" cache entries are still valid, but a previously-
+          // missing fanart that just appeared isn't. Drop the existence cache
+          // so the next sync re-checks on disk.
+          MediaCacheService.instance.clearCache();
           _updateSecondaryDisplay(updatedGame);
           // Force secondary screen to rebuild image-displaying widgets even
           // if the file paths didn't change (rescrape rewrites the same paths
@@ -2324,7 +2353,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
           await _secondaryDisplayState?.updateState(
             mediaRevision: currentRevision + 1,
           );
-          _updateBackground(updatedGame);
+          unawaited(_updateBackground(updatedGame));
           _startVideoTimer();
         }
       }
