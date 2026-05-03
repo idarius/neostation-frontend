@@ -271,12 +271,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
 
     if (Platform.isAndroid) {
       _secondaryDisplayState = SecondaryDisplayState();
-      _secondaryDisplayState!.addListener(() {
-        if (mounted) {
-          setState(() {});
-          _updateMusicDucking();
-        }
-      });
+      _secondaryDisplayState!.addListener(_onSecondaryDisplayStateChanged);
     }
   }
 
@@ -349,6 +344,14 @@ class _SystemGamesListState extends State<SystemGamesList> {
     }
 
     _updateSecondaryDisplay(_selectedGame!);
+  }
+
+  /// Reacts to secondary-display state changes (volume ducking + repaint).
+  void _onSecondaryDisplayStateChanged() {
+    if (mounted) {
+      setState(() {});
+      _updateMusicDucking();
+    }
   }
 
   /// Opens the detailed game information overlay.
