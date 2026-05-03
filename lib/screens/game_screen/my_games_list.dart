@@ -3021,7 +3021,6 @@ class _GameListViewState extends State<GameListView>
                 valueListenable: _centeredScrollController.rebuildNotifier,
                 builder: (context, rebuildCount, _) {
                   return ListView.builder(
-                    key: ValueKey('games_list_rebuild_$rebuildCount'),
                     controller: _centeredScrollController.scrollController,
                     padding: EdgeInsets.symmetric(
                       vertical: 2.r,
