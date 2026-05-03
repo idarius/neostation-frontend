@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../data/datasources/sqlite_service.dart';
+import 'package:neostation/services/logger_service.dart';
 
 /// Repository for ScreenScraper system configuration data access.
 class ScraperRepository {
@@ -597,7 +598,11 @@ class ScraperRepository {
       if (result.isNotEmpty) {
         return result.first['preferred_language']?.toString() ?? 'en';
       }
-    } catch (_) {}
+    } catch (e) {
+      LoggerService.instance.w(
+        'Suppressed error in scraper_repository.dart: $e',
+      );
+    }
     return 'en';
   }
 }

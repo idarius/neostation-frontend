@@ -469,7 +469,11 @@ class SqliteDatabaseService {
               titleId = info.titleId;
               titleName = info.gameName;
             }
-          } catch (_) {}
+          } catch (e) {
+            LoggerService.instance.w(
+              'Suppressed error in sqlite_database_service.dart: $e',
+            );
+          }
         }
 
         if (entry.filename.toLowerCase().endsWith('.psvita')) {
@@ -495,7 +499,11 @@ class SqliteDatabaseService {
               final trimmed = content.trim();
               if (RegExp(r'^\d+$').hasMatch(trimmed)) titleId = trimmed;
             }
-          } catch (_) {}
+          } catch (e) {
+            LoggerService.instance.w(
+              'Suppressed error in sqlite_database_service.dart: $e',
+            );
+          }
         }
 
         batch.rawInsert(sql, [
@@ -540,7 +548,11 @@ class SqliteDatabaseService {
           if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
           referencedFilenames.add(path.basename(trimmed).toLowerCase());
         }
-      } catch (_) {}
+      } catch (e) {
+        LoggerService.instance.w(
+          'Suppressed error in sqlite_database_service.dart: $e',
+        );
+      }
     }
 
     // No references found → return copy (same aliasing protection).
@@ -777,7 +789,11 @@ class SqliteDatabaseService {
             }
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        LoggerService.instance.w(
+          'Suppressed error in sqlite_database_service.dart: $e',
+        );
+      }
       result[folder] = subdirs;
     }
     return result;
@@ -841,7 +857,11 @@ class SqliteDatabaseService {
           }
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      LoggerService.instance.w(
+        'Suppressed error in sqlite_database_service.dart: $e',
+      );
+    }
     return entries;
   }
 
@@ -904,7 +924,11 @@ class SqliteDatabaseService {
           }
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      LoggerService.instance.w(
+        'Suppressed error in sqlite_database_service.dart: $e',
+      );
+    }
     return entries;
   }
 }

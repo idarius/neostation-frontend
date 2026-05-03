@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
+import 'package:neostation/services/logger_service.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:logger/logger.dart';
@@ -85,7 +86,11 @@ class MusicPlayerService extends ChangeNotifier {
         try {
           final file = File(effectivePath);
           if (await file.exists()) await file.delete();
-        } catch (_) {}
+        } catch (e) {
+          LoggerService.instance.w(
+            'Suppressed error in music_player_service.dart: $e',
+          );
+        }
       }
 
       return picture;
@@ -388,7 +393,11 @@ class MusicPlayerService extends ChangeNotifier {
           try {
             final file = File(effectivePath);
             if (await file.exists()) await file.delete();
-          } catch (_) {}
+          } catch (e) {
+            LoggerService.instance.w(
+              'Suppressed error in music_player_service.dart: $e',
+            );
+          }
         }
       }
     } catch (e) {

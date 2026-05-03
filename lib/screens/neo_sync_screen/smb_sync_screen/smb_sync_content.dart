@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:neostation/services/logger_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -173,8 +174,10 @@ class _SmbSyncContentState extends State<SmbSyncContent> {
       if (!mounted) return;
       if (r.success) {
         // ignore: use_build_context_synchronously — guarded above by mounted check
-        final cfgProvider =
-            Provider.of<SqliteConfigProvider>(context, listen: false);
+        final cfgProvider = Provider.of<SqliteConfigProvider>(
+          context,
+          listen: false,
+        );
         await SyncManager.instance.setActive(
           SmbSyncProvider.kProviderId,
           persist: cfgProvider.updateActiveSyncProvider,
@@ -215,14 +218,18 @@ class _SmbSyncContentState extends State<SmbSyncContent> {
       final tempDir = Directory.systemTemp.createTempSync('smb_test_');
       final ts = DateTime.now().millisecondsSinceEpoch;
       final testFile = File('${tempDir.path}/test_$ts.txt');
-      await testFile.writeAsBytes(Uint8List.fromList(
-        'Idastation SMB upload test — $ts\n'.codeUnits,
-      ));
+      await testFile.writeAsBytes(
+        Uint8List.fromList('Idastation SMB upload test — $ts\n'.codeUnits),
+      );
       final r = await p.uploadSave('_idastation_test', testFile);
       // Cleanup local temp.
       try {
         await tempDir.delete(recursive: true);
-      } catch (_) {}
+      } catch (e) {
+        LoggerService.instance.w(
+          'Suppressed error in smb_sync_content.dart: $e',
+        );
+      }
       if (!mounted) return;
       setState(() {
         _resultMessage = r.success
@@ -320,8 +327,11 @@ class _SmbSyncContentState extends State<SmbSyncContent> {
                   onPressed: widget.onBack,
                 ),
                 SizedBox(width: 4.r),
-                Icon(Icons.lan_rounded,
-                    size: 22.r, color: theme.colorScheme.secondary),
+                Icon(
+                  Icons.lan_rounded,
+                  size: 22.r,
+                  color: theme.colorScheme.secondary,
+                ),
                 SizedBox(width: 8.r),
                 Text(
                   AppLocale.smbSyncProviderName.getString(context),
@@ -330,85 +340,98 @@ class _SmbSyncContentState extends State<SmbSyncContent> {
               ],
             ),
             SizedBox(height: 8.r),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _field(AppLocale.smbSyncFormHost, _hostCtrl,
-                      hint: '192.168.0.10'),
-                  _field(AppLocale.smbSyncFormShare, _shareCtrl,
-                      hint: 'Aeris'),
-                  _field(AppLocale.smbSyncFormSubdir, _subdirCtrl,
-                      hint: 'idastation_saves'),
-                  _field(AppLocale.smbSyncFormUser, _userCtrl),
-                  _field(
-                    AppLocale.smbSyncFormPassword,
-                    _passCtrl,
-                    obscure: true,
-                    hint: _provider?.hasStoredPassword == true
-                        ? '••••••• (laisser vide pour conserver)'
-                        : null,
-                  ),
-                  _field(AppLocale.smbSyncFormDomain, _domainCtrl),
-                  SizedBox(height: 8.r),
-                  Wrap(
-                    spacing: 8.r,
-                    runSpacing: 8.r,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: _busy ? null : _onTest,
-                        icon: const Icon(Icons.refresh_rounded),
-                        label: Text(
-                            AppLocale.smbSyncBtnTest.getString(context)),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: _busy ? null : _onSaveAndActivate,
-                        icon: const Icon(Icons.save_rounded),
-                        label: Text(
-                            AppLocale.smbSyncBtnSave.getString(context)),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: _busy ? null : _onListSaves,
-                        icon: const Icon(Icons.list_rounded),
-                        label: Text(
-                            AppLocale.smbSyncBtnList.getString(context)),
-                      ),
-                      if (kDebugMode)
-                        OutlinedButton.icon(
-                          onPressed: _busy ? null : _onUploadTestFile,
-                          icon: const Icon(Icons.upload_file_rounded),
-                          label: const Text('Upload test file (debug)'),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _field(
+                      AppLocale.smbSyncFormHost,
+                      _hostCtrl,
+                      hint: '192.168.0.10',
+                    ),
+                    _field(
+                      AppLocale.smbSyncFormShare,
+                      _shareCtrl,
+                      hint: 'Aeris',
+                    ),
+                    _field(
+                      AppLocale.smbSyncFormSubdir,
+                      _subdirCtrl,
+                      hint: 'idastation_saves',
+                    ),
+                    _field(AppLocale.smbSyncFormUser, _userCtrl),
+                    _field(
+                      AppLocale.smbSyncFormPassword,
+                      _passCtrl,
+                      obscure: true,
+                      hint: _provider?.hasStoredPassword == true
+                          ? '••••••• (laisser vide pour conserver)'
+                          : null,
+                    ),
+                    _field(AppLocale.smbSyncFormDomain, _domainCtrl),
+                    SizedBox(height: 8.r),
+                    Wrap(
+                      spacing: 8.r,
+                      runSpacing: 8.r,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _busy ? null : _onTest,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: Text(
+                            AppLocale.smbSyncBtnTest.getString(context),
+                          ),
                         ),
-                    ],
-                  ),
-                  // Unified status line: shows the latest action result
-                  // when one exists, otherwise the live provider state.
-                  SizedBox(height: 12.r),
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(8.r),
-                    decoration: BoxDecoration(
-                      color: (_resultMessage != null
-                              ? (_resultColor ?? Colors.grey)
-                              : _statusColor())
-                          .withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(6.r),
+                        ElevatedButton.icon(
+                          onPressed: _busy ? null : _onSaveAndActivate,
+                          icon: const Icon(Icons.save_rounded),
+                          label: Text(
+                            AppLocale.smbSyncBtnSave.getString(context),
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _busy ? null : _onListSaves,
+                          icon: const Icon(Icons.list_rounded),
+                          label: Text(
+                            AppLocale.smbSyncBtnList.getString(context),
+                          ),
+                        ),
+                        if (kDebugMode)
+                          OutlinedButton.icon(
+                            onPressed: _busy ? null : _onUploadTestFile,
+                            icon: const Icon(Icons.upload_file_rounded),
+                            label: const Text('Upload test file (debug)'),
+                          ),
+                      ],
                     ),
-                    child: Text(
-                      _resultMessage ?? _statusLabel(),
-                      style: TextStyle(
-                        color: _resultMessage != null
-                            ? _resultColor
-                            : _statusColor(),
+                    // Unified status line: shows the latest action result
+                    // when one exists, otherwise the live provider state.
+                    SizedBox(height: 12.r),
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(8.r),
+                      decoration: BoxDecoration(
+                        color:
+                            (_resultMessage != null
+                                    ? (_resultColor ?? Colors.grey)
+                                    : _statusColor())
+                                .withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(6.r),
+                      ),
+                      child: Text(
+                        _resultMessage ?? _statusLabel(),
+                        style: TextStyle(
+                          color: _resultMessage != null
+                              ? _resultColor
+                              : _statusColor(),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );

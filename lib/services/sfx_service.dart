@@ -133,7 +133,9 @@ class SfxService {
     for (final source in _sources.values) {
       try {
         await SoLoud.instance.disposeSource(source);
-      } catch (_) {}
+      } catch (e) {
+        LoggerService.instance.w('Suppressed error in sfx_service.dart: $e');
+      }
     }
     _sources.clear();
     _isInitialized = false;

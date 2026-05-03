@@ -569,7 +569,11 @@ class ScreenScraperService {
           targetAppSystemId = await ScraperRepository.getAppSystemIdByScraperId(
             systemId,
           );
-        } catch (_) {}
+        } catch (e) {
+          LoggerService.instance.w(
+            'Suppressed error in screenscraper_service.dart: $e',
+          );
+        }
       }
 
       final cleanRomName = await getCleanRomName(
@@ -737,7 +741,11 @@ class ScreenScraperService {
           } else {
             releaseDate ??= parsedDate;
           }
-        } catch (_) {}
+        } catch (e) {
+          LoggerService.instance.w(
+            'Suppressed error in screenscraper_service.dart: $e',
+          );
+        }
       }
     }
     if (releaseDate != null) {

@@ -171,7 +171,11 @@ class OptimizedMd5Utils {
       if (fileName.startsWith('content://')) {
         try {
           fileName = Uri.decodeFull(fileName);
-        } catch (_) {}
+        } catch (e) {
+          LoggerService.instance.w(
+            'Suppressed error in optimized_md5_utils.dart: $e',
+          );
+        }
       }
 
       // Extract the base filename.
@@ -369,7 +373,11 @@ class OptimizedMd5Utils {
                       )
                       .content
                   as List<int>;
-        } catch (_) {}
+        } catch (e) {
+          LoggerService.instance.w(
+            'Suppressed error in optimized_md5_utils.dart: $e',
+          );
+        }
       }
 
       // Check signature.
@@ -408,7 +416,11 @@ class OptimizedMd5Utils {
                       )
                       .content
                   as List<int>;
-        } catch (_) {}
+        } catch (e) {
+          LoggerService.instance.w(
+            'Suppressed error in optimized_md5_utils.dart: $e',
+          );
+        }
       }
 
       if (romBytes.length >= 5 &&
@@ -446,7 +458,11 @@ class OptimizedMd5Utils {
                       )
                       .content
                   as List<int>;
-        } catch (_) {}
+        } catch (e) {
+          LoggerService.instance.w(
+            'Suppressed error in optimized_md5_utils.dart: $e',
+          );
+        }
       }
 
       String text = utf8.decode(romBytes, allowMalformed: true);
@@ -494,7 +510,11 @@ class OptimizedMd5Utils {
                         )
                         .content
                     as List<int>;
-          } catch (_) {}
+          } catch (e) {
+            LoggerService.instance.w(
+              'Suppressed error in optimized_md5_utils.dart: $e',
+            );
+          }
         }
       }
 

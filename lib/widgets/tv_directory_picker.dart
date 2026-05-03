@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:neostation/services/logger_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -233,10 +234,18 @@ class _TvDirectoryPickerState extends State<TvDirectoryPicker> {
                   isInternal: false,
                 ),
               );
-            } catch (_) {}
+            } catch (e) {
+              LoggerService.instance.w(
+                'Suppressed error in tv_directory_picker.dart: $e',
+              );
+            }
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        LoggerService.instance.w(
+          'Suppressed error in tv_directory_picker.dart: $e',
+        );
+      }
     }
 
     if (mounted) {

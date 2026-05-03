@@ -256,7 +256,9 @@ class AppScreenState extends State<AppScreen> {
           context,
           listen: false,
         ).removeListener(_updateCheckListener!);
-      } catch (_) {}
+      } catch (e) {
+        LoggerService.instance.w('Suppressed error in app_screen.dart: $e');
+      }
       _updateCheckListener = null;
     }
     _updateCheckSafetyTimer?.cancel();
