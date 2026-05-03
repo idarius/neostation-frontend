@@ -39,11 +39,7 @@ class LetterIndicator extends StatelessWidget {
               borderRadius: BorderRadius.circular(24.r),
               border: Border.all(color: border, width: 2.r),
               boxShadow: [
-                BoxShadow(
-                  color: shadow,
-                  blurRadius: 30.r,
-                  spreadRadius: 5.r,
-                ),
+                BoxShadow(color: shadow, blurRadius: 30.r, spreadRadius: 5.r),
               ],
             ),
             child: Center(
@@ -53,9 +49,7 @@ class LetterIndicator extends StatelessWidget {
                   fontSize: 72.r,
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
-                  shadows: [
-                    Shadow(color: textShadow, blurRadius: 10.r),
-                  ],
+                  shadows: [Shadow(color: textShadow, blurRadius: 10.r)],
                 ),
               ),
             ),

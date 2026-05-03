@@ -2488,8 +2488,7 @@ class _GameListViewState extends State<GameListView>
     if (oldWidget.selectedIndex != widget.selectedIndex) {
       // Detect wrap-around (UP from index 0 → last, DOWN from last → 0).
       // Animating ~200 cells in one shot looks janky; snap instead.
-      final indexDelta =
-          (widget.selectedIndex - oldWidget.selectedIndex).abs();
+      final indexDelta = (widget.selectedIndex - oldWidget.selectedIndex).abs();
       final isWrap =
           widget.games.length > 1 && indexDelta > widget.games.length ~/ 2;
 
@@ -2512,17 +2511,17 @@ class _GameListViewState extends State<GameListView>
         // Animate the highlight as a 1-cell slide from the adjacent direction
         // of the wrap (mimics normal nav feel) instead of sliding across the
         // entire list.
-        final direction =
-            (widget.selectedIndex - oldWidget.selectedIndex).sign;
+        final direction = (widget.selectedIndex - oldWidget.selectedIndex).sign;
         final adjacentBegin = end + direction.toDouble();
-        _selectionAnimation =
-            Tween<double>(begin: adjacentBegin, end: end).animate(
-          CurvedAnimation(parent: _selectionController, curve: curve),
-        );
+        _selectionAnimation = Tween<double>(
+          begin: adjacentBegin,
+          end: end,
+        ).animate(CurvedAnimation(parent: _selectionController, curve: curve));
       } else {
-        _selectionAnimation = Tween<double>(begin: begin, end: end).animate(
-          CurvedAnimation(parent: _selectionController, curve: curve),
-        );
+        _selectionAnimation = Tween<double>(
+          begin: begin,
+          end: end,
+        ).animate(CurvedAnimation(parent: _selectionController, curve: curve));
       }
       _selectionController.forward(from: 0);
 

@@ -108,10 +108,9 @@ class GamesEmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              AppLocale.noGamesFoundFor.getString(context).replaceFirst(
-                    '{name}',
-                    system.shortName ?? system.realName,
-                  ),
+              AppLocale.noGamesFoundFor
+                  .getString(context)
+                  .replaceFirst('{name}', system.shortName ?? system.realName),
               style: TextStyle(
                 fontSize: 16.r,
                 fontWeight: FontWeight.w600,
