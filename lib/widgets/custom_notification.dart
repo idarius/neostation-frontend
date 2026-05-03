@@ -246,6 +246,7 @@ class AppNotification {
 
     // Remove previous notification if it exists
     _currentNotification?.remove();
+    _currentNotification?.dispose();
     _currentNotification = null;
     _currentNotificationId = notificationId;
     _currentDataNotifier = ValueNotifier(
@@ -268,6 +269,7 @@ class AppNotification {
         duration: duration,
         onDismiss: () {
           _currentNotification?.remove();
+          _currentNotification?.dispose();
           _currentNotification = null;
           _currentNotificationId = null;
           _currentDataNotifier?.dispose();
