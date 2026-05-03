@@ -31,6 +31,7 @@ import 'game_details_card/game_details_card_list.dart';
 import 'game_details_card/random_game_dialog.dart';
 import 'music/music_list.dart';
 import 'music/music_player.dart';
+import 'achievements_delegate.dart';
 import 'system_cycle_helper.dart';
 import 'widgets/games_empty_state.dart';
 import 'widgets/games_loading_state.dart';
@@ -154,15 +155,12 @@ class _SystemGamesListState extends State<SystemGamesList> {
   _gamepadNav; // Unified controller/keyboard input handler.
 
   // Integration callbacks for GameDetailsCardList.
-  VoidCallback? _refreshAchievementsCallback;
   VoidCallback? _toggleInfoCallback;
 
-  // Overlay interaction delegates.
-  bool Function()? _isAchievementsOpen;
-  VoidCallback? _moveAchievementUp;
-  VoidCallback? _moveAchievementDown;
-  VoidCallback? _moveAchievementLeft;
-  VoidCallback? _moveAchievementRight;
+  // Achievements overlay state + navigation, registered by GameDetailsCardList.
+  final AchievementsDelegate _achievements = AchievementsDelegate();
+
+  // Overlay interaction delegates (right-card overlay actions, distinct from achievements).
   VoidCallback? _triggerOverlayAction;
   VoidCallback? _secondaryOverlayAction; // Maps to RB (Scrape/Refresh).
   bool Function(bool isRight)?
@@ -575,8 +573,8 @@ class _SystemGamesListState extends State<SystemGamesList> {
   void _navigateUp() {
     if (_games.isEmpty) return;
 
-    if (_isAchievementsOpen != null && _isAchievementsOpen!()) {
-      _moveAchievementUp?.call();
+    if (_achievements.isOpenAndNavigable) {
+      _achievements.moveUp?.call();
       return;
     }
 
@@ -590,8 +588,8 @@ class _SystemGamesListState extends State<SystemGamesList> {
   void _navigateDown() {
     if (_games.isEmpty) return;
 
-    if (_isAchievementsOpen != null && _isAchievementsOpen!()) {
-      _moveAchievementDown?.call();
+    if (_achievements.isOpenAndNavigable) {
+      _achievements.moveDown?.call();
       return;
     }
 
@@ -603,8 +601,8 @@ class _SystemGamesListState extends State<SystemGamesList> {
   void _navigateLeft() {
     if (_games.isEmpty) return;
 
-    if (_isAchievementsOpen != null && _isAchievementsOpen!()) {
-      _moveAchievementLeft?.call();
+    if (_achievements.isOpenAndNavigable) {
+      _achievements.moveLeft?.call();
       return;
     }
 
@@ -617,8 +615,8 @@ class _SystemGamesListState extends State<SystemGamesList> {
   void _navigateRight() {
     if (_games.isEmpty) return;
 
-    if (_isAchievementsOpen != null && _isAchievementsOpen!()) {
-      _moveAchievementRight?.call();
+    if (_achievements.isOpenAndNavigable) {
+      _achievements.moveRight?.call();
       return;
     }
 
@@ -1114,9 +1112,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
       _log.e('Error refreshing game data after gameplay: $e');
     }
 
-    if (_refreshAchievementsCallback != null) {
-      _refreshAchievementsCallback!();
-    }
+    _achievements.refresh?.call();
   }
 
   /// Toggles the 'favorite' status for the selected game and re-sorts the list.
@@ -2289,8 +2285,11 @@ class _SystemGamesListState extends State<SystemGamesList> {
         onDeactivateNavigation: () => _gamepadNav.deactivate(),
         onReactivateNavigation: () => _gamepadNav.activate(),
         onToggleInfo: (callback) => _toggleInfoCallback = callback,
+        onRegisterRefreshAchievements: (refresh) {
+          _achievements.refresh = refresh;
+        },
         onRegisterOverlayState: (isOverlayOpen, isAchievementsOpen) {
-          _isAchievementsOpen = isAchievementsOpen;
+          _achievements.isOpen = isAchievementsOpen;
         },
         onRegisterNavigation:
             ({
@@ -2299,10 +2298,10 @@ class _SystemGamesListState extends State<SystemGamesList> {
               required moveLeft,
               required moveRight,
             }) {
-              _moveAchievementUp = moveUp;
-              _moveAchievementDown = moveDown;
-              _moveAchievementLeft = moveLeft;
-              _moveAchievementRight = moveRight;
+              _achievements.moveUp = moveUp;
+              _achievements.moveDown = moveDown;
+              _achievements.moveLeft = moveLeft;
+              _achievements.moveRight = moveRight;
             },
         onRegisterCloseOverlays: null,
         onRegisterTriggerAction: (triggerAction) {
