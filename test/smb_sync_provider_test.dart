@@ -72,7 +72,7 @@ void main() {
       final provider = SmbSyncProvider();
       final r = await provider.fullSync();
       expect(r.success, isFalse);
-      expect(r.message, contains('Phase 4'));
+      expect(r.message, contains('not yet implemented'));
     });
 
     test('getQuota returns null', () async {

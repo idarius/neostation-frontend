@@ -9,9 +9,10 @@
 /// Phase 2 scope:
 ///   - Implements: initialize, login, logout, uploadSave, downloadSave,
 ///     listSaves, deleteRemote, getQuota (null), fullSync (stub).
-///   - Auto-trigger methods (syncGameSavesBeforeLaunch / AfterClose,
-///     detectGameSaveFiles) inherit ISyncProvider's default failure
-///     implementations. Phase 4 wires them.
+///
+/// Phase 4 additions:
+///   - Auto-trigger methods: syncGameSavesAfterClose, syncGameSavesBeforeLaunch,
+///     detectGameSaveFiles, getGameSyncState.
 library;
 
 import 'dart:io';
@@ -19,6 +20,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:neostation/models/game_model.dart';
 import 'package:neostation/models/neo_sync_models.dart';
+import 'package:neostation/repositories/sync_repository.dart';
+import 'package:neostation/services/save_discovery_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -41,6 +44,10 @@ class SmbSyncProvider extends ChangeNotifier implements ISyncProvider {
 
   SyncProviderStatus _status = SyncProviderStatus.disconnected;
   String? _lastError;
+
+  /// In-memory sync state per game, keyed by game.romname.
+  /// Updated by auto-trigger methods and detectGameSaveFiles.
+  final Map<String, GameSyncState> _gameSyncStates = {};
 
   SmbSyncProvider({SmbCredentialsRepository? repository})
       : _repository = repository ?? SmbCredentialsRepository();
@@ -356,7 +363,7 @@ class SmbSyncProvider extends ChangeNotifier implements ISyncProvider {
   Future<SyncResult> fullSync() async {
     return SyncResult.fail(
       SyncError.unknown,
-      message: 'fullSync not yet implemented — Phase 4 will scan local saves',
+      message: 'fullSync not yet implemented',
     );
   }
 
@@ -379,37 +386,393 @@ class SmbSyncProvider extends ChangeNotifier implements ISyncProvider {
     }
   }
 
-  // ── Game-specific sync (Phase 4 will override) ────────────────────────────
-  // Explicit overrides are required because ChangeNotifier + ISyncProvider
-  // together make the Dart analyser treat the interface defaults as abstract
-  // unless we re-declare them. The bodies exactly mirror ISyncProvider's
-  // defaults — Phase 4 will replace them with real implementations.
+  // ── Auto-trigger: game save sync ──────────────────────────────────────────
 
   @override
-  Future<SyncResult> detectGameSaveFiles(GameModel game) async =>
-      SyncResult.fail(
-        SyncError.unknown,
-        message: 'detectGameSaveFiles not supported by $providerId',
+  Future<SyncResult> syncGameSavesAfterClose(GameModel game) async {
+    if (!isAuthenticated) {
+      return SyncResult.fail(SyncError.authRequired, message: 'Not connected');
+    }
+    // 1s delay so the emulator has flushed save buffers to disk.
+    await Future.delayed(const Duration(seconds: 1));
+
+    final saves = await SaveDiscoveryService.instance.findSaveFilesForGame(game);
+    if (saves.isEmpty) {
+      _gameSyncStates[game.romname] = GameSyncState(
+        gameId: game.romname,
+        gameName: game.name,
+        status: GameSyncStatus.noSaveFound,
+        cloudEnabled: true,
       );
+      notifyListeners();
+      return SyncResult.ok(message: 'No local saves for ${game.name}');
+    }
+
+    int uploaded = 0;
+    int conflicted = 0;
+    String? lastError;
+
+    for (final localSave in saves) {
+      try {
+        final outcome = await _syncOneFileAfterPlay(game, localSave);
+        if (outcome == _SyncOutcome.uploaded) {
+          uploaded++;
+        } else if (outcome == _SyncOutcome.conflict) {
+          conflicted++;
+        }
+      } catch (e) {
+        lastError = e.toString();
+      }
+    }
+
+    final status = conflicted > 0
+        ? GameSyncStatus.conflict
+        : GameSyncStatus.upToDate;
+    _gameSyncStates[game.romname] = GameSyncState(
+      gameId: game.romname,
+      gameName: game.name,
+      status: status,
+      cloudEnabled: true,
+      lastSync: DateTime.now(),
+      errorMessage: lastError,
+    );
+    notifyListeners();
+
+    return SyncResult.ok(
+      message:
+          'Uploaded $uploaded file(s)${conflicted > 0 ? ", $conflicted conflict(s)" : ""}',
+    );
+  }
 
   @override
-  GameSyncState? getGameSyncState(String gameId) => null;
+  Future<SyncResult> syncGameSavesBeforeLaunch(GameModel game) async {
+    if (!isAuthenticated) {
+      return SyncResult.fail(SyncError.authRequired, message: 'Not connected');
+    }
 
-  @override
-  Future<SyncResult> syncGameSavesBeforeLaunch(GameModel game) async =>
-      SyncResult.fail(
-        SyncError.unknown,
-        message: 'syncGameSavesBeforeLaunch not supported by $providerId',
+    final saves = await SaveDiscoveryService.instance.findSaveFilesForGame(game);
+    if (saves.isEmpty) {
+      _gameSyncStates[game.romname] = GameSyncState(
+        gameId: game.romname,
+        gameName: game.name,
+        status: GameSyncStatus.noSaveFound,
+        cloudEnabled: true,
       );
+      notifyListeners();
+      return SyncResult.ok(message: 'No local saves for ${game.name}');
+    }
+
+    int downloaded = 0;
+    int conflicted = 0;
+    String? lastError;
+
+    for (final localSave in saves) {
+      try {
+        final outcome = await _syncOneFileBeforeLaunch(game, localSave);
+        if (outcome == _SyncOutcome.downloaded) {
+          downloaded++;
+        } else if (outcome == _SyncOutcome.conflict) {
+          conflicted++;
+        }
+      } catch (e) {
+        lastError = e.toString();
+      }
+    }
+
+    final status = conflicted > 0
+        ? GameSyncStatus.conflict
+        : GameSyncStatus.upToDate;
+    _gameSyncStates[game.romname] = GameSyncState(
+      gameId: game.romname,
+      gameName: game.name,
+      status: status,
+      cloudEnabled: true,
+      lastSync: DateTime.now(),
+      errorMessage: lastError,
+    );
+    notifyListeners();
+
+    return SyncResult.ok(
+      message:
+          'Downloaded $downloaded file(s)${conflicted > 0 ? ", $conflicted conflict(s)" : ""}',
+    );
+  }
 
   @override
-  Future<SyncResult> syncGameSavesAfterClose(GameModel game) async =>
-      SyncResult.fail(
-        SyncError.unknown,
-        message: 'syncGameSavesAfterClose not supported by $providerId',
+  Future<SyncResult> detectGameSaveFiles(GameModel game) async {
+    if (!isAuthenticated) {
+      return SyncResult.fail(SyncError.authRequired);
+    }
+
+    final saves = await SaveDiscoveryService.instance.findSaveFilesForGame(game);
+    if (saves.isEmpty) {
+      _gameSyncStates[game.romname] = GameSyncState(
+        gameId: game.romname,
+        gameName: game.name,
+        status: GameSyncStatus.noSaveFound,
+        cloudEnabled: true,
       );
+      notifyListeners();
+      return SyncResult.ok();
+    }
+
+    // Pure inspection — no side-effects. Compute aggregate status.
+    var anyConflict = false;
+    var anyLocalOnly = false;
+    var anyCloudOnly = false;
+    var anyUpToDate = false;
+
+    for (final localSave in saves) {
+      final localFile = File(localSave.filePath);
+      if (!await localFile.exists()) continue;
+
+      final cfg = _config!;
+      final remotePath = cfg.subdirectory.isEmpty
+          ? '${game.romname}/${localSave.relativePath}'
+          : '${cfg.subdirectory}/${game.romname}/${localSave.relativePath}';
+
+      final remoteStat = await _connection!.stat(remotePath);
+      if (remoteStat == null) {
+        anyLocalOnly = true;
+        continue;
+      }
+
+      final localStat = await localFile.stat();
+      final localTime = localStat.modified.millisecondsSinceEpoch;
+      final remoteTime = remoteStat.modifiedAt.millisecondsSinceEpoch;
+
+      if ((localTime - remoteTime).abs() < 2000) {
+        anyUpToDate = true;
+        continue;
+      }
+
+      final synced = await SyncRepository.getSyncState(localSave.filePath);
+      if (synced != null) {
+        final syncedLocalMs = synced['local_modified_at'] as int? ?? 0;
+        final syncedCloudMs = synced['cloud_updated_at'] as int? ?? 0;
+        final localChanged = (localTime - syncedLocalMs).abs() > 2000;
+        final cloudChanged = remoteTime > syncedCloudMs + 2000;
+        if (localChanged && cloudChanged) {
+          anyConflict = true;
+        } else if (localChanged) {
+          anyLocalOnly = true;
+        } else if (cloudChanged) {
+          anyCloudOnly = true;
+        } else {
+          anyUpToDate = true;
+        }
+      } else {
+        // Unknown state — flag conservatively.
+        anyConflict = true;
+      }
+    }
+
+    final status = anyConflict
+        ? GameSyncStatus.conflict
+        : (anyLocalOnly && anyCloudOnly)
+            ? GameSyncStatus.conflict
+            : anyLocalOnly
+                ? GameSyncStatus.localOnly
+                : anyCloudOnly
+                    ? GameSyncStatus.cloudOnly
+                    : anyUpToDate
+                        ? GameSyncStatus.upToDate
+                        : GameSyncStatus.noSaveFound;
+
+    _gameSyncStates[game.romname] = GameSyncState(
+      gameId: game.romname,
+      gameName: game.name,
+      status: status,
+      cloudEnabled: true,
+    );
+    notifyListeners();
+    return SyncResult.ok();
+  }
+
+  @override
+  GameSyncState? getGameSyncState(String gameId) => _gameSyncStates[gameId];
 
   @override
   Future<void> updateGameCloudSyncEnabled(
       String gameId, bool enabled) async {}
+
+  // ── Per-file sync helpers ─────────────────────────────────────────────────
+
+  /// After-play: bias toward upload (user just played and saved).
+  Future<_SyncOutcome> _syncOneFileAfterPlay(
+    GameModel game,
+    LocalSaveFile localSave,
+  ) async {
+    final localFile = File(localSave.filePath);
+    if (!await localFile.exists()) return _SyncOutcome.skippedUpToDate;
+
+    final cfg = _config!;
+    final remotePath = cfg.subdirectory.isEmpty
+        ? '${game.romname}/${localSave.relativePath}'
+        : '${cfg.subdirectory}/${game.romname}/${localSave.relativePath}';
+
+    final localStat = await localFile.stat();
+    final localTime = localStat.modified.millisecondsSinceEpoch;
+    final localSize = localStat.size;
+    final remoteStat = await _connection!.stat(remotePath);
+    final synced = await SyncRepository.getSyncState(localSave.filePath);
+
+    // Case A: no remote — just upload.
+    if (remoteStat == null) {
+      final bytes = await localFile.readAsBytes();
+      await _connection!.writeFile(remotePath, bytes);
+      await SyncRepository.saveSyncState(
+        localSave.filePath,
+        localTime,
+        DateTime.now().millisecondsSinceEpoch,
+        localSize,
+      );
+      return _SyncOutcome.uploaded;
+    }
+
+    // Case B: timestamps within 2s — up-to-date.
+    final remoteTime = remoteStat.modifiedAt.millisecondsSinceEpoch;
+    if ((localTime - remoteTime).abs() < 2000) {
+      return _SyncOutcome.skippedUpToDate;
+    }
+
+    // Case C: persisted snapshot — figure out who changed.
+    if (synced != null) {
+      final syncedLocalMs = synced['local_modified_at'] as int? ?? 0;
+      final syncedCloudMs = synced['cloud_updated_at'] as int? ?? 0;
+      final localChanged = (localTime - syncedLocalMs).abs() > 2000;
+      final cloudChanged = remoteTime > syncedCloudMs + 2000;
+
+      if (localChanged && !cloudChanged) {
+        final bytes = await localFile.readAsBytes();
+        await _connection!.writeFile(remotePath, bytes);
+        await SyncRepository.saveSyncState(
+          localSave.filePath,
+          localTime,
+          DateTime.now().millisecondsSinceEpoch,
+          localSize,
+        );
+        return _SyncOutcome.uploaded;
+      }
+      if (!localChanged && cloudChanged) {
+        final bytes = await _connection!.readFile(remotePath);
+        await localFile.writeAsBytes(bytes);
+        await SyncRepository.saveSyncState(
+          localSave.filePath,
+          DateTime.now().millisecondsSinceEpoch,
+          remoteTime,
+          bytes.length,
+        );
+        return _SyncOutcome.downloaded;
+      }
+      if (localChanged && cloudChanged) {
+        return _SyncOutcome.conflict;
+      }
+      return _SyncOutcome.skippedUpToDate;
+    }
+
+    // Case D: no snapshot, timestamps diverge — after-play biases toward
+    // upload.
+    if (localTime > remoteTime + 2000) {
+      final bytes = await localFile.readAsBytes();
+      await _connection!.writeFile(remotePath, bytes);
+      await SyncRepository.saveSyncState(
+        localSave.filePath,
+        localTime,
+        DateTime.now().millisecondsSinceEpoch,
+        localSize,
+      );
+      return _SyncOutcome.uploaded;
+    }
+    // Local is older — leave remote alone; pre-launch hook will sync down.
+    return _SyncOutcome.skippedUpToDate;
+  }
+
+  /// Before-launch: bias toward download (pull the latest save from the NAS).
+  Future<_SyncOutcome> _syncOneFileBeforeLaunch(
+    GameModel game,
+    LocalSaveFile localSave,
+  ) async {
+    final localFile = File(localSave.filePath);
+    final cfg = _config!;
+    final remotePath = cfg.subdirectory.isEmpty
+        ? '${game.romname}/${localSave.relativePath}'
+        : '${cfg.subdirectory}/${game.romname}/${localSave.relativePath}';
+
+    final remoteStat = await _connection!.stat(remotePath);
+    // No remote — nothing to download.
+    if (remoteStat == null) return _SyncOutcome.skippedUpToDate;
+
+    final remoteTime = remoteStat.modifiedAt.millisecondsSinceEpoch;
+
+    // If local doesn't exist, always download.
+    if (!await localFile.exists()) {
+      final bytes = await _connection!.readFile(remotePath);
+      await localFile.parent.create(recursive: true);
+      await localFile.writeAsBytes(bytes);
+      await SyncRepository.saveSyncState(
+        localSave.filePath,
+        DateTime.now().millisecondsSinceEpoch,
+        remoteTime,
+        bytes.length,
+      );
+      return _SyncOutcome.downloaded;
+    }
+
+    final localStat = await localFile.stat();
+    final localTime = localStat.modified.millisecondsSinceEpoch;
+
+    // Timestamps within 2s — up-to-date.
+    if ((localTime - remoteTime).abs() < 2000) {
+      return _SyncOutcome.skippedUpToDate;
+    }
+
+    final synced = await SyncRepository.getSyncState(localSave.filePath);
+
+    // Persisted snapshot — figure out who changed.
+    if (synced != null) {
+      final syncedLocalMs = synced['local_modified_at'] as int? ?? 0;
+      final syncedCloudMs = synced['cloud_updated_at'] as int? ?? 0;
+      final localChanged = (localTime - syncedLocalMs).abs() > 2000;
+      final cloudChanged = remoteTime > syncedCloudMs + 2000;
+
+      if (!localChanged && cloudChanged) {
+        final bytes = await _connection!.readFile(remotePath);
+        await localFile.writeAsBytes(bytes);
+        await SyncRepository.saveSyncState(
+          localSave.filePath,
+          DateTime.now().millisecondsSinceEpoch,
+          remoteTime,
+          bytes.length,
+        );
+        return _SyncOutcome.downloaded;
+      }
+      if (localChanged && cloudChanged) {
+        return _SyncOutcome.conflict;
+      }
+      if (localChanged && !cloudChanged) {
+        // Local is newer — don't overwrite. After-close will upload.
+        return _SyncOutcome.skippedUpToDate;
+      }
+      return _SyncOutcome.skippedUpToDate;
+    }
+
+    // No snapshot, timestamps diverge — before-launch biases toward download.
+    if (remoteTime > localTime + 2000) {
+      final bytes = await _connection!.readFile(remotePath);
+      await localFile.writeAsBytes(bytes);
+      await SyncRepository.saveSyncState(
+        localSave.filePath,
+        DateTime.now().millisecondsSinceEpoch,
+        remoteTime,
+        bytes.length,
+      );
+      return _SyncOutcome.downloaded;
+    }
+    // Local is newer — don't overwrite.
+    return _SyncOutcome.skippedUpToDate;
+  }
 }
+
+/// Internal outcome of a per-file sync operation.
+enum _SyncOutcome { uploaded, downloaded, skippedUpToDate, conflict }
