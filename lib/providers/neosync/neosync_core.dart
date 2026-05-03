@@ -586,7 +586,7 @@ extension NeoSyncCore on NeoSyncProvider {
       }
 
       // Buscar TODOS los archivos de save locales para este juego (saves y states)
-      final localSaveFiles = await _findGameSaveFiles(game);
+      final localSaveFiles = await findGameSaveFiles(game);
 
       // Si no hay archivos locales, verificar si hay archivos en la nube para descargar
       if (localSaveFiles.isEmpty) {
@@ -892,7 +892,7 @@ extension NeoSyncCore on NeoSyncProvider {
   }
 
   /// Busca TODOS los archivos de guardado locales para un juego específico (saves y states)
-  Future<List<LocalSaveFile>> _findGameSaveFiles(GameModel game) async {
+  Future<List<LocalSaveFile>> findGameSaveFiles(GameModel game) async {
     try {
       // 1. Obtener el sistema para resolver sus rutas JSON
       final system = await _getSystemForGame(game);
@@ -1040,14 +1040,14 @@ extension NeoSyncCore on NeoSyncProvider {
 
       return matchingFiles;
     } catch (e) {
-      NeoSyncProvider._log.e('Error in universal _findGameSaveFiles: $e');
+      NeoSyncProvider._log.e('Error in universal findGameSaveFiles: $e');
       return [];
     }
   }
 
   /// Busca archivo de guardado local para un juego específico (legacy method - returns first match)
   Future<LocalSaveFile?> _findGameSaveFile(GameModel game) async {
-    final allFiles = await _findGameSaveFiles(game);
+    final allFiles = await findGameSaveFiles(game);
     return allFiles.isNotEmpty ? allFiles.first : null;
   }
 
