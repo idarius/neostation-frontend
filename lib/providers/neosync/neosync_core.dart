@@ -480,7 +480,7 @@ extension NeoSyncCore on NeoSyncProvider {
   }
 
   // ==========================================
-  // MÉTODOS PARA SINCRONIZACIÓN POR JUEGO
+  // PER-GAME SYNCHRONIZATION METHODS
   // ==========================================
 
   /// Detecta automáticamente archivos de guardado para un juego específico
@@ -1290,7 +1290,7 @@ extension NeoSyncCore on NeoSyncProvider {
   }
 
   // ==========================================
-  // MÉTODOS PÚBLICOS PARA DESCARGA INDIVIDUAL
+  // PUBLIC METHODS FOR INDIVIDUAL DOWNLOAD
   // ==========================================
 
   /// Obtiene la ruta del directorio de saves de RetroArch (método público)
