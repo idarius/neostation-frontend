@@ -195,6 +195,16 @@ class NeoAssetsService {
     _cachedThemes = null;
   }
 
+  /// Validates a folder/system identifier sourced from a (potentially
+  /// adversarial) manifest. Rejects anything that could traverse the local
+  /// theme cache (e.g. `..`, slashes) or otherwise escape the dir layout.
+  static final RegExp _safeFolderName = RegExp(r'^[A-Za-z0-9_.-]+$');
+  static bool _isSafeFolderName(String name) =>
+      name.isNotEmpty &&
+      name != '.' &&
+      name != '..' &&
+      _safeFolderName.hasMatch(name);
+
   /// Returns the remote URL for a specific system background within a theme.
   static String getBackgroundUrl(String themeFolder, String systemFolderName) {
     return '$_baseRaw/themes/$themeFolder/backgrounds/$systemFolderName.webp';
@@ -211,11 +221,27 @@ class NeoAssetsService {
   }
 
   /// Downloads a remote asset to the local filesystem and returns the absolute path.
+  ///
+  /// Refuses to write to any path that escapes the configured theme cache
+  /// directory (e.g. via `..` segments or absolute siblings). A rogue
+  /// manifest with `folder: "../../../etc/whatever"` would otherwise let an
+  /// attacker overwrite arbitrary files within the app's writable storage.
   static Future<String?> downloadAndCacheAsset(
     String url,
     String localPath,
   ) async {
     try {
+      final cacheDir = await _cacheDir();
+      final canonicalCache = path.canonicalize(cacheDir);
+      final canonicalTarget = path.canonicalize(localPath);
+      if (!path.isWithin(canonicalCache, canonicalTarget)) {
+        _log.w(
+          'Refusing to cache asset outside theme dir: '
+          'cache="$canonicalCache" target="$canonicalTarget"',
+        );
+        return null;
+      }
+
       final file = File(localPath);
       if (await file.exists()) return localPath;
 
@@ -251,6 +277,10 @@ class NeoAssetsService {
   ) {
     final dir = _cachedThemeDir;
     if (dir == null) return null;
+    if (!_isSafeFolderName(themeFolder) ||
+        !_isSafeFolderName(systemFolderName)) {
+      return null;
+    }
     return path.join(dir, themeFolder, 'backgrounds', '$systemFolderName.webp');
   }
 
@@ -261,6 +291,10 @@ class NeoAssetsService {
   ) {
     final dir = _cachedThemeDir;
     if (dir == null) return null;
+    if (!_isSafeFolderName(themeFolder) ||
+        !_isSafeFolderName(systemFolderName)) {
+      return null;
+    }
     return path.join(dir, themeFolder, 'logos', '$systemFolderName.webp');
   }
 
