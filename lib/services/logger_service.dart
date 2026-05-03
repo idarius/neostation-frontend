@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:logger/logger.dart';
 import 'package:neostation/services/config_service.dart';
 
@@ -51,7 +52,7 @@ class LoggerService {
       }
 
       _logger = Logger(
-        level: Level.info,
+        level: kReleaseMode ? Level.warning : Level.info,
         printer: SimplePrinter(colors: true),
         filter: CustomProductionFilter(),
         output: MultiOutput([
