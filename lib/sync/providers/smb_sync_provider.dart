@@ -596,6 +596,86 @@ class SmbSyncProvider extends ChangeNotifier implements ISyncProvider {
   Future<void> updateGameCloudSyncEnabled(
       String gameId, bool enabled) async {}
 
+  @override
+  Future<SyncResult> resolveConflict({
+    required GameModel game,
+    required bool useLocal,
+  }) async {
+    if (!isAuthenticated) {
+      return SyncResult.fail(SyncError.authRequired, message: 'Not connected');
+    }
+
+    final saves = await SaveDiscoveryService.instance.findSaveFilesForGame(game);
+    if (saves.isEmpty) {
+      _gameSyncStates[game.romname] = GameSyncState(
+        gameId: game.romname,
+        gameName: game.name,
+        status: GameSyncStatus.noSaveFound,
+        cloudEnabled: true,
+      );
+      notifyListeners();
+      return SyncResult.ok(message: 'No saves to resolve');
+    }
+
+    final cfg = _config!;
+    int processed = 0;
+    String? lastError;
+
+    for (final localSave in saves) {
+      try {
+        final localFile = File(localSave.filePath);
+        final remotePath = cfg.subdirectory.isEmpty
+            ? '${game.romname}/${localSave.relativePath}'
+            : '${cfg.subdirectory}/${game.romname}/${localSave.relativePath}';
+
+        if (useLocal) {
+          if (!await localFile.exists()) continue;
+          final bytes = await localFile.readAsBytes();
+          await _connection!.writeFile(remotePath, bytes);
+          final localStat = await localFile.stat();
+          await SyncRepository.saveSyncState(
+            localSave.filePath,
+            localStat.modified.millisecondsSinceEpoch,
+            DateTime.now().millisecondsSinceEpoch,
+            localStat.size,
+          );
+        } else {
+          final remoteStat = await _connection!.stat(remotePath);
+          if (remoteStat == null) continue;
+          final bytes = await _connection!.readFile(remotePath);
+          await localFile.parent.create(recursive: true);
+          await localFile.writeAsBytes(bytes);
+          await SyncRepository.saveSyncState(
+            localSave.filePath,
+            DateTime.now().millisecondsSinceEpoch,
+            remoteStat.modifiedAt.millisecondsSinceEpoch,
+            bytes.length,
+          );
+        }
+        processed++;
+      } catch (e) {
+        lastError = e.toString();
+      }
+    }
+
+    _gameSyncStates[game.romname] = GameSyncState(
+      gameId: game.romname,
+      gameName: game.name,
+      status: GameSyncStatus.upToDate,
+      cloudEnabled: true,
+      lastSync: DateTime.now(),
+      errorMessage: lastError,
+    );
+    notifyListeners();
+
+    if (lastError != null) {
+      return SyncResult.fail(SyncError.unknown, message: lastError);
+    }
+    return SyncResult.ok(
+      message: 'Resolved $processed file(s) — kept ${useLocal ? "local" : "remote"}',
+    );
+  }
+
   // ── Per-file sync helpers ─────────────────────────────────────────────────
 
   /// After-play: bias toward upload (user just played and saved).

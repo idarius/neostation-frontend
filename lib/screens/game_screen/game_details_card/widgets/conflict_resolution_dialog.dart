@@ -43,19 +43,21 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
     });
 
     try {
-      // Logic for both paths currently converges on detectGameSaveFiles to refresh state.
-      if (useCloudVersion) {
-        await widget.syncProvider.detectGameSaveFiles(widget.game);
-      } else {
-        await widget.syncProvider.detectGameSaveFiles(widget.game);
-      }
+      final result = await widget.syncProvider.resolveConflict(
+        game: widget.game,
+        useLocal: !useCloudVersion,
+      );
 
       if (mounted) {
         Navigator.of(context).pop();
         AppNotification.showNotification(
           context,
-          'Conflict resolved - ${useCloudVersion ? "Cloud" : "Local"} version kept',
-          type: NotificationType.success,
+          result.success
+              ? 'Conflict resolved - ${useCloudVersion ? "Cloud" : "Local"} version kept'
+              : 'Failed to resolve conflict: ${result.message ?? "unknown error"}',
+          type: result.success
+              ? NotificationType.success
+              : NotificationType.error,
         );
       }
     } catch (e) {

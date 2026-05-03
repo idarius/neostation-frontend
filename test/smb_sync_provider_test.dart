@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:neostation/models/game_model.dart';
 import 'package:neostation/models/smb_credentials_model.dart';
 import 'package:neostation/sync/i_sync_provider.dart';
 import 'package:neostation/sync/providers/smb_sync_provider.dart';
@@ -78,6 +79,24 @@ void main() {
     test('getQuota returns null', () async {
       final provider = SmbSyncProvider();
       expect(await provider.getQuota(), isNull);
+    });
+
+    test('resolveConflict fails when not authenticated', () async {
+      final provider = SmbSyncProvider();
+      const game = GameModel(
+        romname: 'test.rom',
+        realname: 'Test',
+        name: 'Test',
+        year: '',
+        developer: '',
+        publisher: '',
+        genre: '',
+        players: '',
+        rating: 0.0,
+      );
+      final r = await provider.resolveConflict(game: game, useLocal: true);
+      expect(r.success, isFalse);
+      expect(r.error, SyncError.authRequired);
     });
   });
 

@@ -109,6 +109,20 @@ abstract class ISyncProvider {
   /// Updates whether cloud sync is enabled for a specific game.
   Future<void> updateGameCloudSyncEnabled(String gameId, bool enabled) async {}
 
+  /// Resolves an existing conflict for [game] by force-pushing one side.
+  ///
+  /// When [useLocal] is true, every local save for the game overwrites its
+  /// remote counterpart; when false, every remote save overwrites the local
+  /// one. Implementations must update their internal sync bookkeeping so the
+  /// next conflict detection sees both sides as in sync.
+  Future<SyncResult> resolveConflict({
+    required GameModel game,
+    required bool useLocal,
+  }) async => SyncResult.fail(
+    SyncError.unknown,
+    message: 'resolveConflict not supported by $providerId',
+  );
+
   // ── Optional Capabilities (override as needed) ─────────────────────────────
 
   /// Storage quota info. Return null if the provider has no quota concept.

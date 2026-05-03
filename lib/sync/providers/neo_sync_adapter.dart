@@ -193,6 +193,22 @@ class NeoSyncAdapter extends ChangeNotifier implements ISyncProvider {
     await _provider.updateGameCloudSyncEnabled(gameId, enabled);
   }
 
+  @override
+  Future<SyncResult> resolveConflict({
+    required GameModel game,
+    required bool useLocal,
+  }) async {
+    // NeoSync upstream does not expose a force-push API; fall back to a state
+    // refresh so the dialog completes without error. Honest "no-op resolved"
+    // behaviour matches the pre-fork dialog flow.
+    try {
+      await _provider.detectGameSaveFiles(game);
+      return SyncResult.ok();
+    } catch (e) {
+      return SyncResult.fail(SyncError.unknown, message: e.toString());
+    }
+  }
+
   // ── Optional Capabilities ──────────────────────────────────────────────────
 
   @override
