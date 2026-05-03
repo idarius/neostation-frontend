@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
@@ -75,6 +76,11 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
 
   SecondaryDisplayState? _secondaryDisplayState;
 
+  /// Cancellable retry-timer for the first-launch secondary display sync
+  /// (kicks 600 ms after initState in case the OS reports <=1 displays on
+  /// the initial post-frame tick).
+  Timer? _secondarySyncRetryTimer;
+
   /// In-memory cache for resolved ID3v2 album art.
   Uint8List? _resolvedMusicCoverBytes;
   bool _isResolvingMusicCover = false;
@@ -118,7 +124,9 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
     });
     // Delayed retry for first-launch where getDisplays() may return <=1 on
     // the initial post-frame tick but the secondary connects shortly after.
-    Future.delayed(const Duration(milliseconds: 600), () {
+    // Cancellable so dispose() doesn't fire _updateSecondaryScreenName on
+    // an unmounted state.
+    _secondarySyncRetryTimer = Timer(const Duration(milliseconds: 600), () {
       if (mounted) _updateSecondaryScreenName();
     });
     _musicPlayerService.addListener(_handleMusicStateChanged);
@@ -157,6 +165,7 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
 
   @override
   void dispose() {
+    _secondarySyncRetryTimer?.cancel();
     _musicPlayerService.removeListener(_handleMusicStateChanged);
     _secondaryDisplayState?.removeListener(_onSecondaryStateChanged);
     _cleanupGamepad();
