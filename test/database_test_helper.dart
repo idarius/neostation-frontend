@@ -259,5 +259,17 @@ class DatabaseTestHelper {
         file_hash TEXT
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE smb_credentials (
+        id INTEGER PRIMARY KEY,
+        host TEXT NOT NULL,
+        share TEXT NOT NULL,
+        subdirectory TEXT DEFAULT 'idastation_saves',
+        username TEXT NOT NULL,
+        domain TEXT DEFAULT 'WORKGROUP',
+        enabled INTEGER DEFAULT 1
+      )
+    ''');
   }
 }

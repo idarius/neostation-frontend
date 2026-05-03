@@ -1167,6 +1167,13 @@ class SqliteService {
       }
     }
 
+    // FIX: Ensure smb_credentials table exists (fork-private, no version bump).
+    try {
+      await _ensureSmbCredentialsTable(db);
+    } catch (e) {
+      _log.e('Minor fix for smb_credentials table failed: $e');
+    }
+
     // FIX: Ensure unique_identifier column in app_emulators.
     if (tableNames.contains('app_emulators')) {
       try {
@@ -1398,6 +1405,27 @@ class SqliteService {
     }
   }
 
+  /// Ensures the smb_credentials table exists on existing databases.
+  /// Idempotent — uses CREATE TABLE IF NOT EXISTS, no _databaseVersion bump.
+  Future<void> _ensureSmbCredentialsTable(DatabaseAdapter db) async {
+    try {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS smb_credentials (
+          id INTEGER PRIMARY KEY,
+          host TEXT NOT NULL,
+          share TEXT NOT NULL,
+          subdirectory TEXT DEFAULT 'idastation_saves',
+          username TEXT NOT NULL,
+          domain TEXT DEFAULT 'WORKGROUP',
+          enabled INTEGER DEFAULT 1
+        )
+      ''');
+    } catch (e) {
+      _log.e('Minor fix ensuring smb_credentials table failed: $e');
+      rethrow;
+    }
+  }
+
   /// Creates initial database tables during first run.
   Future<void> _onCreate(DatabaseAdapter db, int version) async {
     final stopwatch = Stopwatch()..start();
@@ -1566,6 +1594,17 @@ class SqliteService {
         video_delay_ms INTEGER DEFAULT 1500,
         hide_recent_system INTEGER DEFAULT 0,
         local_sync_path TEXT
+      );
+      ''',
+      '''
+      CREATE TABLE IF NOT EXISTS smb_credentials (
+        id INTEGER PRIMARY KEY,
+        host TEXT NOT NULL,
+        share TEXT NOT NULL,
+        subdirectory TEXT DEFAULT 'idastation_saves',
+        username TEXT NOT NULL,
+        domain TEXT DEFAULT 'WORKGROUP',
+        enabled INTEGER DEFAULT 1
       );
       ''',
       '''
@@ -2335,6 +2374,47 @@ class SqliteService {
       newConfig,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  /// Returns the (single-row) SMB credentials, or null if not configured.
+  static Future<Map<String, dynamic>?> getSmbCredentials() async {
+    final db = await instance.database;
+    final rows = await db.query('smb_credentials', where: 'id = ?', whereArgs: [1]);
+    if (rows.isEmpty) return null;
+    return rows.first;
+  }
+
+  /// Saves (upserts) the SMB credentials non-secret config. Always row id=1.
+  /// Password is NOT stored here — see SmbCredentialsRepository for that.
+  static Future<void> saveSmbCredentials({
+    required String host,
+    required String share,
+    required String subdirectory,
+    required String username,
+    required String domain,
+    bool enabled = true,
+  }) async {
+    final db = await instance.database;
+    await db.insert(
+      'smb_credentials',
+      {
+        'id': 1,
+        'host': host,
+        'share': share,
+        'subdirectory': subdirectory,
+        'username': username,
+        'domain': domain,
+        'enabled': enabled ? 1 : 0,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// Clears the SMB credentials row. Password also needs to be cleared via
+  /// SmbCredentialsRepository.
+  static Future<void> clearSmbCredentials() async {
+    final db = await instance.database;
+    await db.delete('smb_credentials', where: 'id = ?', whereArgs: [1]);
   }
 
   /// Returns folder names of systems the user has hidden
