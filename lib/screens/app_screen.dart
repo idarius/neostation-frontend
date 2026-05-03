@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:neostation/utils/gamepad_nav.dart';
 import 'package:neostation/providers/sqlite_config_provider.dart';
 import 'package:neostation/services/update_service.dart';
+import 'package:neostation/services/systems_update_service.dart';
 import 'package:neostation/widgets/update_dialog.dart';
+import 'package:neostation/widgets/custom_notification.dart';
 import 'package:neostation/services/logger_service.dart';
 import '../widgets/fixed_header.dart';
 import 'systems_screen/system_content.dart';
@@ -139,6 +141,7 @@ class AppScreenState extends State<AppScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _gamepadNav.initialize();
       _checkForUpdates();
+      _checkForSystemsUpdate();
       _scheduleTabPrewarm();
     });
 
@@ -197,6 +200,23 @@ class AppScreenState extends State<AppScreen> {
       });
     } catch (e) {
       _log.e('AppScreen: Failed to initiate update check', error: e);
+    }
+  }
+
+  /// Checks the neostation-systems GitHub repo for updated system JSON configs.
+  Future<void> _checkForSystemsUpdate() async {
+    try {
+      final result = await SystemsUpdateService.checkAndUpdate();
+      if (result != null && mounted) {
+        AppNotification.showNotification(
+          context,
+          'Systems updated to v${result.newVersion} (${result.filesUpdated} files)',
+          type: NotificationType.success,
+          icon: Icons.system_update_alt,
+        );
+      }
+    } catch (e) {
+      _log.e('AppScreen: Systems update check failure', error: e);
     }
   }
 
