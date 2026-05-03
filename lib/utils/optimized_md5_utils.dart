@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:archive/archive.dart';
@@ -16,6 +17,15 @@ import 'dart:convert';
 /// and Android Storage Access Framework (SAF) URI paths.
 class OptimizedMd5Utils {
   static final _log = LoggerService.instance;
+
+  /// Computes MD5 of [bytes] in a background isolate so multi-MB ROM
+  /// hashing doesn't block the UI thread. The cross-isolate copy of
+  /// [bytes] is acceptable for the typical 256 KB – 8 MB ROM range used
+  /// by RetroAchievements hash strategies; for very large ROMs the
+  /// platform copy cost still beats blocking the main isolate.
+  static Future<String> _md5IsolateHex(List<int> bytes) {
+    return Isolate.run(() => crypto.md5.convert(bytes).toString());
+  }
 
   /// Validates file existence, supporting both standard paths and Android SAF URIs.
   static Future<bool> fileExists(String filePath) async {
@@ -152,7 +162,7 @@ class OptimizedMd5Utils {
         hashData.addAll(iconBlock);
       }
 
-      return crypto.md5.convert(hashData).toString();
+      return await _md5IsolateHex(hashData);
     } catch (e) {
       _log.e('Error calculating DS MD5 for $filePath: $e');
       rethrow;
@@ -163,7 +173,7 @@ class OptimizedMd5Utils {
   ///
   /// Per RetroAchievements specifications, Arcade hashing is based on the
   /// lowercase filename without the extension.
-  static String calculateArcadeMd5(String filePath) {
+  static Future<String> calculateArcadeMd5(String filePath) async {
     try {
       String fileName = filePath;
 
@@ -193,7 +203,7 @@ class OptimizedMd5Utils {
           : fileName;
 
       final bytes = utf8.encode(nameWithoutExtension);
-      return crypto.md5.convert(bytes).toString();
+      return await _md5IsolateHex(bytes);
     } catch (e) {
       _log.e('Error calculating Arcade MD5 for $filePath: $e');
       rethrow;
@@ -217,7 +227,7 @@ class OptimizedMd5Utils {
       }
 
       final bytes = await readAllBytes(filePath);
-      return crypto.md5.convert(bytes).toString();
+      return await _md5IsolateHex(bytes);
     } catch (e) {
       _log.e('Error calculating MD5 for $filePath: $e');
       rethrow;
@@ -280,7 +290,7 @@ class OptimizedMd5Utils {
             .convert(romBytes.length > 16 ? romBytes.sublist(16) : romBytes)
             .toString();
       } else {
-        return crypto.md5.convert(romBytes).toString();
+        return await _md5IsolateHex(romBytes);
       }
     } catch (e) {
       _log.e('Error calculating NES MD5 for $filePath: $e');
@@ -343,7 +353,7 @@ class OptimizedMd5Utils {
             .convert(romBytes.length > 512 ? romBytes.sublist(512) : romBytes)
             .toString();
       } else {
-        return crypto.md5.convert(romBytes).toString();
+        return await _md5IsolateHex(romBytes);
       }
     } catch (e) {
       _log.e('Error calculating SNES MD5 for $filePath: $e');
@@ -388,7 +398,7 @@ class OptimizedMd5Utils {
             .convert(romBytes.length > 128 ? romBytes.sublist(128) : romBytes)
             .toString();
       }
-      return crypto.md5.convert(romBytes).toString();
+      return await _md5IsolateHex(romBytes);
     } catch (e) {
       _log.e('Error calculating Atari 7800 MD5: $e');
       rethrow;
@@ -430,7 +440,7 @@ class OptimizedMd5Utils {
             .convert(romBytes.length > 64 ? romBytes.sublist(64) : romBytes)
             .toString();
       }
-      return crypto.md5.convert(romBytes).toString();
+      return await _md5IsolateHex(romBytes);
     } catch (e) {
       _log.e('Error calculating Atari Lynx MD5: $e');
       rethrow;
@@ -527,7 +537,7 @@ class OptimizedMd5Utils {
             hashBytes[i] = hashBytes[i + 1];
             hashBytes[i + 1] = temp;
           }
-          return crypto.md5.convert(hashBytes).toString();
+          return await _md5IsolateHex(hashBytes);
         }
         // Detect Little Endian (.n64)
         else if (hashBytes[0] == 0x40 && hashBytes[1] == 0x12) {
@@ -539,10 +549,10 @@ class OptimizedMd5Utils {
             hashBytes[i + 2] = temp1;
             hashBytes[i + 3] = temp0;
           }
-          return crypto.md5.convert(hashBytes).toString();
+          return await _md5IsolateHex(hashBytes);
         }
       }
-      return crypto.md5.convert(romBytes).toString();
+      return await _md5IsolateHex(romBytes);
     } catch (e) {
       _log.e('Error calculating N64 MD5: $e');
       rethrow;

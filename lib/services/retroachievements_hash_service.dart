@@ -287,7 +287,7 @@ class RetroAchievementsHashService {
           systemFolder == 'cps2' ||
           systemFolder == 'cps3' ||
           systemFolder == 'mame') {
-        hash = OptimizedMd5Utils.calculateArcadeMd5(romPath);
+        hash = await OptimizedMd5Utils.calculateArcadeMd5(romPath);
       } else if (systemFolder == 'snes' ||
           systemFolder == 'sfc' ||
           systemFolder == 'satellaview') {
@@ -332,7 +332,7 @@ class RetroAchievementsHashService {
           systemFolder == 'fbneo' ||
           systemFolder == 'neogeo' ||
           systemFolder == 'mame') {
-        hash = OptimizedMd5Utils.calculateArcadeMd5(romPath);
+        hash = await OptimizedMd5Utils.calculateArcadeMd5(romPath);
       } else if (systemFolder == 'snes' ||
           systemFolder == 'sfc' ||
           systemFolder == 'satellaview') {
