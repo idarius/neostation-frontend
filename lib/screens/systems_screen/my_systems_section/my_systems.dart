@@ -408,7 +408,7 @@ class MySystems extends StatelessWidget {
             ),
             child: SystemCardGridView(
               crossAxisCount: Responsive.getSystemsCrossAxisCount(context),
-              childAspectRatio: 1.14,
+              childAspectRatio: 8 / 7,
               systems: allSystems,
               onEnterPressed: () =>
                   _navigateToSystem(context, currentSystem(), configProvider),
@@ -762,7 +762,7 @@ class SystemCardGridView extends StatefulWidget {
   const SystemCardGridView({
     super.key,
     required this.crossAxisCount,
-    this.childAspectRatio = 1.14,
+    this.childAspectRatio = 8 / 7,
     this.onEnterPressed,
     this.onEscapePressed,
     this.systems = const [],
