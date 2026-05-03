@@ -36,6 +36,7 @@ import 'system_cycle_helper.dart';
 import 'widgets/games_empty_state.dart';
 import 'widgets/games_loading_state.dart';
 import 'widgets/letter_indicator.dart';
+import 'widgets/select_game_placeholder.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../utils/game_utils.dart';
 import '../../providers/system_background_provider.dart';
@@ -2206,56 +2207,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
 
   Widget _buildGameDetailsPanel() {
     if (_selectedGame == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 64.r,
-              height: 64.r,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.2),
-                    Colors.white.withValues(alpha: 0.1),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(32.r),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  width: 1.r,
-                ),
-              ),
-              child: Icon(
-                Icons.videogame_asset_outlined,
-                size: 32.r,
-                color: Colors.white.withValues(alpha: 0.5),
-              ),
-            ),
-            SizedBox(height: 16.r),
-            Text(
-              AppLocale.selectAGame.getString(context),
-              style: TextStyle(
-                fontSize: 18.r,
-                fontWeight: FontWeight.w500,
-                color: Colors.white.withValues(alpha: 0.7),
-                letterSpacing: 0.5,
-              ),
-            ),
-            SizedBox(height: 8.r),
-            Text(
-              AppLocale.chooseGameFromList.getString(context),
-              style: TextStyle(
-                fontSize: 14.r,
-                fontWeight: FontWeight.w400,
-                color: Colors.white.withValues(alpha: 0.5),
-                letterSpacing: 0.3,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
+      return const SelectGamePlaceholder();
     }
 
     if (_effectiveSystem.folderName == 'music') {
