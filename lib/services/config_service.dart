@@ -61,7 +61,7 @@ class ConfigService {
       if (Platform.isLinux) {
         final executable = Platform.resolvedExecutable;
         if (executable.contains('/.mount_') ||
-            executable.endsWith('.AppImage')) {
+            executable.toLowerCase().endsWith('.appimage')) {
           final home = Platform.environment['HOME'];
           if (home != null) {
             basePath = path.join(home, '.neostation');
@@ -146,7 +146,7 @@ class ConfigService {
       if (Platform.isLinux) {
         final executable = Platform.resolvedExecutable;
         if (executable.contains('/.mount_') ||
-            executable.endsWith('.AppImage')) {
+            executable.toLowerCase().endsWith('.appimage')) {
           final home = Platform.environment['HOME'];
           if (home != null) {
             basePath = path.join(home, '.neostation');

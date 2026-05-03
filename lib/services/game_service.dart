@@ -1360,7 +1360,7 @@ class GameService {
       }
 
       bool raExists = false;
-      if (Platform.isMacOS && retroArch.path.endsWith('.app')) {
+      if (Platform.isMacOS && retroArch.path.toLowerCase().endsWith('.app')) {
         raExists = await Directory(retroArch.path).exists();
       } else {
         raExists = await File(retroArch.path).exists();
@@ -1410,7 +1410,7 @@ class GameService {
 
       if (Platform.isMacOS) {
         String executable = retroArch.path;
-        if (executable.endsWith('.app')) {
+        if (executable.toLowerCase().endsWith('.app')) {
           executable = path.join(executable, 'Contents', 'MacOS', 'RetroArch');
         }
 
@@ -1517,7 +1517,7 @@ class GameService {
         final ra = detected['RetroArch'];
         if (ra != null) {
           executable = ra.path;
-          if (executable.endsWith('.app')) {
+          if (executable.toLowerCase().endsWith('.app')) {
             executable = path.join(
               executable,
               'Contents',
