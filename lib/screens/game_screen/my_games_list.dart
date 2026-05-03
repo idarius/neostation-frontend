@@ -293,7 +293,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
     MusicPlayerService().removeListener(_onMusicPlayerStateChanged);
 
     _loadingSplashTimer?.cancel();
-    _secondaryDisplayState?.dispose();
+    _secondaryDisplayState?.removeListener(_onSecondaryDisplayStateChanged);
 
     _cleanupResources();
     _backButtonFocusNode.dispose();
