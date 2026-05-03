@@ -119,9 +119,10 @@ class MainActivity: MultiDisplayFlutterActivity(), GamepadsCompatibleActivity {
                     val data = call.argument<String>("data")
                     val type = call.argument<String>("type")
                     val extras = call.argument<List<Map<String, Any>>>("extras")
-                    
+                    val activityFlags = call.argument<List<String>>("activity_flags") ?: emptyList()
+
                     if (packageName != null) {
-                        launchGenericIntent(packageName, activityName, action, category, data, type, extras, result)
+                        launchGenericIntent(packageName, activityName, action, category, data, type, extras, activityFlags, result)
                     } else {
                         result.error("INVALID_ARGUMENTS", "Package name is required", null)
                     }
@@ -383,6 +384,7 @@ class MainActivity: MultiDisplayFlutterActivity(), GamepadsCompatibleActivity {
         data: String?,
         type: String?,
         extras: List<Map<String, Any>>?,
+        activityFlags: List<String>,
         result: MethodChannel.Result
     ) {
         EmulatorLauncher.launchGenericIntent(
@@ -394,6 +396,7 @@ class MainActivity: MultiDisplayFlutterActivity(), GamepadsCompatibleActivity {
             data = data,
             type = type,
             extras = extras,
+            activityFlags = activityFlags,
             result = result
         )
     }
