@@ -3,6 +3,8 @@ import 'package:flutter_localization/flutter_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../l10n/app_locale.dart';
+import '../../../../services/game_service.dart' show GamepadNavigationManager;
+import '../../../../utils/gamepad_nav.dart';
 
 /// Shows a modal dialog that lets the user edit the search name before a
 /// ScreenScraper request. Returns the trimmed string on submit, or `null` if
@@ -11,17 +13,41 @@ import '../../../../l10n/app_locale.dart';
 /// [initialName] is what the field starts with (typically `_game.name`).
 /// [resetName] is what the Reset button restores the field to (typically the
 /// raw ROM filename ScreenScraper would search by default).
+///
+/// Pushes a dedicated gamepad layer for the lifetime of the dialog so that B
+/// (or any "back" gesture from the gamepad) only closes the dialog, instead of
+/// invoking the parent screen's onBack — which used to popLayer + Navigator.pop
+/// in sequence and left the parent visible but with no active gamepad layer.
 Future<String?> showScrapeNameDialog(
   BuildContext context, {
   required String initialName,
   required String resetName,
-}) {
-  return showDialog<String>(
-    context: context,
-    barrierDismissible: true,
-    builder: (ctx) =>
-        _ScrapeNameDialog(initialName: initialName, resetName: resetName),
+}) async {
+  final navigatorState = Navigator.of(context);
+
+  final dialogNav = GamepadNavigation(
+    onBack: () {
+      if (navigatorState.canPop()) navigatorState.pop();
+    },
   );
+  dialogNav.initialize();
+  GamepadNavigationManager.pushLayer(
+    'scrape_name_dialog',
+    onActivate: dialogNav.activate,
+    onDeactivate: dialogNav.deactivate,
+  );
+
+  try {
+    return await showDialog<String>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) =>
+          _ScrapeNameDialog(initialName: initialName, resetName: resetName),
+    );
+  } finally {
+    GamepadNavigationManager.popLayer('scrape_name_dialog');
+    dialogNav.dispose();
+  }
 }
 
 class _ScrapeNameDialog extends StatefulWidget {
