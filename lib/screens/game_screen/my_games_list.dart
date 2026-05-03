@@ -32,6 +32,7 @@ import 'game_details_card/random_game_dialog.dart';
 import 'music/music_list.dart';
 import 'music/music_player.dart';
 import 'system_cycle_helper.dart';
+import 'widgets/games_loading_state.dart';
 import 'widgets/letter_indicator.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../utils/game_utils.dart';
@@ -2023,7 +2024,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
                 child: SizedBox(
                   child: _isLoading
                       ? (_showLoadingSplash
-                            ? _buildLoadingState()
+                            ? const GamesLoadingState()
                             : const SizedBox.shrink())
                       : _games.isEmpty
                       ? _buildEmptyState()
@@ -2072,75 +2073,6 @@ class _SystemGamesListState extends State<SystemGamesList> {
                 shadow: _letterIndicatorShadow,
                 textShadow: _letterIndicatorTextShadow,
               ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Visual placeholder for initial data hydration.
-  Widget _buildLoadingState() {
-    return Center(
-      child: Container(
-        padding: EdgeInsets.all(32.w),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor.withValues(alpha: 0.25),
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-            width: 1.r,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 64.r,
-              height: 64.r,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                borderRadius: BorderRadius.circular(32.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: 0.3),
-                    blurRadius: 16.r,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).colorScheme.onSurface,
-                  ),
-                  strokeWidth: 3.r,
-                ),
-              ),
-            ),
-            SizedBox(height: 24.r),
-            Text(
-              AppLocale.loadingGames.getString(context),
-              style: TextStyle(
-                fontSize: 20.r,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-                letterSpacing: 0.5,
-              ),
-            ),
-            SizedBox(height: 8.r),
-            Text(
-              AppLocale.preparingLibrary.getString(context),
-              style: TextStyle(
-                fontSize: 14.r,
-                fontWeight: FontWeight.w400,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.7),
-                letterSpacing: 0.3,
-              ),
-            ),
           ],
         ),
       ),
