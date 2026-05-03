@@ -1822,12 +1822,17 @@ class _SystemGamesListState extends State<SystemGamesList> {
       _log.e('Error loading games: $e');
     } finally {
       _loadingSplashTimer?.cancel();
+      // Reset the re-entry flag unconditionally — it's a plain bool, not a
+      // widget-tree concern. Previously gated on `mounted`, which left it
+      // stuck `true` whenever the method bailed via `if (!mounted) return;`
+      // mid-load. Harmless on a dead State, but defensive against any
+      // listener that might fire between unmount and dispose().
+      _isLoadingGames = false;
       if (mounted) {
         setState(() {
           _isLoading = false;
           _showLoadingSplash = false;
         });
-        _isLoadingGames = false;
       }
     }
   }
