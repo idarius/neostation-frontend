@@ -620,19 +620,27 @@ mixin AppLocale {
   static const String neoSyncCloudSyncDisabled = 'neo_sync_cloud_sync_disabled';
   static const String neoSyncQuotaExceeded = 'neo_sync_quota_exceeded';
 
-  // ── Local / NAS sync provider ──────────────────────────────────────────────
-  static const String localSyncProviderName = 'local_sync_provider_name';
-  static const String localSyncProviderSubtitle = 'local_sync_provider_subtitle';
-  static const String localSyncStatusConnected = 'local_sync_status_connected';
-  static const String localSyncStatusUnconfigured =
-      'local_sync_status_unconfigured';
-  static const String localSyncStatusError = 'local_sync_status_error';
-  static const String localSyncBtnPickFolder = 'local_sync_btn_pick_folder';
-  static const String localSyncBtnTest = 'local_sync_btn_test';
-  static const String localSyncBtnList = 'local_sync_btn_list';
-  static const String localSyncRestartHint = 'local_sync_restart_hint';
-  static const String localSyncContentUriUnsupported =
-      'local_sync_content_uri_unsupported';
+  // ── SMB / Network sync provider ────────────────────────────────────────────
+  static const String smbSyncProviderName = 'smb_sync_provider_name';
+  static const String smbSyncProviderSubtitle = 'smb_sync_provider_subtitle';
+  static const String smbSyncStatusConnected = 'smb_sync_status_connected';
+  static const String smbSyncStatusDisconnected = 'smb_sync_status_disconnected';
+  static const String smbSyncStatusError = 'smb_sync_status_error';
+  static const String smbSyncFormHost = 'smb_sync_form_host';
+  static const String smbSyncFormShare = 'smb_sync_form_share';
+  static const String smbSyncFormSubdir = 'smb_sync_form_subdir';
+  static const String smbSyncFormUser = 'smb_sync_form_user';
+  static const String smbSyncFormDomain = 'smb_sync_form_domain';
+  static const String smbSyncFormPassword = 'smb_sync_form_password';
+  static const String smbSyncBtnTest = 'smb_sync_btn_test';
+  static const String smbSyncBtnSave = 'smb_sync_btn_save';
+  static const String smbSyncBtnSyncNow = 'smb_sync_btn_sync_now';
+  static const String smbSyncBtnList = 'smb_sync_btn_list';
+  static const String smbSyncErrAuth = 'smb_sync_err_auth';
+  static const String smbSyncErrUnreachable = 'smb_sync_err_unreachable';
+  static const String smbSyncErrShareNotFound = 'smb_sync_err_share_not_found';
+  static const String smbSyncErrTimeout = 'smb_sync_err_timeout';
+  static const String smbSyncErrUnknown = 'smb_sync_err_unknown';
 
   static const String packageNameMissing = 'package_name_missing';
   static const String failedToLaunchAndroidApp = 'failed_to_launch_android_app';

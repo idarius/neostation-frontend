@@ -5,7 +5,7 @@ import 'package:neostation/l10n/app_locale.dart';
 import 'package:neostation/utils/gamepad_nav.dart';
 import 'package:neostation/services/game_service.dart';
 import '../app_screen.dart';
-import 'local_sync_screen/local_sync_content.dart';
+import 'smb_sync_screen/smb_sync_content.dart';
 import 'login_screen/neo_sync_content.dart';
 
 class NeoSyncTab extends StatefulWidget {
@@ -103,7 +103,7 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
     }
     if (_selectedIndex == 1) {
       _popMyLayer();
-      setState(() => _selectedProviderId = 'local_storage');
+      setState(() => _selectedProviderId = 'smb');
       return;
     }
     // Indices 2 (RomM) and 3 (GDrive) are still inactive — no-op.
@@ -112,8 +112,8 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
   @override
   Widget build(BuildContext context) {
     if (_selectedProviderId == 'neosync') return const NeoSyncContent();
-    if (_selectedProviderId == 'local_storage') {
-      return LocalSyncContent(
+    if (_selectedProviderId == 'smb') {
+      return SmbSyncContent(
         onBack: () => setState(() => _selectedProviderId = null),
       );
     }
@@ -164,10 +164,10 @@ class _NeoSyncTabState extends State<NeoSyncTab> {
               _ProviderCard(
                 index: 1,
                 selectedIndex: _selectedIndex,
-                icon: Icons.folder_shared_rounded,
-                name: AppLocale.localSyncProviderName.getString(context),
+                icon: Icons.lan_rounded,
+                name: AppLocale.smbSyncProviderName.getString(context),
                 subtitle:
-                    AppLocale.localSyncProviderSubtitle.getString(context),
+                    AppLocale.smbSyncProviderSubtitle.getString(context),
                 isActive: true,
                 onTap: () {
                   setState(() => _selectedIndex = 1);
