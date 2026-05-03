@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_localization/flutter_localization.dart';
@@ -94,177 +96,190 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
           )
         : DateTime.now();
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final screenSize = MediaQuery.of(context).size;
+
     return Dialog(
       backgroundColor: Colors.transparent,
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.85,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.secondary,
-            ],
-          ),
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(
-            color: Colors.deepOrangeAccent.withValues(alpha: 0.5),
-            width: 2.r,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 2.r,
-              offset: Offset(2.0.r, 2.0.r),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header: Warning status and game identity.
-            Container(
-              padding: EdgeInsets.all(12.r),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.deepOrangeAccent.withValues(alpha: 0.3),
-                    Colors.deepOrangeAccent.withValues(alpha: 0.2),
-                  ],
-                ),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16.r),
-                  topRight: Radius.circular(16.r),
-                ),
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.deepOrangeAccent.withValues(alpha: 0.3),
-                    width: 1.r,
-                  ),
-                ),
+      insetPadding: EdgeInsets.symmetric(horizontal: 24.r, vertical: 24.r),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16.r),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            width: screenSize.width * 0.85,
+            constraints: BoxConstraints(maxHeight: screenSize.height * 0.85),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.10),
+                width: 1,
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.warning,
-                    color: Colors.deepOrangeAccent,
-                    size: 28.r,
-                  ),
-                  SizedBox(width: 12.r),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Save Conflict Detected',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18.r,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 2.r),
-                        Text(
-                          GameUtils.formatGameName(widget.game.name),
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            fontSize: 12.r,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 8.r,
+                  offset: Offset(0, 4.r),
+                ),
+              ],
             ),
-
-            // Content: Arbitration prompt and option cards.
-            Padding(
-              padding: EdgeInsets.all(16.r),
-              child: Column(
-                children: [
-                  Text(
-                    'This game has different save files on your device and in the cloud. Which version would you like to keep?',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: 14.r,
-                      height: 1.4,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header: Warning status and game identity.
+                Container(
+                  padding: EdgeInsets.all(12.r),
+                  decoration: BoxDecoration(
+                    color: colorScheme.error.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(16.r),
+                      topRight: Radius.circular(16.r),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 20.r),
-
-                  // Option A: Authority assigned to local storage.
-                  _buildVersionCard(
-                    title: AppLocale.localSave.getString(context),
-                    subtitle: AppLocale.localSaveSubtitle.getString(context),
-                    date: localDate,
-                    icon: Icons.phone_android,
-                    color: Colors.blue,
-                    onTap: _isResolving
-                        ? null
-                        : () {
-                            SfxService().playNavSound();
-                            _resolveConflict(false);
-                          },
-                  ),
-
-                  SizedBox(height: 12.r),
-
-                  // Option B: Authority assigned to cloud storage.
-                  _buildVersionCard(
-                    title: AppLocale.cloudSaveTitle.getString(context),
-                    subtitle: AppLocale.cloudSaveSubtitle.getString(context),
-                    date: cloudDate,
-                    icon: Icons.cloud,
-                    color: Colors.purple,
-                    onTap: _isResolving
-                        ? null
-                        : () {
-                            SfxService().playNavSound();
-                            _resolveConflict(true);
-                          },
-                  ),
-
-                  SizedBox(height: 16.r),
-
-                  // Termination Actions.
-                  if (!_isResolving)
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(
-                        AppLocale.cancel.getString(context),
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          fontSize: 14.r,
-                        ),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        width: 1,
                       ),
                     ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: colorScheme.error,
+                        size: 28.r,
+                      ),
+                      SizedBox(width: 12.r),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Save Conflict Detected',
+                              style: TextStyle(
+                                color: colorScheme.onSurface,
+                                fontSize: 18.r,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 2.r),
+                            Text(
+                              GameUtils.formatGameName(widget.game.name),
+                              style: TextStyle(
+                                color: colorScheme.onSurface
+                                    .withValues(alpha: 0.7),
+                                fontSize: 12.r,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
-                  // Transition/Loading State.
-                  if (_isResolving)
-                    Column(
+                // Content: Arbitration prompt and option cards.
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(16.r),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                        SizedBox(height: 8.r),
                         Text(
-                          'Resolving conflict...',
+                          'This game has different save files on your device and in the cloud. Which version would you like to keep?',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            fontSize: 12.r,
+                            color: colorScheme.onSurface
+                                .withValues(alpha: 0.9),
+                            fontSize: 14.r,
+                            height: 1.4,
                           ),
+                          textAlign: TextAlign.center,
                         ),
+                        SizedBox(height: 16.r),
+
+                        // Option A: Authority assigned to local storage.
+                        _buildVersionCard(
+                          context: context,
+                          title:
+                              AppLocale.localSave.getString(context),
+                          subtitle: AppLocale.localSaveSubtitle
+                              .getString(context),
+                          date: localDate,
+                          icon: Icons.phone_android,
+                          color: colorScheme.primary,
+                          onTap: _isResolving
+                              ? null
+                              : () {
+                                  SfxService().playNavSound();
+                                  _resolveConflict(false);
+                                },
+                        ),
+
+                        SizedBox(height: 10.r),
+
+                        // Option B: Authority assigned to cloud storage.
+                        _buildVersionCard(
+                          context: context,
+                          title:
+                              AppLocale.cloudSaveTitle.getString(context),
+                          subtitle: AppLocale.cloudSaveSubtitle
+                              .getString(context),
+                          date: cloudDate,
+                          icon: Icons.cloud,
+                          color: colorScheme.tertiary,
+                          onTap: _isResolving
+                              ? null
+                              : () {
+                                  SfxService().playNavSound();
+                                  _resolveConflict(true);
+                                },
+                        ),
+
+                        SizedBox(height: 12.r),
+
+                        // Termination Actions.
+                        if (!_isResolving)
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: Text(
+                              AppLocale.cancel.getString(context),
+                              style: TextStyle(
+                                color: colorScheme.onSurface
+                                    .withValues(alpha: 0.7),
+                                fontSize: 14.r,
+                              ),
+                            ),
+                          ),
+
+                        // Transition/Loading State.
+                        if (_isResolving)
+                          Column(
+                            children: [
+                              CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  colorScheme.primary,
+                                ),
+                              ),
+                              SizedBox(height: 8.r),
+                              Text(
+                                'Resolving conflict...',
+                                style: TextStyle(
+                                  color: colorScheme.onSurface
+                                      .withValues(alpha: 0.7),
+                                  fontSize: 12.r,
+                                ),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
-                ],
-              ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -272,6 +287,7 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
 
   /// Builds a high-contrast card representing a candidate save-state for resolution.
   Widget _buildVersionCard({
+    required BuildContext context,
     required String title,
     required String subtitle,
     required DateTime date,
@@ -279,6 +295,7 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
     required Color color,
     required VoidCallback? onTap,
   }) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -299,22 +316,25 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                color.withValues(alpha: 0.2),
-                color.withValues(alpha: 0.1),
+                color.withValues(alpha: 0.22),
+                color.withValues(alpha: 0.10),
               ],
             ),
             borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: color.withValues(alpha: 0.4), width: 2.r),
+            border: Border.all(
+              color: color.withValues(alpha: 0.45),
+              width: 1.5,
+            ),
           ),
           child: Row(
             children: [
               Container(
                 padding: EdgeInsets.all(8.r),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.3),
+                  color: color.withValues(alpha: 0.30),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
-                child: Icon(icon, color: color, size: 32.r),
+                child: Icon(icon, color: color, size: 28.r),
               ),
               SizedBox(width: 12.r),
               Expanded(
@@ -324,32 +344,38 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
                     Text(
                       title,
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16.r,
+                        color: onSurface,
+                        fontSize: 15.r,
                         fontWeight: FontWeight.bold,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: 2.r),
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 12.r,
+                        color: onSurface.withValues(alpha: 0.6),
+                        fontSize: 11.r,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: 4.r),
+                    SizedBox(height: 3.r),
                     Text(
                       'Last modified: ${_formatDate(date)}',
                       style: TextStyle(
                         color: color,
-                        fontSize: 12.r,
+                        fontSize: 11.r,
                         fontWeight: FontWeight.w500,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: color, size: 24.r),
+              Icon(Icons.chevron_right, color: color, size: 22.r),
             ],
           ),
         ),
