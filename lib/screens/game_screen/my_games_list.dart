@@ -32,6 +32,7 @@ import 'game_details_card/random_game_dialog.dart';
 import 'music/music_list.dart';
 import 'music/music_player.dart';
 import 'system_cycle_helper.dart';
+import 'widgets/games_empty_state.dart';
 import 'widgets/games_loading_state.dart';
 import 'widgets/letter_indicator.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -2027,7 +2028,15 @@ class _SystemGamesListState extends State<SystemGamesList> {
                             ? const GamesLoadingState()
                             : const SizedBox.shrink())
                       : _games.isEmpty
-                      ? _buildEmptyState()
+                      ? GamesEmptyState(
+                          system: _effectiveSystem,
+                          currentQuery: _searchController.text,
+                          onGoBack: () {
+                            SfxService().playBackSound();
+                            _goBack();
+                          },
+                          onToggleRecursiveScan: _onToggleRecursiveScan,
+                        )
                       : _buildGamesList(),
                 ),
               ),
@@ -2079,374 +2088,34 @@ class _SystemGamesListState extends State<SystemGamesList> {
     );
   }
 
-  /// specialized view for systems with zero detected media files.
-  /// includes controls for recursive scanning and directory management.
-  Widget _buildEmptyState() {
-    if (_effectiveSystem.folderName == 'search') {
-      final raw = _searchController.text;
-      final trimmed = raw.trim();
-      final String message;
-      if (trimmed.length < 2) {
-        message = raw.isEmpty
-            ? AppLocale.searchEmptyHint.getString(context)
-            : AppLocale.searchMinLength.getString(context);
-      } else {
-        message = AppLocale.searchNoResults
-            .getString(context)
-            .replaceFirst('{query}', trimmed);
-      }
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 32.w),
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16.sp,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
-          ),
-        ),
+  /// Handles the recursive scan toggle from the empty-state widget.
+  /// Persists the new value, refreshes config + database, then reloads games.
+  Future<void> _onToggleRecursiveScan(bool value) async {
+    final oldSystem = _effectiveSystem;
+    try {
+      await SystemRepository.setRecursiveScan(oldSystem.id!, value);
+
+      if (!mounted) return;
+      final configProvider = context.read<SqliteConfigProvider>();
+      await configProvider.scanSystems();
+      if (!mounted) return;
+
+      await Provider.of<SqliteDatabaseProvider>(
+        context,
+        listen: false,
+      ).loadDatabase();
+      if (!mounted) return;
+
+      await _loadGames();
+    } catch (e) {
+      _log.e('Error toggling recursive scan: $e');
+      if (!mounted) return;
+      AppNotification.showNotification(
+        context,
+        AppLocale.failedToSaveSetting.getString(context),
+        type: NotificationType.error,
       );
     }
-    bool currentScanValue = _effectiveSystem.recursiveScan;
-
-    return Center(
-      child: Container(
-        constraints: BoxConstraints(maxWidth: 600.r),
-        padding: EdgeInsets.symmetric(horizontal: 24.r, vertical: 16.r),
-        margin: EdgeInsets.all(32.r),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
-              Theme.of(context).colorScheme.secondary.withValues(alpha: 0.45),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(
-                context,
-              ).colorScheme.shadow.withValues(alpha: 0.3),
-              blurRadius: 16.r,
-              offset: const Offset(0, 8),
-            ),
-            BoxShadow(
-              color: Theme.of(
-                context,
-              ).colorScheme.shadow.withValues(alpha: 0.1),
-              blurRadius: 32.r,
-              offset: const Offset(0, 16),
-            ),
-          ],
-          border: Border.all(
-            color: Theme.of(
-              context,
-            ).colorScheme.outline.withValues(alpha: 0.15),
-            width: 1.r,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              AppLocale.noGamesFoundFor
-                  .getString(context)
-                  .replaceFirst(
-                    '{name}',
-                    _effectiveSystem.shortName ?? _effectiveSystem.realName,
-                  ),
-              style: TextStyle(
-                fontSize: 16.r,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-                letterSpacing: 0.3,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 4.r),
-            Text(
-              AppLocale.checkRomFiles.getString(context),
-              style: TextStyle(
-                fontSize: 11.r,
-                fontWeight: FontWeight.w400,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.5),
-                letterSpacing: 0.2,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 16.r),
-
-            // Configuration Component: Recursive Library Scanning.
-            StatefulBuilder(
-              builder: (context, setStateBuilder) {
-                return Column(
-                  children: [
-                    Container(
-                      margin: EdgeInsets.only(bottom: 12.r),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.r,
-                        vertical: 8.r,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.05),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.folder_shared_outlined,
-                            color: Colors.white.withValues(alpha: 0.7),
-                            size: 16.r,
-                          ),
-                          SizedBox(width: 8.r),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                AppLocale.recursiveScan.getString(context),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12.r,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              Text(
-                                AppLocale.recursiveScanSubtitle.getString(
-                                  context,
-                                ),
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.5),
-                                  fontSize: 10.r,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(width: 16.r),
-                          Switch(
-                            value: currentScanValue,
-                            activeThumbColor: Theme.of(
-                              context,
-                            ).colorScheme.primary,
-                            onChanged: (value) async {
-                              final oldSystem = _effectiveSystem;
-                              setStateBuilder(() {
-                                currentScanValue = value;
-                              });
-
-                              try {
-                                await SystemRepository.setRecursiveScan(
-                                  oldSystem.id!,
-                                  value,
-                                );
-
-                                if (!context.mounted) return;
-                                final configProvider = context
-                                    .read<SqliteConfigProvider>();
-
-                                await configProvider.scanSystems();
-                                if (!context.mounted) return;
-
-                                await Provider.of<SqliteDatabaseProvider>(
-                                  context,
-                                  listen: false,
-                                ).loadDatabase();
-                                if (!context.mounted) return;
-
-                                await _loadGames();
-                              } catch (e) {
-                                _log.e('Error toggling recursive scan: $e');
-                                if (!context.mounted) return;
-                                AppNotification.showNotification(
-                                  context,
-                                  AppLocale.failedToSaveSetting.getString(
-                                    context,
-                                  ),
-                                  type: NotificationType.error,
-                                );
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Real-time Scan Progress Feedback.
-                    Consumer<SqliteConfigProvider>(
-                      builder: (context, provider, child) {
-                        if (!provider.isScanning ||
-                            provider.totalSystemsToScan <= 0) {
-                          return const SizedBox.shrink();
-                        }
-
-                        return Container(
-                          width: 320.r,
-                          margin: EdgeInsets.only(bottom: 12.r),
-                          padding: EdgeInsets.all(12.r),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.primary.withValues(alpha: 0.2),
-                              width: 1.r,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    provider.scanStatus,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleSmall
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 10.r,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.primary,
-                                        ),
-                                  ),
-                                  Text(
-                                    '${(provider.scanProgress * 100).toInt()}%',
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 10.r,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.primary,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 8.r),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(4.r),
-                                child: LinearProgressIndicator(
-                                  value: provider.scanProgress,
-                                  minHeight: 6.r,
-                                  backgroundColor: Theme.of(
-                                    context,
-                                  ).colorScheme.primary.withValues(alpha: 0.1),
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Theme.of(context).colorScheme.primary,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 4.r),
-                              Text(
-                                AppLocale.scanningSystemOf
-                                    .getString(context)
-                                    .replaceFirst(
-                                      '{current}',
-                                      provider.scannedSystemsCount.toString(),
-                                    )
-                                    .replaceFirst(
-                                      '{total}',
-                                      provider.totalSystemsToScan.toString(),
-                                    ),
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      fontSize: 9.r,
-                                      color: Colors.white.withValues(
-                                        alpha: 0.6,
-                                      ),
-                                    ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                );
-              },
-            ),
-
-            // Navigation Component: Exit Action.
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  SfxService().playBackSound();
-                  _goBack();
-                },
-                borderRadius: BorderRadius.circular(8.r),
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: Container(
-                    padding: EdgeInsets.only(
-                      top: 4.r,
-                      bottom: 4.r,
-                      left: 8.r,
-                      right: 12.r,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(8.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: 0.3),
-                          blurRadius: 8.r,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ColorFiltered(
-                          colorFilter: const ColorFilter.mode(
-                            Colors.white,
-                            BlendMode.srcIn,
-                          ),
-                          child: Image.asset(
-                            'assets/images/gamepad/Xbox_B_button.png',
-                            width: 18.r,
-                            height: 18.r,
-                          ),
-                        ),
-                        SizedBox(width: 6.r),
-                        Text(
-                          AppLocale.back.getString(context),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14.r,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   /// Main layout orchestrator.
