@@ -27,8 +27,19 @@ class AuthService extends ChangeNotifier {
   /// Metadata for the currently authenticated user.
   User? _currentUser;
 
+  /// In-flight guard to prevent duplicate HTTP calls when the user
+  /// double-taps a login/register/verify/reset button before the
+  /// previous request resolves.
+  bool _busy = false;
+
   bool get isLoggedIn => _isLoggedIn;
   User? get currentUser => _currentUser;
+  bool get isBusy => _busy;
+
+  Map<String, dynamic> _busyError() => {
+    'success': false,
+    'message': 'Another auth request is already in progress',
+  };
 
   /// Initializes the service by attempting to restore a previous session from storage.
   ///
@@ -93,6 +104,8 @@ class AuthService extends ChangeNotifier {
     String email,
     String password,
   ) async {
+    if (_busy) return _busyError();
+    _busy = true;
     try {
       final baseUrl = AppConfig.authBaseUrl;
       _log.i('Attempting registration to: $baseUrl/register');
@@ -123,6 +136,8 @@ class AuthService extends ChangeNotifier {
       }
     } catch (e) {
       return {'success': false, 'message': 'Network error: $e'};
+    } finally {
+      _busy = false;
     }
   }
 
@@ -131,6 +146,8 @@ class AuthService extends ChangeNotifier {
   /// Upon successful authentication, it stores the JWT token securely,
   /// updates the internal [_currentUser] state, and notifies listeners.
   Future<Map<String, dynamic>> login(String email, String password) async {
+    if (_busy) return _busyError();
+    _busy = true;
     try {
       final baseUrl = AppConfig.authBaseUrl;
       _log.i('Attempting login to: $baseUrl/login');
@@ -186,11 +203,15 @@ class AuthService extends ChangeNotifier {
       }
     } catch (e) {
       return {'success': false, 'message': 'Network error: $e'};
+    } finally {
+      _busy = false;
     }
   }
 
   /// Verifies a user's email using a verification [token] sent via email.
   Future<Map<String, dynamic>> verifyEmail(String token) async {
+    if (_busy) return _busyError();
+    _busy = true;
     try {
       final response = await http.post(
         Uri.parse('${AppConfig.authBaseUrl}/verify-email'),
@@ -214,6 +235,8 @@ class AuthService extends ChangeNotifier {
       }
     } catch (e) {
       return {'success': false, 'message': 'Network error: $e'};
+    } finally {
+      _busy = false;
     }
   }
 
@@ -319,6 +342,8 @@ class AuthService extends ChangeNotifier {
 
   /// Initiates a password recovery request for the specified email address.
   Future<Map<String, dynamic>> forgotPassword(String email) async {
+    if (_busy) return _busyError();
+    _busy = true;
     try {
       final response = await http.post(
         Uri.parse('${AppConfig.authBaseUrl}/forgot-password'),
@@ -344,6 +369,8 @@ class AuthService extends ChangeNotifier {
       }
     } catch (e) {
       return {'success': false, 'message': 'Network error: $e'};
+    } finally {
+      _busy = false;
     }
   }
 
@@ -352,6 +379,8 @@ class AuthService extends ChangeNotifier {
     String token,
     String newPassword,
   ) async {
+    if (_busy) return _busyError();
+    _busy = true;
     try {
       final response = await http.post(
         Uri.parse('${AppConfig.authBaseUrl}/reset-password'),
@@ -375,6 +404,8 @@ class AuthService extends ChangeNotifier {
       }
     } catch (e) {
       return {'success': false, 'message': 'Network error: $e'};
+    } finally {
+      _busy = false;
     }
   }
 
