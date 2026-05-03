@@ -2818,14 +2818,22 @@ class _GameListViewState extends State<GameListView>
 
       _selectionController.duration = animationDuration;
       if (isWrap) {
-        // Snap the highlight overlay to the new position without sliding.
-        _selectionAnimation = AlwaysStoppedAnimation(end);
+        // Animate the highlight as a 1-cell slide from the adjacent direction
+        // of the wrap (mimics normal nav feel) instead of sliding across the
+        // entire list.
+        final direction =
+            (widget.selectedIndex - oldWidget.selectedIndex).sign;
+        final adjacentBegin = end + direction.toDouble();
+        _selectionAnimation =
+            Tween<double>(begin: adjacentBegin, end: end).animate(
+          CurvedAnimation(parent: _selectionController, curve: curve),
+        );
       } else {
         _selectionAnimation = Tween<double>(begin: begin, end: end).animate(
           CurvedAnimation(parent: _selectionController, curve: curve),
         );
-        _selectionController.forward(from: 0);
       }
+      _selectionController.forward(from: 0);
 
       _centeredScrollController.updateSelectedIndex(widget.selectedIndex);
       if (isWrap) {
