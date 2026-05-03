@@ -151,6 +151,13 @@ class _RandomGameDialogState extends State<RandomGameDialog>
     _cycleTimer = Timer.periodic(const Duration(milliseconds: _baseDurationMs), (
       timer,
     ) {
+      // Defensive: the dialog can be popped while the periodic timer is
+      // still scheduled. Without this guard a Tick that fires after the
+      // pop would call setState against a disposed state.
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
       if (_cycleCount >= _totalCycles) {
         timer.cancel();
         setState(() {
