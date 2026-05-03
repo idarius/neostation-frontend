@@ -178,6 +178,11 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
   double _scrapeProgress = 0.0;
   String _scrapeStatus = '';
 
+  // Cross-instance memory of the last tab the user picked. Persists across
+  // game-details mount/unmount within a session (B-back to systems then
+  // re-enter resumes on the same tab). Resets on app restart.
+  static DetailTab _lastUsedTab = DetailTab.general;
+
   // View state: Current active tab and scrolling context.
   DetailTab _currentTab = DetailTab.general;
   final ScrollController _achievementsScrollController = ScrollController();
@@ -254,7 +259,7 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
     _favoriteButtonFocusNode = FocusNode();
     _scrapeButtonFocusNode = FocusNode();
 
-    _currentTab = DetailTab.general;
+    _currentTab = _lastUsedTab;
 
     // Reset primary UI 'Game Info' overlay to ensure clean state transitions.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1127,6 +1132,8 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
     if (_currentTab == tab) return;
 
     final wasGameInfo = _currentTab == DetailTab.gameInfo;
+
+    _lastUsedTab = tab;
 
     setState(() {
       _currentTab = tab;
