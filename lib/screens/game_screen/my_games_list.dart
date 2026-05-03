@@ -32,6 +32,7 @@ import 'game_details_card/random_game_dialog.dart';
 import 'music/music_list.dart';
 import 'music/music_player.dart';
 import 'system_cycle_helper.dart';
+import 'widgets/letter_indicator.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../utils/game_utils.dart';
 import '../../providers/system_background_provider.dart';
@@ -2063,49 +2064,15 @@ class _SystemGamesListState extends State<SystemGamesList> {
 
             // Navigation Layer: Visual alphabetical feedback for rapid scrolling.
             if (_currentLetter != null && !_isGameLaunching)
-              _buildLetterIndicator(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Renders a large, semi-transparent alphabetical indicator for high-speed navigation.
-  Widget _buildLetterIndicator() {
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 150),
-      opacity: _isNavigatingFast ? 1.0 : 0.0,
-      child: RepaintBoundary(
-        child: Center(
-          child: Container(
-            width: 120.r,
-            height: 120.r,
-            decoration: BoxDecoration(
-              color: _letterIndicatorBg,
-              borderRadius: BorderRadius.circular(24.r),
-              border: Border.all(color: _letterIndicatorBorder, width: 2.r),
-              boxShadow: [
-                BoxShadow(
-                  color: _letterIndicatorShadow,
-                  blurRadius: 30.r,
-                  spreadRadius: 5.r,
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                _currentLetter!,
-                style: TextStyle(
-                  fontSize: 72.r,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(color: _letterIndicatorTextShadow, blurRadius: 10.r),
-                  ],
-                ),
+              LetterIndicator(
+                letter: _currentLetter!,
+                isVisible: _isNavigatingFast,
+                background: _letterIndicatorBg,
+                border: _letterIndicatorBorder,
+                shadow: _letterIndicatorShadow,
+                textShadow: _letterIndicatorTextShadow,
               ),
-            ),
-          ),
+          ],
         ),
       ),
     );
