@@ -357,7 +357,8 @@ class _GameLaunchDialogState extends State<GameLaunchDialog> {
 
               if (widget.syncProvider.isAuthenticated)
                 Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (_neoSyncStatus ==
                             AppLocale.neoSyncSynchronizing.getString(context) &&
@@ -396,13 +397,17 @@ class _GameLaunchDialogState extends State<GameLaunchDialog> {
 
                     SizedBox(width: 4.r),
 
-                    Text(
-                      _neoSyncStatus,
-                      style: TextStyle(
-                        fontSize: 14.r,
-                        fontWeight: FontWeight.w400,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        letterSpacing: 0.2.r,
+                    Flexible(
+                      child: Text(
+                        _neoSyncStatus,
+                        style: TextStyle(
+                          fontSize: 14.r,
+                          fontWeight: FontWeight.w400,
+                          color: Theme.of(context).colorScheme.onSurface,
+                          letterSpacing: 0.2.r,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],

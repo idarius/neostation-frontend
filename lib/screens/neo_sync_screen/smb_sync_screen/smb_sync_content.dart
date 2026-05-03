@@ -272,47 +272,31 @@ class _SmbSyncContentState extends State<SmbSyncContent> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.r, vertical: 12.r),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: widget.onBack,
-              ),
-              SizedBox(width: 4.r),
-              Icon(Icons.lan_rounded,
-                  size: 22.r, color: theme.colorScheme.secondary),
-              SizedBox(width: 8.r),
-              Text(
-                AppLocale.smbSyncProviderName.getString(context),
-                style: theme.textTheme.titleMedium,
-              ),
-              SizedBox(width: 12.r),
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 10.r,
-                  vertical: 4.r,
+    return SafeArea(
+      child: Padding(
+        // Extra top padding to clear the LB/RB tab navbar that overlays the
+        // top of the page in this app's tab layout.
+        padding: EdgeInsets.fromLTRB(16.r, 56.r, 16.r, 12.r),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: widget.onBack,
                 ),
-                decoration: BoxDecoration(
-                  color: _statusColor().withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(20.r),
+                SizedBox(width: 4.r),
+                Icon(Icons.lan_rounded,
+                    size: 22.r, color: theme.colorScheme.secondary),
+                SizedBox(width: 8.r),
+                Text(
+                  AppLocale.smbSyncProviderName.getString(context),
+                  style: theme.textTheme.titleMedium,
                 ),
-                child: Text(
-                  _statusLabel(),
-                  style: TextStyle(
-                    fontSize: 11.r,
-                    color: _statusColor(),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8.r),
+              ],
+            ),
+            SizedBox(height: 8.r),
           Expanded(
             child: SingleChildScrollView(
               child: Column(
@@ -365,33 +349,34 @@ class _SmbSyncContentState extends State<SmbSyncContent> {
                         ),
                     ],
                   ),
-                  if (_resultMessage != null) ...[
-                    SizedBox(height: 12.r),
-                    Container(
-                      padding: EdgeInsets.all(8.r),
-                      decoration: BoxDecoration(
-                        color: (_resultColor ?? Colors.grey)
-                            .withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(6.r),
-                      ),
-                      child: Text(
-                        _resultMessage!,
-                        style: TextStyle(color: _resultColor),
+                  // Unified status line: shows the latest action result
+                  // when one exists, otherwise the live provider state.
+                  SizedBox(height: 12.r),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(8.r),
+                    decoration: BoxDecoration(
+                      color: (_resultMessage != null
+                              ? (_resultColor ?? Colors.grey)
+                              : _statusColor())
+                          .withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                    child: Text(
+                      _resultMessage ?? _statusLabel(),
+                      style: TextStyle(
+                        color: _resultMessage != null
+                            ? _resultColor
+                            : _statusColor(),
                       ),
                     ),
-                  ],
-                  if (kDebugMode) ...[
-                    SizedBox(height: 16.r),
-                    Text(
-                      'Phase 2 — Sync now (full sync) wired in Phase 4.',
-                      style: TextStyle(fontSize: 10.r, color: Colors.grey),
-                    ),
-                  ],
+                  ),
                 ],
               ),
             ),
           ),
         ],
+        ),
       ),
     );
   }
