@@ -43,13 +43,29 @@ class SqliteDatabaseProvider extends ChangeNotifier {
   DateTime? get lastUpdate => _lastUpdate;
   bool get initialized => _initialized;
 
+  /// In-flight initialize() promise. Two concurrent callers (e.g. main()
+  /// and a SetupWizard postFrame call) used to both pass the
+  /// `if (_initialized) return;` check before the first one finished
+  /// loading the database, double-running loadDatabase. Returning the
+  /// cached future joins them onto a single execution.
+  Future<void>? _initFuture;
+
   /// Initializes the provider by performing an initial full load of the database.
   Future<void> initialize({
     List<String>? romFolders,
     List<SystemModel>? availableSystems,
-  }) async {
-    if (_initialized) return;
+  }) {
+    if (_initialized) return Future.value();
+    return _initFuture ??= _doInitialize(
+      romFolders: romFolders,
+      availableSystems: availableSystems,
+    );
+  }
 
+  Future<void> _doInitialize({
+    List<String>? romFolders,
+    List<SystemModel>? availableSystems,
+  }) async {
     if (romFolders != null) _romFolders = romFolders;
     if (availableSystems != null) _availableSystems = availableSystems;
 
@@ -62,6 +78,7 @@ class SqliteDatabaseProvider extends ChangeNotifier {
       _log.e('$_error');
     } finally {
       _setLoading(false);
+      _initFuture = null;
     }
   }
 

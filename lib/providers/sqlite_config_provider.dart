@@ -106,11 +106,20 @@ class SqliteConfigProvider extends ChangeNotifier {
 
   /// Initializes the provider by establishing the SQLite connection and loading user configuration.
   ///
+  /// In-flight initialize() promise. Two concurrent callers used to both
+  /// pass `if (_initialized) return;` before the first finished syncing
+  /// the system databases — duplicating SqliteConfigService.initialize()
+  /// and the asset-sync work. Returning the cached future joins them.
+  Future<void>? _initFuture;
+
   /// Triggers a synchronization of system metadata from assets and attempts
   /// an initial system scan if auto-scan on startup is enabled.
-  Future<void> initialize() async {
-    if (_initialized) return;
+  Future<void> initialize() {
+    if (_initialized) return Future.value();
+    return _initFuture ??= _doInitialize();
+  }
 
+  Future<void> _doInitialize() async {
     _setLoading(true);
     _error = null;
 
@@ -191,6 +200,7 @@ class SqliteConfigProvider extends ChangeNotifier {
       _log.e('$_error');
     } finally {
       _setLoading(false);
+      _initFuture = null;
     }
   }
 
