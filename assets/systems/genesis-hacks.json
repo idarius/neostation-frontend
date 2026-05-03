@@ -1,8 +1,8 @@
 {
   "system": {
-    "id": "genesis",
-    "name": "Sega Genesis",
-    "short_name": "Genesis",
+    "id": "gen-hacks",
+    "name": "Sega Genesis Hacks",
+    "short_name": "GENH",
     "details": {
       "manufacturer": "Sega",
       "release_date": "1988-10-29",
@@ -14,8 +14,10 @@
       "retroachievements": 1
     },
     "folders": [
-      "genesis",
-      "Sega Genesis"
+      "genh",
+      "gen-hacks",
+      "genesis-hacks",
+      "Sega Genesis Hacks"
     ],
     "colors": [
       "#424242",
@@ -62,7 +64,7 @@
       "is_retroachievements_compatible": false,
       "platforms": {
         "android": {
-          "launch_arguments": "-n com.androidemu.gens/.EmulatorActivity -a android.intent.action.VIEW -d {file.path} --activity-clear-task --activity-clear-top --activity-no-history"
+          "launch_arguments": "-n com.androidemu.gens/.EmulatorActivity -a android.intent.action.VIEW -d \"{file.uri}\" --activity-clear-task --activity-clear-top --activity-no-history"
         }
       }
     },
