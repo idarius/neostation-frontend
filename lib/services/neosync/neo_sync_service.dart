@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:neostation/models/neo_sync_models.dart';
 import 'package:neostation/utils/app_config.dart';
@@ -106,7 +107,11 @@ class NeoSyncService extends ChangeNotifier {
     try {
       final fileBytes = await file.readAsBytes();
       final fileHash = _calculateFileHash(fileBytes);
-      final filename = customFilename ?? file.path;
+      // Send only the base filename to the cloud — the full local path
+      // would leak the user's username and ROM directory layout via the
+      // `file_name` field and multipart filename header. Defensive
+      // basename even on customFilename in case a caller forgot.
+      final filename = p.basename(customFilename ?? file.path);
 
       final fileStat = await file.stat();
       final localModifiedAt = fileStat.modified;
