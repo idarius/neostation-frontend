@@ -26,6 +26,7 @@ import 'package:neostation/utils/custom_scroll_behavior.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import 'package:neostation/l10n/app_locale.dart';
 import 'package:neostation/services/logger_service.dart';
+import 'package:neostation/services/media_cache_service.dart';
 import 'package:neostation/services/sfx_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -128,6 +129,8 @@ void main() async {
   final log = LoggerService.instance;
   await log.init();
   log.i('Starting NeoStation...');
+
+  await MediaCacheService.instance.initialize();
 
   // Inicializar window_manager para desktop (solo Windows y macOS)
   if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
