@@ -1814,6 +1814,10 @@ class SqliteService {
       // Indexes for user_screenscraper_metadata
       'CREATE INDEX IF NOT EXISTS idx_user_screenscraper_metadata_filename ON user_screenscraper_metadata(filename);',
       'CREATE INDEX IF NOT EXISTS idx_user_screenscraper_metadata_app_system_id ON user_screenscraper_metadata(app_system_id);',
+      // Composite index for the hot JOIN in getGamesBySystem and
+      // getRomsForScraping (filter by app_system_id, then match on filename).
+      // Lets SQLite cover both columns from one B-tree.
+      'CREATE INDEX IF NOT EXISTS idx_user_screenscraper_metadata_system_filename ON user_screenscraper_metadata(app_system_id, filename);',
       'CREATE INDEX IF NOT EXISTS idx_user_screenscraper_metadata_developer ON user_screenscraper_metadata(developer);',
       'CREATE INDEX IF NOT EXISTS idx_user_screenscraper_metadata_publisher ON user_screenscraper_metadata(publisher);',
       'CREATE INDEX IF NOT EXISTS idx_user_screenscraper_metadata_genre ON user_screenscraper_metadata(genre);',
