@@ -2405,6 +2405,11 @@ class _GameListViewState extends State<GameListView>
   late AnimationController _selectionController;
   late Animation<double> _selectionAnimation;
 
+  // Race guard: set true on the first line of dispose() so any in-flight
+  // didUpdateWidget → _updateFocusNodes can early-return instead of
+  // double-disposing FocusNodes (AUDIT.md:82).
+  bool _disposed = false;
+
   // Constants for pixel-perfect highlight positioning.
   static const double _itemHeightBase = 26.0;
 
@@ -2522,6 +2527,7 @@ class _GameListViewState extends State<GameListView>
 
   @override
   void dispose() {
+    _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
     _centeredScrollController.dispose();
     _selectionController.dispose();
@@ -2532,6 +2538,7 @@ class _GameListViewState extends State<GameListView>
   }
 
   void _updateFocusNodes() {
+    if (_disposed) return;
     final newCount = widget.games.length;
     if (newCount < _gameFocusNodes.length) {
       for (int i = newCount; i < _gameFocusNodes.length; i++) {
