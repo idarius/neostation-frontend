@@ -113,4 +113,5 @@ flutter {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:${project.property("kotlin_version")}")
+    implementation("eu.agno3.jcifs:jcifs-ng:2.1.10")
 }
