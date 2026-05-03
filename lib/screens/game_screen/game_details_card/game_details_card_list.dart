@@ -959,9 +959,6 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
     // The dialog only appears once we know the default name failed (or
     // succeeded and the user wants to retry with a different name).
     if (scrapeState == 'never') {
-      if (!widget.isSecondaryScreenActive) {
-        _setTab(DetailTab.gameInfo);
-      }
       _startSingleGameScrape(forceOverwrite: !isDescriptionMissing);
       return;
     }
@@ -982,9 +979,6 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
 
     if (!mounted) return;
 
-    if (!widget.isSecondaryScreenActive) {
-      _setTab(DetailTab.gameInfo);
-    }
     // Force metadata overwrite if a valid description is already present.
     _startSingleGameScrape(
       forceOverwrite: !isDescriptionMissing,
@@ -1092,10 +1086,8 @@ class _GameDetailsCardListState extends State<GameDetailsCardList>
 
   /// Handles secondary hardware actions (typically mapped to X or RB).
   void _handleSecondaryAction() {
-    if (!_isGameInfoHidden) {
-      _setTab(DetailTab.gameInfo);
-    } else {
-      // If primary UI is hidden (OLED secondary screen optimization), skip navigation.
+    if (_isGameInfoHidden) {
+      // If primary UI is hidden (OLED secondary screen optimization), skip.
       return;
     }
 
