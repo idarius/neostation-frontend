@@ -12,7 +12,9 @@ import jcifs.context.BaseContext
 import jcifs.smb.NtlmPasswordAuthenticator
 import jcifs.smb.SmbException
 import jcifs.smb.SmbFile
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.io.IOException
+import java.security.Security
 import java.util.Properties
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -42,8 +44,28 @@ class SmbClientPlugin : FlutterPlugin, MethodCallHandler {
     private val connections = ConcurrentHashMap<String, Connection>()
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        ensureFullBouncyCastleProvider()
         channel = MethodChannel(binding.binaryMessenger, CHANNEL)
         channel.setMethodCallHandler(this)
+    }
+
+    /**
+     * Replaces Android's stripped "BC" provider with the full BouncyCastle
+     * provider bundled by jcifs-ng (bcprov-jdk18on). Android 7+ ships a
+     * neutered "BC" that no longer offers MD4, which JCIFS-NG NTLMv2 needs.
+     * Without this, every fresh connect() throws
+     * `NoSuchAlgorithmException: no such algorithm: MD4 for provider BC`.
+     *
+     * Idempotent — safe to call from every plugin attach.
+     */
+    private fun ensureFullBouncyCastleProvider() {
+        val bcName = BouncyCastleProvider.PROVIDER_NAME // "BC"
+        val current = Security.getProvider(bcName)
+        if (current == null || current.javaClass != BouncyCastleProvider::class.java) {
+            Security.removeProvider(bcName)
+            Security.insertProviderAt(BouncyCastleProvider(), 1)
+            Log.i(TAG, "Registered full BouncyCastleProvider at slot 1 (replaces Android's stripped BC).")
+        }
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
