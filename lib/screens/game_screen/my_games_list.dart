@@ -423,14 +423,15 @@ class _SystemGamesListState extends State<SystemGamesList> {
     _saveDetectionTimer?.cancel();
     _musicExtractionTimer?.cancel();
 
-    if (_videoController != null) {
+    final cleanupController = _videoController;
+    _videoController = null;
+    if (cleanupController != null) {
       try {
-        _videoController!.pause();
+        cleanupController.pause();
+        cleanupController.dispose();
       } catch (e) {
-        _log.w('Error pausing video in cleanup: $e');
+        _log.w('Error disposing video in cleanup: $e');
       }
-      _videoController!.dispose();
-      _videoController = null;
     }
 
     _gamepadNav.dispose();
@@ -510,10 +511,15 @@ class _SystemGamesListState extends State<SystemGamesList> {
     _videoTimer?.cancel();
     _videoTimer = null;
 
-    if (_videoController != null) {
-      _videoController!.pause();
-      _videoController!.dispose();
-      _videoController = null;
+    final resetController = _videoController;
+    _videoController = null;
+    if (resetController != null) {
+      try {
+        resetController.pause();
+        resetController.dispose();
+      } catch (e) {
+        _log.w('Error disposing video in reset: $e');
+      }
     }
 
     setState(() {
@@ -528,19 +534,20 @@ class _SystemGamesListState extends State<SystemGamesList> {
     _videoTimer = null;
 
     if (mounted) {
+      final stopController = _videoController;
+      _videoController = null;
       setState(() {
         _showVideo = false;
         _isVideoLoading = false;
-        if (_videoController != null) {
-          try {
-            _videoController!.pause();
-            _videoController!.dispose();
-          } catch (e) {
-            _log.w('Error disposing video controller: $e');
-          }
-          _videoController = null;
-        }
       });
+      if (stopController != null) {
+        try {
+          stopController.pause();
+          stopController.dispose();
+        } catch (e) {
+          _log.w('Error disposing video controller: $e');
+        }
+      }
     }
     _updateMusicDucking();
   }
@@ -1925,15 +1932,25 @@ class _SystemGamesListState extends State<SystemGamesList> {
         return;
       }
 
-      // CRITICAL: Ensure previously active controllers are disposed to prevent resource leaks.
-      if (_videoController != null) {
+      // CRITICAL: Fully release the previous controller before allocating a
+      // new one. dispose() is async (awaits a native platform call); without
+      // the await, the old native player and the new one briefly coexist —
+      // each holding a heavy GPU surface. Null the slot first so any
+      // listener that fires during the awaited dispose sees no controller.
+      final old = _videoController;
+      _videoController = null;
+      if (old != null) {
         try {
-          _videoController!.pause();
-          _videoController!.dispose();
+          await old.pause();
+          await old.dispose();
         } catch (e) {
           _log.w('Error disposing old controller: $e');
         }
-        _videoController = null;
+      }
+
+      // Re-check after the await: selection may have changed.
+      if (!mounted || _selectedGame != game) {
+        return;
       }
 
       final mainController = VideoPlayerController.file(
