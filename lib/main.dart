@@ -126,6 +126,15 @@ class ToggleFullscreenAction extends Action<ToggleFullscreenIntent> {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Image cache budget. Flutter's default is 100 MB which fills quickly
+  // with 1024px fanart backgrounds on systems with hundreds of games. Cap
+  // at 64 MB on Android handhelds (RAM-constrained) and 256 MB on desktop.
+  const androidImageCacheBytes = 64 * 1024 * 1024;
+  const desktopImageCacheBytes = 256 * 1024 * 1024;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = Platform.isAndroid
+      ? androidImageCacheBytes
+      : desktopImageCacheBytes;
+
   final log = LoggerService.instance;
   await log.init();
   log.i('Starting NeoStation...');
