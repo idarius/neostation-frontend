@@ -27,12 +27,14 @@ import 'package:path_provider/path_provider.dart';
 
 import 'package:neostation/models/smb_credentials_model.dart';
 import 'package:neostation/repositories/smb_credentials_repository.dart';
+import 'package:neostation/services/logger_service.dart';
 import 'package:neostation/services/smb/smb_client.dart';
 import 'package:neostation/services/smb/smb_exceptions.dart';
 import 'package:neostation/sync/i_sync_provider.dart';
 
 class SmbSyncProvider extends ChangeNotifier implements ISyncProvider {
   static const String kProviderId = 'smb';
+  static final _log = LoggerService.instance;
 
   final SmbCredentialsRepository _repository;
 
@@ -84,20 +86,16 @@ class SmbSyncProvider extends ChangeNotifier implements ISyncProvider {
 
   @override
   Future<void> initialize() async {
-    // ignore: avoid_print
-    print('[SMB] initialize() — loading config from SQLite...');
+    _log.d('[SMB] initialize() — loading config from SQLite...');
     final cfg = await _repository.loadConfig();
-    // ignore: avoid_print
-    print('[SMB] config loaded: ${cfg == null ? "null" : "host=${cfg.host} share=${cfg.share} user=${cfg.username}"}');
+    _log.d('[SMB] config loaded: ${cfg == null ? "null" : "host=${cfg.host} share=${cfg.share} user=${cfg.username}"}');
     if (cfg == null) {
       _status = SyncProviderStatus.disconnected;
       return;
     }
-    // ignore: avoid_print
-    print('[SMB] loading password from secure_storage...');
+    _log.d('[SMB] loading password from secure_storage...');
     final pw = await _repository.loadPassword();
-    // ignore: avoid_print
-    print('[SMB] password loaded: ${pw == null ? "null (BUG)" : "OK (${pw.length} chars)"}');
+    _log.d('[SMB] password loaded: ${pw == null ? "null (BUG)" : "OK (${pw.length} chars)"}');
     if (pw == null) {
       // Config exists but no password (rare: secure storage cleared
       // independently). Treat as needing login.
@@ -113,11 +111,9 @@ class SmbSyncProvider extends ChangeNotifier implements ISyncProvider {
       _status = SyncProviderStatus.disconnected;
       return;
     }
-    // ignore: avoid_print
-    print('[SMB] reconnecting with stored credentials...');
+    _log.d('[SMB] reconnecting with stored credentials...');
     final r = await _doConnect();
-    // ignore: avoid_print
-    print('[SMB] _doConnect result: success=${r.success} message=${r.message}');
+    _log.d('[SMB] _doConnect result: success=${r.success} message=${r.message}');
   }
 
   @override

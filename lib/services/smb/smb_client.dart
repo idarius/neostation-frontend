@@ -76,6 +76,11 @@ class SmbConnection {
     }
   }
 
+  /// Returns true iff [path] points to an existing file.
+  ///
+  /// **Files only.** JCIFS-NG resolves directory paths only when the URL ends
+  /// with a trailing slash, but this method does not auto-detect intent — pass
+  /// it a file path or use [listDirectory] to probe directories.
   Future<bool> fileExists(String path) async {
     _checkOpen();
     try {
@@ -89,6 +94,9 @@ class SmbConnection {
     }
   }
 
+  /// Returns size + mtime + isDir for [path], or null when missing.
+  ///
+  /// **Files only** (same JCIFS-NG trailing-slash caveat as [fileExists]).
   Future<SmbStat?> stat(String path) async {
     _checkOpen();
     try {
@@ -146,6 +154,10 @@ class SmbConnection {
     }
   }
 
+  /// Deletes the file at [path].
+  ///
+  /// **Files only** (same JCIFS-NG trailing-slash caveat as [fileExists]).
+  /// Throws [SmbPathNotFoundException] when [path] is missing.
   Future<void> delete(String path) async {
     _checkOpen();
     try {

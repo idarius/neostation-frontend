@@ -48,6 +48,14 @@ class SmbClientPlugin : FlutterPlugin, MethodCallHandler {
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+        // Release all CIFSContexts before dropping references.
+        for ((_, conn) in connections) {
+            try {
+                conn.context.close()
+            } catch (e: Throwable) {
+                Log.w(TAG, "context.close() failed during detach: ${e.message}")
+            }
+        }
         connections.clear()
     }
 
@@ -115,7 +123,18 @@ class SmbClientPlugin : FlutterPlugin, MethodCallHandler {
 
     private fun disconnect(call: MethodCall, result: Result) {
         val id = call.argument<String>("connectionId") ?: return result.error("SMB_UNKNOWN", "missing connectionId", null)
-        connections.remove(id)
+        val removed = connections.remove(id)
+        // Release the underlying CIFSContext so JCIFS-NG closes its transport
+        // pool eagerly. Without this, hot-swapping credentials many times in a
+        // single session can pile up idle transports until the pool's idle
+        // timeout reclaims them.
+        if (removed != null) {
+            try {
+                removed.context.close()
+            } catch (e: Throwable) {
+                Log.w(TAG, "context.close() failed on disconnect: ${e.message}")
+            }
+        }
         result.success(null)
     }
 
