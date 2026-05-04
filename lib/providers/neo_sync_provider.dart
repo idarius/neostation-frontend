@@ -75,7 +75,6 @@ class NeoSyncProvider extends ChangeNotifier {
   /// Count of files successfully downloaded from the cloud.
   int _downloadedFiles = 0;
 
-
   /// History of item identifiers processed in the current session.
   List<String> _processedItems = [];
 

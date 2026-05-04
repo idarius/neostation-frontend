@@ -343,8 +343,8 @@ class LauncherService {
       // Only convert bare filesystem paths to file:// scheme.
       final String uri =
           (romPath.startsWith('content://') || romPath.startsWith('file://'))
-              ? romPath
-              : Uri.file(romPath).toString();
+          ? romPath
+          : Uri.file(romPath).toString();
       result = result.replaceAll('{file.uri}', uri);
 
       if (game.titleId != null) {

@@ -643,7 +643,9 @@ extension NeoSyncCore on NeoSyncProvider {
       if (_quotaExceededActive || quotaExceededDuringProcessing) {
         finalStatus = neo_sync.GameSyncStatus.quotaExceeded;
       } else if (!allUploadsSucceeded || !allCloudDownloadsSucceeded) {
-        NeoSyncProvider._log.w('Sync had errors for ${game.name}, marking as upToDate');
+        NeoSyncProvider._log.w(
+          'Sync had errors for ${game.name}, marking as upToDate',
+        );
         finalStatus = neo_sync.GameSyncStatus.upToDate;
       } else {
         finalStatus = neo_sync.GameSyncStatus.upToDate;

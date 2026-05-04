@@ -481,7 +481,8 @@ class SwitchSaveDetector {
       for (var userIdEntity in userIdEntries) {
         String userIdPath;
         if (nandDirectory.startsWith('content://')) {
-          if (userIdEntity is! Map || userIdEntity['is_directory'] != true) continue;
+          if (userIdEntity is! Map || userIdEntity['is_directory'] != true)
+            continue;
           userIdPath = userIdEntity['uri']!.toString();
         } else {
           if (userIdEntity is! Directory) continue;
@@ -490,7 +491,8 @@ class SwitchSaveDetector {
 
         final titleIdPath = path.join(userIdPath, titleId);
 
-        if (await _directoryExistsSafe(titleIdPath) && await _isDirectoryNonEmpty(titleIdPath)) {
+        if (await _directoryExistsSafe(titleIdPath) &&
+            await _isDirectoryNonEmpty(titleIdPath)) {
           return SwitchSaveInfo(
             titleId: titleId,
             savePath: titleIdPath,
@@ -553,7 +555,8 @@ class SwitchSaveDetector {
         String userIdPath;
         String userId;
         if (nandDirectory.startsWith('content://')) {
-          if (userIdEntity is! Map || userIdEntity['is_directory'] != true) continue;
+          if (userIdEntity is! Map || userIdEntity['is_directory'] != true)
+            continue;
           userIdPath = userIdEntity['uri']!.toString();
           userId = userIdEntity['name']!.toString();
         } else {
@@ -568,7 +571,8 @@ class SwitchSaveDetector {
           String titleIdPath;
           String titleId;
           if (nandDirectory.startsWith('content://')) {
-            if (titleIdEntity is! Map || titleIdEntity['is_directory'] != true) continue;
+            if (titleIdEntity is! Map || titleIdEntity['is_directory'] != true)
+              continue;
             titleIdPath = titleIdEntity['uri']!.toString();
             titleId = titleIdEntity['name']!.toString();
           } else {
@@ -630,10 +634,9 @@ class SwitchSaveDetector {
       if (savePath.startsWith('content://')) {
         totalSize = await _calculateSafSaveSize(savePath);
       } else {
-        await for (var entity in Directory(savePath).list(
-          recursive: true,
-          followLinks: false,
-        )) {
+        await for (var entity in Directory(
+          savePath,
+        ).list(recursive: true, followLinks: false)) {
           if (entity is File) {
             totalSize += (await entity.stat()).size;
           }
@@ -653,13 +656,13 @@ class SwitchSaveDetector {
       if (entry['is_directory'] == true) {
         totalSize += await _calculateSafSaveSize(entry['uri']!.toString());
       } else {
-        totalSize += await SafDirectoryService.getFileSize(entry['uri']!.toString());
+        totalSize += await SafDirectoryService.getFileSize(
+          entry['uri']!.toString(),
+        );
       }
     }
     return totalSize;
   }
-
-
 }
 
 /// Holds NAND location and metadata for a specific emulator installation.
