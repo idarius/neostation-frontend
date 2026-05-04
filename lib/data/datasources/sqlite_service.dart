@@ -3540,12 +3540,28 @@ class SqliteService {
     }
 
     // 2. Fallback to system-provided default (usually a core).
+    //
+    // Fork-private fix: when multiple `is_default=1` rows exist (e.g. both
+    // `nes.ra64.fceumm` → `com.retroarch.aarch64` AND `nes.ra.fceumm` →
+    // `com.retroarch` after the upstream JSON refactor), upstream's
+    // `LIMIT 1` returns one arbitrarily. On modern Android handhelds
+    // (Thor / aarch64) the bare `com.retroarch` package is rarely
+    // installed, so we order RA variants by likely install probability:
+    // 64-bit > 32-bit > bare. Standalones keep their natural priority.
     final defaultEmu = await db.rawQuery(
       '''
       SELECT e.*, os.name as os_name
       FROM app_emulators e
       JOIN app_os os ON e.os_id = os.id
       WHERE e.system_id = ? AND os.name = ? AND e.is_default = 1
+      ORDER BY
+        CASE e.android_package_name
+          WHEN 'com.retroarch.aarch64' THEN 0
+          WHEN 'com.retroarch.ra32' THEN 1
+          WHEN 'com.retroarch' THEN 2
+          ELSE 0
+        END,
+        e.unique_identifier
       LIMIT 1
       ''',
       [systemId, currentOs],
