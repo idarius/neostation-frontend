@@ -28,11 +28,15 @@ class LauncherService {
     try {
       // Prefer locally cached version downloaded from GitHub (newer than bundled).
       String jsonString;
-      final cachedPath = await SystemsUpdateService.getCachedSystemPath(jsonFileName);
+      final cachedPath = await SystemsUpdateService.getCachedSystemPath(
+        jsonFileName,
+      );
       if (cachedPath != null) {
         jsonString = await File(cachedPath).readAsString();
       } else {
-        jsonString = await rootBundle.loadString('assets/systems/$jsonFileName');
+        jsonString = await rootBundle.loadString(
+          'assets/systems/$jsonFileName',
+        );
       }
       final config = jsonDecode(jsonString) as Map<String, dynamic>;
 
