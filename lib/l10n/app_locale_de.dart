@@ -130,6 +130,9 @@ const Map<String, dynamic> appLocaleDe = {
   AppLocale.showGameWheelLogo: 'Show game logo',
   AppLocale.showGameWheelLogoSub:
       "Display the game's wheel logo over the fanart background on the games page",
+  AppLocale.enableSystemsAutodownload: 'Auto-update system definitions',
+  AppLocale.enableSystemsAutodownloadSub:
+      'Download from idarius/neostation-systems at startup',
   AppLocale.videoPreviewDelay: 'Video preview delay',
   AppLocale.videoPreviewDelaySub:
       'Time before the video starts playing when you select a game',

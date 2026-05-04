@@ -108,7 +108,9 @@ class DatabaseTestHelper {
         rom_folders TEXT,
         video_delay_ms INTEGER DEFAULT 1500,
         hide_recent_system INTEGER DEFAULT 0,
-        local_sync_path TEXT
+        local_sync_path TEXT,
+        systems_version TEXT DEFAULT '',
+        enable_systems_autodownload INTEGER DEFAULT 0
       )
     ''');
 

@@ -31,6 +31,14 @@ class ConfigRepository {
   static Future<void> updateActiveTheme(String folder) =>
       SqliteService.updateActiveTheme(folder);
 
+  // ── Systems autodownload toggle ───────────────────────────────────────────
+
+  static Future<bool> getEnableSystemsAutodownload() =>
+      SqliteService.getEnableSystemsAutodownload();
+
+  static Future<void> updateEnableSystemsAutodownload(bool value) =>
+      SqliteService.updateEnableSystemsAutodownload(value);
+
   // ── General user config (write) ───────────────────────────────────────────
 
   static Future<void> saveUserConfig({String? lastScan}) =>

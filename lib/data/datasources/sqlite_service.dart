@@ -1404,6 +1404,11 @@ class SqliteService {
           "ALTER TABLE user_config ADD COLUMN systems_version TEXT DEFAULT ''",
         );
       }
+      if (!columns.contains('enable_systems_autodownload')) {
+        await db.execute(
+          'ALTER TABLE user_config ADD COLUMN enable_systems_autodownload INTEGER DEFAULT 0',
+        );
+      }
     } catch (e) {
       _log.e('Minor fix ensuring user_config columns failed: $e');
       rethrow;
@@ -1599,7 +1604,8 @@ class SqliteService {
         video_delay_ms INTEGER DEFAULT 1500,
         hide_recent_system INTEGER DEFAULT 0,
         local_sync_path TEXT,
-        systems_version TEXT DEFAULT ''
+        systems_version TEXT DEFAULT '',
+        enable_systems_autodownload INTEGER DEFAULT 0
       );
       ''',
       '''
@@ -2314,6 +2320,7 @@ class SqliteService {
     String? activeSyncProvider,
     String? localSyncPath,
     String? systemsVersion,
+    int? enableSystemsAutodownload,
   }) async {
     final db = await instance.database;
 
@@ -2381,6 +2388,9 @@ class SqliteService {
     }
     if (systemsVersion != null) {
       newConfig['systems_version'] = systemsVersion;
+    }
+    if (enableSystemsAutodownload != null) {
+      newConfig['enable_systems_autodownload'] = enableSystemsAutodownload;
     }
 
     await db.insert(
@@ -2643,6 +2653,21 @@ class SqliteService {
   /// Persists the systems manifest version after a successful update.
   static Future<void> updateSystemsVersion(String version) async {
     await saveUserConfig(systemsVersion: version);
+  }
+
+  /// Returns whether the systems autodownload feature is enabled.
+  static Future<bool> getEnableSystemsAutodownload() async {
+    final config = await getUserConfig();
+    return (int.tryParse(
+              config?['enable_systems_autodownload']?.toString() ?? '0',
+            ) ??
+            0) ==
+        1;
+  }
+
+  /// Persists the systems autodownload enabled flag.
+  static Future<void> updateEnableSystemsAutodownload(bool value) async {
+    await saveUserConfig(enableSystemsAutodownload: value ? 1 : 0);
   }
 
   /// Updates the video/sound configuration setting.

@@ -1123,6 +1123,13 @@ class SqliteConfigProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Enables or disables the systems autodownload feature.
+  Future<void> updateEnableSystemsAutodownload(bool value) async {
+    _config = _config.copyWith(enableSystemsAutodownload: value);
+    await SqliteConfigService.saveConfig(_config);
+    notifyListeners();
+  }
+
   /// Updates the video preview delay (clamped to `[500, 3000]` ms).
   Future<void> updateVideoDelayMs(int value) async {
     final clamped = value.clamp(500, 3000);

@@ -65,5 +65,20 @@ void main() {
       expect(config, isNotNull);
       expect(config!['last_scan'], '2024-01-01');
     });
+
+    test(
+      'getEnableSystemsAutodownload returns default false when no config exists',
+      () async {
+        final value = await ConfigRepository.getEnableSystemsAutodownload();
+        expect(value, false);
+      },
+    );
+
+    test('updateEnableSystemsAutodownload persists the value', () async {
+      await ConfigRepository.updateEnableSystemsAutodownload(true);
+      expect(await ConfigRepository.getEnableSystemsAutodownload(), true);
+      await ConfigRepository.updateEnableSystemsAutodownload(false);
+      expect(await ConfigRepository.getEnableSystemsAutodownload(), false);
+    });
   });
 }

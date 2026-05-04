@@ -139,6 +139,9 @@ mixin AppLocale {
       'disable_secondary_screen_sub';
   static const String showGameWheelLogo = 'show_game_wheel_logo';
   static const String showGameWheelLogoSub = 'show_game_wheel_logo_sub';
+  static const String enableSystemsAutodownload = 'enable_systems_autodownload';
+  static const String enableSystemsAutodownloadSub =
+      'enable_systems_autodownload_sub';
   static const String videoPreviewDelay = 'video_preview_delay';
   static const String videoPreviewDelaySub = 'video_preview_delay_sub';
   static const String bartopShutdown = 'bartop_shutdown';
@@ -624,7 +627,8 @@ mixin AppLocale {
   static const String smbSyncProviderName = 'smb_sync_provider_name';
   static const String smbSyncProviderSubtitle = 'smb_sync_provider_subtitle';
   static const String smbSyncStatusConnected = 'smb_sync_status_connected';
-  static const String smbSyncStatusDisconnected = 'smb_sync_status_disconnected';
+  static const String smbSyncStatusDisconnected =
+      'smb_sync_status_disconnected';
   static const String smbSyncStatusError = 'smb_sync_status_error';
   static const String smbSyncFormHost = 'smb_sync_form_host';
   static const String smbSyncFormShare = 'smb_sync_form_share';

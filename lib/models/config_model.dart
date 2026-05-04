@@ -78,6 +78,10 @@ class ConfigModel {
   /// Null/empty means the provider is registered but unconfigured.
   final String? localSyncPath;
 
+  /// Whether the systems autodownload feature is enabled.
+  /// Off by default — the service won't run unless the user enables this.
+  final bool enableSystemsAutodownload;
+
   const ConfigModel({
     this.romFolders = const [],
     this.detectedSystems = const [],
@@ -103,6 +107,7 @@ class ConfigModel {
     this.hideRecentSystem = false,
     this.activeSyncProvider = 'neosync',
     this.localSyncPath,
+    this.enableSystemsAutodownload = false,
   });
 
   /// Convenience getter that returns the primary ROM folder, if any are configured.
@@ -203,6 +208,11 @@ class ConfigModel {
               .toString(),
       localSyncPath: (json['localSyncPath'] ?? json['local_sync_path'])
           ?.toString(),
+      enableSystemsAutodownload: _parseBool(
+        json['enableSystemsAutodownload'] ??
+            json['enable_systems_autodownload'],
+        defaultValue: false,
+      ),
     );
   }
 
@@ -238,6 +248,7 @@ class ConfigModel {
       'hideRecentSystem': hideRecentSystem,
       'activeSyncProvider': activeSyncProvider,
       'localSyncPath': localSyncPath,
+      'enableSystemsAutodownload': enableSystemsAutodownload,
     };
   }
 
@@ -267,6 +278,7 @@ class ConfigModel {
     bool? hideRecentSystem,
     String? activeSyncProvider,
     String? localSyncPath,
+    bool? enableSystemsAutodownload,
   }) {
     return ConfigModel(
       romFolders: romFolders ?? this.romFolders,
@@ -293,6 +305,8 @@ class ConfigModel {
       hideRecentSystem: hideRecentSystem ?? this.hideRecentSystem,
       activeSyncProvider: activeSyncProvider ?? this.activeSyncProvider,
       localSyncPath: localSyncPath ?? this.localSyncPath,
+      enableSystemsAutodownload:
+          enableSystemsAutodownload ?? this.enableSystemsAutodownload,
     );
   }
 

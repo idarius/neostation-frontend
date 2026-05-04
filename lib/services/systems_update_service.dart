@@ -7,11 +7,11 @@ import 'logger_service.dart';
 import '../data/datasources/sqlite_service.dart';
 
 const _manifestUrl =
-    'https://raw.githubusercontent.com/miguelsotobaez/neostation-systems/main/manifest.json';
+    'https://raw.githubusercontent.com/idarius/neostation-systems/main/manifest.json';
 const _baseRawUrl =
-    'https://raw.githubusercontent.com/miguelsotobaez/neostation-systems/main/systems';
+    'https://raw.githubusercontent.com/idarius/neostation-systems/main/systems';
 const _githubApiUrl =
-    'https://api.github.com/repos/miguelsotobaez/neostation-systems/contents/systems';
+    'https://api.github.com/repos/idarius/neostation-systems/contents/systems';
 
 final _log = LoggerService.instance;
 
@@ -19,7 +19,10 @@ final _log = LoggerService.instance;
 class SystemsUpdateResult {
   final String newVersion;
   final int filesUpdated;
-  const SystemsUpdateResult({required this.newVersion, required this.filesUpdated});
+  const SystemsUpdateResult({
+    required this.newVersion,
+    required this.filesUpdated,
+  });
 }
 
 /// Service that keeps the bundled system JSON configs up-to-date from the
@@ -62,7 +65,9 @@ class SystemsUpdateService {
       final localVersion = await SqliteService.getSystemsVersion();
       if (localVersion == remoteVersion) return null;
 
-      _log.i('SystemsUpdateService: new version $remoteVersion (local: $localVersion)');
+      _log.i(
+        'SystemsUpdateService: new version $remoteVersion (local: $localVersion)',
+      );
 
       // 3. Get the full list of system files from the GitHub repo directory.
       final systemIds = await _fetchSystemListFromApi();
@@ -82,7 +87,9 @@ class SystemsUpdateService {
             await file.writeAsString(response.body, flush: true);
             downloaded++;
           } else {
-            _log.w('SystemsUpdateService: failed to download $fileName (${response.statusCode})');
+            _log.w(
+              'SystemsUpdateService: failed to download $fileName (${response.statusCode})',
+            );
           }
         } catch (e) {
           _log.w('SystemsUpdateService: error downloading $fileName: $e');
@@ -93,10 +100,19 @@ class SystemsUpdateService {
 
       // 5. Persist new version.
       await SqliteService.updateSystemsVersion(remoteVersion);
-      _log.i('SystemsUpdateService: updated $downloaded files to v$remoteVersion');
-      return SystemsUpdateResult(newVersion: remoteVersion, filesUpdated: downloaded);
+      _log.i(
+        'SystemsUpdateService: updated $downloaded files to v$remoteVersion',
+      );
+      return SystemsUpdateResult(
+        newVersion: remoteVersion,
+        filesUpdated: downloaded,
+      );
     } catch (e, st) {
-      _log.e('SystemsUpdateService: unexpected error', error: e, stackTrace: st);
+      _log.e(
+        'SystemsUpdateService: unexpected error',
+        error: e,
+        stackTrace: st,
+      );
       return null;
     }
   }
@@ -130,5 +146,4 @@ class SystemsUpdateService {
       return null; // No internet or timeout — silent fallback to bundled assets.
     }
   }
-
 }

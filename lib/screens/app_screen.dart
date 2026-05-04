@@ -15,6 +15,7 @@ import 'settings_screen/new_settings_screen.dart';
 import 'scraper_screen/new_scraper_options_screen.dart';
 import 'neo_sync_screen/neo_sync_tab.dart';
 import '../widgets/scraper_content.dart';
+import 'package:neostation/repositories/config_repository.dart';
 import 'package:neostation/services/game_service.dart';
 import 'package:neostation/providers/theme_provider.dart';
 import '../models/secondary_display_state.dart';
@@ -205,6 +206,11 @@ class AppScreenState extends State<AppScreen> {
 
   /// Checks the neostation-systems GitHub repo for updated system JSON configs.
   Future<void> _checkForSystemsUpdate() async {
+    final enabled = await ConfigRepository.getEnableSystemsAutodownload();
+    if (!enabled) {
+      _log.i('Systems autodownload disabled by user — skip');
+      return;
+    }
     try {
       final result = await SystemsUpdateService.checkAndUpdate();
       if (result != null && mounted) {
