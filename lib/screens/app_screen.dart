@@ -142,7 +142,7 @@ class AppScreenState extends State<AppScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _gamepadNav.initialize();
       _checkForUpdates();
-      _checkForSystemsUpdate();
+      _initAndCheckSystemsUpdate();
       _scheduleTabPrewarm();
     });
 
@@ -204,8 +204,11 @@ class AppScreenState extends State<AppScreen> {
     }
   }
 
-  /// Checks the neostation-systems GitHub repo for updated system JSON configs.
-  Future<void> _checkForSystemsUpdate() async {
+  /// Initializes the systems version baseline then checks for GitHub updates.
+  Future<void> _initAndCheckSystemsUpdate() async {
+    // Always runs — ensures systems_version is set in SQLite even without internet.
+    await SystemsUpdateService.initialize();
+    // Then attempt to pull newer configs from GitHub (only if user enabled it).
     final enabled = await ConfigRepository.getEnableSystemsAutodownload();
     if (!enabled) {
       _log.i('Systems autodownload disabled by user — skip');
