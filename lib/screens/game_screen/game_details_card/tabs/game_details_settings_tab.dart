@@ -196,12 +196,14 @@ class GameDetailsSettingsTabState extends State<GameDetailsSettingsTab> {
       } else {
         // Desktop: RetroArch cores are considered installed when the global
         // RetroArch executable has been detected/configured by the user.
-        final retroArchPath = await EmulatorRepository.getRetroArchExecutablePath();
+        final retroArchPath =
+            await EmulatorRepository.getRetroArchExecutablePath();
         if (retroArchPath != null && retroArchPath.isNotEmpty) {
           final updated = <CoreEmulatorModel>[];
           for (final e in emulators) {
             final uid = e.uniqueId;
-            final isRaCore = uid.contains('.ra.') ||
+            final isRaCore =
+                uid.contains('.ra.') ||
                 uid.contains('.ra32.') ||
                 uid.contains('.ra64.');
             if (isRaCore && !e.isInstalled) {
@@ -350,253 +352,275 @@ class GameDetailsSettingsTabState extends State<GameDetailsSettingsTab> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header: Category title and icon.
-            Padding(
-              padding: EdgeInsets.fromLTRB(8.r, 8.r, 8.r, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.settings,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        size: 13.r,
-                      ),
-                      SizedBox(width: 6.r),
-                      Text(
-                        AppLocale.gameSettings.getString(context),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 12.r,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Divider(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.3),
-                    height: 10.r,
-                  ),
-                ],
-              ),
-            ),
-
-            // Content: Scrollable list of actionable settings.
-            Expanded(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8.r),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(8.r, 8.r, 8.r, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Cloud Synchronization Option.
-                      if (_settingsShowCloudSync)
-                        _SettingsRow(
-                          key: _settingsKey(_settingsCloudSyncIdx),
-                          isSelected:
-                              _settingsSelectedIndex == _settingsCloudSyncIdx,
-                          icon: Icons.cloud,
-                          label: AppLocale.cloudSync.getString(context),
-                          subtitle: _cloudSyncEnabled
-                              ? AppLocale.cloudSyncOn.getString(context)
-                              : AppLocale.cloudSyncOff.getString(context),
-                          onTap: () {
-                            SfxService().playNavSound();
-                            setState(
-                              () => _settingsSelectedIndex =
-                                  _settingsCloudSyncIdx,
-                            );
-                            if (!_isUpdatingCloudSync) {
-                              _toggleCloudSync(!_cloudSyncEnabled);
-                            }
-                          },
-                          trailing: _isUpdatingCloudSync
-                              ? SizedBox(
-                                  width: 20.r,
-                                  height: 20.r,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
-                                  ),
-                                )
-                              : ExcludeFocus(
-                                  child: Switch(
-                                    value: _cloudSyncEnabled,
-                                    onChanged: !_isUpdatingCloudSync
-                                        ? (v) => _toggleCloudSync(v)
-                                        : null,
-                                    activeThumbColor: Colors.lightGreen,
-                                  ),
-                                ),
-                        ),
-                      SizedBox(height: 4.r),
-
-                      // Play-time Statistics & Reset Option.
-                      _SettingsRow(
-                        key: _settingsKey(_settingsPlayTimeIdx),
-                        isSelected:
-                            _settingsSelectedIndex == _settingsPlayTimeIdx,
-                        icon: Icons.timer_off,
-                        label: AppLocale.playTime.getString(context),
-                        subtitle: GameUtils.formatPlayTime(_game.playTime ?? 0),
-                        onTap: () {
-                          SfxService().playNavSound();
-                          setState(
-                            () => _settingsSelectedIndex = _settingsPlayTimeIdx,
-                          );
-                          if ((_game.playTime ?? 0) > 0 &&
-                              !_isResettingPlayTime) {
-                            _resetPlayTime();
-                          }
-                        },
-                        trailing: _isResettingPlayTime
-                            ? SizedBox(
-                                width: 20.r,
-                                height: 20.r,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
-                                ),
-                              )
-                            : ExcludeFocus(
-                                child: Builder(
-                                  builder: (context) {
-                                    final canReset =
-                                        (_game.playTime ?? 0) > 0 &&
-                                        !_isResettingPlayTime;
-                                    final theme = Theme.of(context);
-                                    return GestureDetector(
-                                      onTap: canReset ? _resetPlayTime : null,
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 8.r,
-                                          vertical: 3.r,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: canReset
-                                              ? theme.colorScheme.error
-                                                    .withValues(alpha: 0.15)
-                                              : theme.colorScheme.onSurface
-                                                    .withValues(alpha: 0.05),
-                                          borderRadius: BorderRadius.circular(
-                                            4.r,
-                                          ),
-                                          border: Border.all(
-                                            color: canReset
-                                                ? theme.colorScheme.error
-                                                      .withValues(alpha: 0.4)
-                                                : theme.colorScheme.onSurface
-                                                      .withValues(alpha: 0.1),
-                                            width: 1.r,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          AppLocale.reset.getString(context),
-                                          style: TextStyle(
-                                            fontSize: 11.r,
-                                            fontWeight: FontWeight.w600,
-                                            color: canReset
-                                                ? theme.colorScheme.error
-                                                : theme.colorScheme.onSurface
-                                                      .withValues(alpha: 0.3),
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                      ),
-
-                      // Emulator Overrides Section.
-                      if (_settingsShowEmulators) ...[
-                        SizedBox(height: 8.r),
-                        Padding(
-                          padding: EdgeInsets.only(left: 4.r, bottom: 4.r),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.sports_esports,
-                                size: 12.r,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.6),
-                              ),
-                              SizedBox(width: 4.r),
-                              Text(
-                                AppLocale.emulator.getString(context),
-                                style: TextStyle(
-                                  fontSize: 11.r,
-                                  fontWeight: FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.6),
-                                ),
-                              ),
-                            ],
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.settings,
+                            color: Theme.of(context).colorScheme.onSurface,
+                            size: 13.r,
                           ),
-                        ),
-                        // Global System Default Option.
-                        _EmulatorRow(
-                          key: _settingsKey(_settingsEmulatorStartIdx),
-                          isSelected:
-                              _settingsSelectedIndex ==
-                              _settingsEmulatorStartIdx,
-                          label: AppLocale.systemDefault.getString(context),
-                          isActive:
-                              _resolvedEmulatorId == null ||
-                              !_availableEmulators.any(
-                                (e) => e.uniqueId == _resolvedEmulatorId,
-                              ),
-                          onTap: () {
-                            SfxService().playNavSound();
-                            setState(
-                              () => _settingsSelectedIndex =
-                                  _settingsEmulatorStartIdx,
-                            );
-                            _setEmulatorOverride(null);
-                          },
-                        ),
-                        // Individual Emulator Options.
-                        ..._availableEmulators.asMap().entries.map((entry) {
-                          final i = entry.key;
-                          final e = entry.value;
-                          return _EmulatorRow(
-                            key: _settingsKey(
-                              _settingsEmulatorStartIdx + 1 + i,
+                          SizedBox(width: 6.r),
+                          Text(
+                            AppLocale.gameSettings.getString(context),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 12.r,
+                              fontWeight: FontWeight.bold,
                             ),
+                          ),
+                        ],
+                      ),
+                      Divider(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.3),
+                        height: 10.r,
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Content: Scrollable list of actionable settings.
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8.r),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Cloud Synchronization Option.
+                          if (_settingsShowCloudSync)
+                            _SettingsRow(
+                              key: _settingsKey(_settingsCloudSyncIdx),
+                              isSelected:
+                                  _settingsSelectedIndex ==
+                                  _settingsCloudSyncIdx,
+                              icon: Icons.cloud,
+                              label: AppLocale.cloudSync.getString(context),
+                              subtitle: _cloudSyncEnabled
+                                  ? AppLocale.cloudSyncOn.getString(context)
+                                  : AppLocale.cloudSyncOff.getString(context),
+                              onTap: () {
+                                SfxService().playNavSound();
+                                setState(
+                                  () => _settingsSelectedIndex =
+                                      _settingsCloudSyncIdx,
+                                );
+                                if (!_isUpdatingCloudSync) {
+                                  _toggleCloudSync(!_cloudSyncEnabled);
+                                }
+                              },
+                              trailing: _isUpdatingCloudSync
+                                  ? SizedBox(
+                                      width: 20.r,
+                                      height: 20.r,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
+                                      ),
+                                    )
+                                  : ExcludeFocus(
+                                      child: Switch(
+                                        value: _cloudSyncEnabled,
+                                        onChanged: !_isUpdatingCloudSync
+                                            ? (v) => _toggleCloudSync(v)
+                                            : null,
+                                        activeThumbColor: Colors.lightGreen,
+                                      ),
+                                    ),
+                            ),
+                          SizedBox(height: 4.r),
+
+                          // Play-time Statistics & Reset Option.
+                          _SettingsRow(
+                            key: _settingsKey(_settingsPlayTimeIdx),
                             isSelected:
-                                _settingsSelectedIndex ==
-                                _settingsEmulatorStartIdx + 1 + i,
-                            label: e.name,
-                            isActive: _resolvedEmulatorId == e.uniqueId,
+                                _settingsSelectedIndex == _settingsPlayTimeIdx,
+                            icon: Icons.timer_off,
+                            label: AppLocale.playTime.getString(context),
+                            subtitle: GameUtils.formatPlayTime(
+                              _game.playTime ?? 0,
+                            ),
                             onTap: () {
                               SfxService().playNavSound();
                               setState(
                                 () => _settingsSelectedIndex =
-                                    _settingsEmulatorStartIdx + 1 + i,
+                                    _settingsPlayTimeIdx,
                               );
-                              _setEmulatorOverride(e);
+                              if ((_game.playTime ?? 0) > 0 &&
+                                  !_isResettingPlayTime) {
+                                _resetPlayTime();
+                              }
                             },
-                            emulator: e,
-                          );
-                        }),
-                      ],
-                    ],
+                            trailing: _isResettingPlayTime
+                                ? SizedBox(
+                                    width: 20.r,
+                                    height: 20.r,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                    ),
+                                  )
+                                : ExcludeFocus(
+                                    child: Builder(
+                                      builder: (context) {
+                                        final canReset =
+                                            (_game.playTime ?? 0) > 0 &&
+                                            !_isResettingPlayTime;
+                                        final theme = Theme.of(context);
+                                        return GestureDetector(
+                                          onTap: canReset
+                                              ? _resetPlayTime
+                                              : null,
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 8.r,
+                                              vertical: 3.r,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: canReset
+                                                  ? theme.colorScheme.error
+                                                        .withValues(alpha: 0.15)
+                                                  : theme.colorScheme.onSurface
+                                                        .withValues(
+                                                          alpha: 0.05,
+                                                        ),
+                                              borderRadius:
+                                                  BorderRadius.circular(4.r),
+                                              border: Border.all(
+                                                color: canReset
+                                                    ? theme.colorScheme.error
+                                                          .withValues(
+                                                            alpha: 0.4,
+                                                          )
+                                                    : theme
+                                                          .colorScheme
+                                                          .onSurface
+                                                          .withValues(
+                                                            alpha: 0.1,
+                                                          ),
+                                                width: 1.r,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              AppLocale.reset.getString(
+                                                context,
+                                              ),
+                                              style: TextStyle(
+                                                fontSize: 11.r,
+                                                fontWeight: FontWeight.w600,
+                                                color: canReset
+                                                    ? theme.colorScheme.error
+                                                    : theme
+                                                          .colorScheme
+                                                          .onSurface
+                                                          .withValues(
+                                                            alpha: 0.3,
+                                                          ),
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                          ),
+
+                          // Emulator Overrides Section.
+                          if (_settingsShowEmulators) ...[
+                            SizedBox(height: 8.r),
+                            Padding(
+                              padding: EdgeInsets.only(left: 4.r, bottom: 4.r),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.sports_esports,
+                                    size: 12.r,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
+                                  ),
+                                  SizedBox(width: 4.r),
+                                  Text(
+                                    AppLocale.emulator.getString(context),
+                                    style: TextStyle(
+                                      fontSize: 11.r,
+                                      fontWeight: FontWeight.w600,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Global System Default Option.
+                            _EmulatorRow(
+                              key: _settingsKey(_settingsEmulatorStartIdx),
+                              isSelected:
+                                  _settingsSelectedIndex ==
+                                  _settingsEmulatorStartIdx,
+                              label: AppLocale.systemDefault.getString(context),
+                              isActive:
+                                  _resolvedEmulatorId == null ||
+                                  !_availableEmulators.any(
+                                    (e) => e.uniqueId == _resolvedEmulatorId,
+                                  ),
+                              onTap: () {
+                                SfxService().playNavSound();
+                                setState(
+                                  () => _settingsSelectedIndex =
+                                      _settingsEmulatorStartIdx,
+                                );
+                                _setEmulatorOverride(null);
+                              },
+                            ),
+                            // Individual Emulator Options.
+                            ..._availableEmulators.asMap().entries.map((entry) {
+                              final i = entry.key;
+                              final e = entry.value;
+                              return _EmulatorRow(
+                                key: _settingsKey(
+                                  _settingsEmulatorStartIdx + 1 + i,
+                                ),
+                                isSelected:
+                                    _settingsSelectedIndex ==
+                                    _settingsEmulatorStartIdx + 1 + i,
+                                label: e.name,
+                                isActive: _resolvedEmulatorId == e.uniqueId,
+                                onTap: () {
+                                  SfxService().playNavSound();
+                                  setState(
+                                    () => _settingsSelectedIndex =
+                                        _settingsEmulatorStartIdx + 1 + i,
+                                  );
+                                  _setEmulatorOverride(e);
+                                },
+                                emulator: e,
+                              );
+                            }),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                SizedBox(height: 8.r),
+              ],
             ),
-            SizedBox(height: 8.r),
-          ],
-        ),
-      ),
+          ),
         ),
       ),
     );

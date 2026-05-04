@@ -573,7 +573,8 @@ class SwitchSaveDetector {
           String titleIdPath;
           String titleId;
           if (nandDirectory.startsWith('content://')) {
-            if (titleIdEntity is! Map || titleIdEntity['is_directory'] != true) {
+            if (titleIdEntity is! Map ||
+                titleIdEntity['is_directory'] != true) {
               continue;
             }
             titleIdPath = titleIdEntity['uri']!.toString();
