@@ -1126,8 +1126,12 @@ class _MySystemsCarouselState extends State<MySystemsCarousel> {
         (system.isGame && customWheelPath != null && customWheelPath.isNotEmpty)
         ? File(customWheelPath)
         : null;
-    final hasWheelFile = wheelFile != null &&
-        _fileExistsCache.putIfAbsent(customWheelPath!, () => wheelFile.existsSync());
+    final hasWheelFile =
+        wheelFile != null &&
+        _fileExistsCache.putIfAbsent(
+          customWheelPath!,
+          () => wheelFile.existsSync(),
+        );
     final theme = Theme.of(context);
 
     return GestureDetector(
