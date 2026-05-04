@@ -76,7 +76,7 @@ flutter_launcher_icons:
   adaptive_icon_foreground: "assets/images/logo-foreground.png"
   adaptive_icon_monochrome: "assets/images/logo-monochrome.png"
   adaptive_icon_foreground_inset: 20
-  min_sdk_android: 21 # android min sdk min:16, default 21
+  min_sdk_android: 21 # android min sdk min:16, default 21 
   windows:
     generate: true
     image_path: "assets/images/logo.png"
@@ -105,3 +105,4 @@ flutter:
     - assets/shaders/gif_player.frag
     - assets/shaders/music_visualizer.frag
     - assets/shaders/music_card_background.frag
+#refresh2

@@ -1,5 +1,5 @@
 /// Adapts the existing [NeoSyncProvider] to the [ISyncProvider] interface
-/// without rewriting its complex sync, conflict, and quota logic.
+/// without rewriting its complex sync and quota logic.
 library;
 
 import 'dart:io';
@@ -37,7 +37,7 @@ class NeoSyncAdapter extends ChangeNotifier implements ISyncProvider {
     id: kProviderId,
     name: 'NeoSync',
     description:
-        'Official NeoStation cloud sync. Includes conflict '
+        'Official NeoStation cloud sync. Includes auto '
         'resolution, per-game tracking, and quota management.',
     author: 'NeoGameLab',
     isOfficial: true,
@@ -50,7 +50,6 @@ class NeoSyncAdapter extends ChangeNotifier implements ISyncProvider {
   @override
   SyncProviderStatus get status {
     if (_provider.isSyncing) return SyncProviderStatus.syncing;
-    if (_provider.isPausedForConflict) return SyncProviderStatus.paused;
     if (_provider.error != null) return SyncProviderStatus.error;
     if (_provider.isNeoSyncAuthenticated) return SyncProviderStatus.connected;
     return SyncProviderStatus.disconnected;

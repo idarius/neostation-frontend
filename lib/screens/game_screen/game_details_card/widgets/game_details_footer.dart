@@ -448,6 +448,11 @@ class GameDetailsFooter extends StatelessWidget {
           statusIcon = Icons.videogame_asset_off;
           statusText = AppLocale.noEmulator.getString(context);
           break;
+        case GameSyncStatus.error:
+          statusColor = Colors.red;
+          statusIcon = Icons.error_outline;
+          statusText = AppLocale.error.getString(context);
+          break;
       }
     } else {
       statusColor = Colors.lightBlue;

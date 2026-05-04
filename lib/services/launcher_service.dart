@@ -322,8 +322,9 @@ class LauncherService {
 
   /// Replaces placeholders in Android-specific launch templates with game data.
   ///
-  /// Supported placeholders: `{file.path}`, `{file.uri}`, and specialized tags
-  /// like `{tags.steamappid}`.
+  /// Supported placeholders:
+  /// - `{file.path}` — raw SAF content:// URI or real filesystem path
+  /// - `{file.uri}`  — proper URI: content:// passes through, bare paths become file://
   String resolvePlaceholdersAndroid(String template, GameModel game) {
     if (template.isEmpty) return template;
 

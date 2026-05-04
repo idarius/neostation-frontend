@@ -1399,6 +1399,11 @@ class SqliteService {
           'ALTER TABLE user_config ADD COLUMN local_sync_path TEXT',
         );
       }
+      if (!columns.contains('systems_version')) {
+        await db.execute(
+          "ALTER TABLE user_config ADD COLUMN systems_version TEXT DEFAULT ''",
+        );
+      }
     } catch (e) {
       _log.e('Minor fix ensuring user_config columns failed: $e');
       rethrow;
@@ -1593,7 +1598,8 @@ class SqliteService {
         show_game_wheel INTEGER DEFAULT 1,
         video_delay_ms INTEGER DEFAULT 1500,
         hide_recent_system INTEGER DEFAULT 0,
-        local_sync_path TEXT
+        local_sync_path TEXT,
+        systems_version TEXT DEFAULT ''
       );
       ''',
       '''

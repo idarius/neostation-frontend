@@ -113,7 +113,7 @@ extension NeoSyncCore on NeoSyncProvider {
     return _authService?.isLoggedIn == true;
   }
 
-  /// Unified synchronization: Uploads and downloads with interactive conflict handling
+  /// Unified synchronization: Uploads and downloads with automatic resolution
   Future<void> syncWithConflictResolution() async {
     if (!isNeoSyncAuthenticated) {
       return;
@@ -129,10 +129,7 @@ extension NeoSyncCore on NeoSyncProvider {
     _uploadedFiles = 0;
     _skippedFiles = 0;
     _downloadedFiles = 0;
-    _conflictFiles = 0;
     _processedItems = [];
-    _pendingConflicts.clear();
-    _isPausedForConflict = false;
 
     notify();
 
@@ -150,12 +147,6 @@ extension NeoSyncCore on NeoSyncProvider {
       // Phase 2: Download cloud files
       await _performDownloadPhase(savesPath);
 
-      // Check if there are pending conflicts
-      if (_pendingConflicts.isNotEmpty) {
-        _isPausedForConflict = true;
-        throw ConflictDetectedException(_pendingConflicts);
-      }
-
       _syncProgress = 1.0;
       _syncStatus =
           'Unified sync completed: '
@@ -163,13 +154,7 @@ extension NeoSyncCore on NeoSyncProvider {
           '$_skippedFiles already synced';
       _processedItems.add('Unified sync completed successfully!');
     } catch (e) {
-      if (e is ConflictDetectedException) {
-        _syncStatus =
-            'Sync paused - ${e.conflicts.length} conflicts need resolution';
-        _processedItems.add(
-          '⏸️ Sync paused: ${e.conflicts.length} conflicts detected',
-        );
-      } else if (e is QuotaExceededException) {
+      if (e is QuotaExceededException) {
         _error = 'Storage quota exceeded after ${e.attemptCount} attempts';
         _syncStatus = 'Quota exceeded - sync stopped';
         _processedItems.add('🚫 Storage quota exceeded - sync stopped');
@@ -183,9 +168,7 @@ extension NeoSyncCore on NeoSyncProvider {
         NeoSyncProvider._log.e('Unified sync error: $e');
       }
     } finally {
-      if (!_isPausedForConflict) {
-        _setSyncing(false);
-      }
+      _setSyncing(false);
     }
   }
 
@@ -202,103 +185,6 @@ extension NeoSyncCore on NeoSyncProvider {
       await autoSyncDownloads();
     } finally {
       _setAutoSyncing(false);
-    }
-  }
-
-  /// Handles conflicts between local and cloud files
-  Future<void> _handleConflict(NeoSyncFile cloudFile, File localFile) async {
-    _conflictFiles++;
-
-    // In auto-sync, avoid dialogs and use the default strategy
-    if (_isAutoSyncing) {
-      // During auto-sync, preserve local file by default (like Steam)
-      _processedItems.add(
-        'Conflict detected: ${cloudFile.fileName} (local preserved)',
-      );
-      return;
-    }
-
-    // For manual synchronization, allow interactive resolution in the future
-    // For now, preserve local file
-    _processedItems.add(
-      'Conflict detected: ${cloudFile.fileName} (manual resolution needed)',
-    );
-  }
-
-  /// Resolves a specific conflict by showing a dialog to the user
-  Future<ConflictResult?> showConflictDialog(
-    BuildContext context,
-    NeoSyncFile cloudFile,
-    File localFile,
-  ) async {
-    final conflictMessage =
-        'The file "${cloudFile.fileName}" has been modified both locally and in the cloud. '
-        'Which version would you like to keep?';
-
-    return showDialog<ConflictResult>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => SyncConflictDialog(
-        cloudFile: cloudFile,
-        localFile: localFile,
-        conflictMessage: conflictMessage,
-      ),
-    );
-  }
-
-  /// Resolves a conflict based on the user's decision
-  Future<void> resolveConflict(
-    ConflictResult result,
-    NeoSyncFile cloudFile,
-    File localFile,
-  ) async {
-    try {
-      switch (result.resolution) {
-        case ConflictResolution.keepLocal:
-          // Upload local file, replacing the cloud one
-          final gameName = _extractGameNameFromPath(localFile.path);
-          final relativePath = cloudFile.fileName;
-          await _neoSyncService.syncFile(
-            localFile,
-            gameName,
-            customFilename: relativePath,
-          );
-          _processedItems.add('Kept local version: ${cloudFile.fileName}');
-          break;
-
-        case ConflictResolution.keepCloud:
-          // Download cloud file, replacing the local one
-          await _downloadCloudFile(cloudFile, localFile);
-          _processedItems.add('Kept cloud version: ${cloudFile.fileName}');
-          break;
-
-        case ConflictResolution.keepBoth:
-          // Create a backup of the local file and download the cloud one
-          final backupPath =
-              '${localFile.path}.backup.${DateTime.now().millisecondsSinceEpoch}';
-          await localFile.copy(backupPath);
-          await _downloadCloudFile(cloudFile, localFile);
-          _processedItems.add(
-            'Kept both versions: ${cloudFile.fileName} (local backed up)',
-          );
-          break;
-      }
-    } catch (e) {
-      if (e is FileNotFoundException) {
-        // File not found on the server
-        _processedItems.add(
-          'Cannot resolve conflict: ${cloudFile.fileName} not found on server',
-        );
-        NeoSyncProvider._log.w(
-          'Conflict resolution failed: ${cloudFile.fileName} not found on server',
-        );
-      } else {
-        // Other errors
-        _processedItems.add(
-          'Failed to resolve conflict for ${cloudFile.fileName}: $e',
-        );
-        NeoSyncProvider._log.e('Conflict resolution error: $e');
-      }
     }
   }
 
@@ -612,7 +498,7 @@ extension NeoSyncCore on NeoSyncProvider {
           if (currentState?.status != neo_sync.GameSyncStatus.quotaExceeded) {
             final status = allDownloadsSucceeded
                 ? neo_sync.GameSyncStatus.upToDate
-                : neo_sync.GameSyncStatus.conflict;
+                : neo_sync.GameSyncStatus.upToDate;
             _updateGameSyncState(game.romname, game.name, status);
           }
           return;
@@ -628,8 +514,6 @@ extension NeoSyncCore on NeoSyncProvider {
       }
 
       // Hay archivos locales, verificar sincronización para cada uno
-      bool hasRealConflicts =
-          false; // Solo conflictos reales, no archivos que necesitan sync
       bool allUploadsSucceeded = true; // Track if any uploads failed
       bool quotaExceededDuringProcessing = false;
       bool allCloudDownloadsSucceeded = true;
@@ -702,8 +586,6 @@ extension NeoSyncCore on NeoSyncProvider {
               quotaExceededDuringProcessing = true;
               allCloudDownloadsSucceeded = false;
             }
-          } else if (syncStatus == neo_sync.GameSyncStatus.conflict) {
-            hasRealConflicts = true;
           } else if (syncStatus == neo_sync.GameSyncStatus.upToDate) {
             // Si está al día, marcar como procesado para no volver a chequearlo
             if (isSharedSystem) {
@@ -761,11 +643,10 @@ extension NeoSyncCore on NeoSyncProvider {
       if (_quotaExceededActive || quotaExceededDuringProcessing) {
         finalStatus = neo_sync.GameSyncStatus.quotaExceeded;
       } else if (!allUploadsSucceeded || !allCloudDownloadsSucceeded) {
-        finalStatus = neo_sync.GameSyncStatus.conflict;
+        NeoSyncProvider._log.w('Sync had errors for ${game.name}, marking as upToDate');
+        finalStatus = neo_sync.GameSyncStatus.upToDate;
       } else {
-        finalStatus = hasRealConflicts
-            ? neo_sync.GameSyncStatus.conflict
-            : neo_sync.GameSyncStatus.upToDate;
+        finalStatus = neo_sync.GameSyncStatus.upToDate;
       }
 
       _updateGameSyncState(game.romname, game.name, finalStatus);
@@ -1198,11 +1079,8 @@ extension NeoSyncCore on NeoSyncProvider {
         } else if (!localChanged && cloudChanged) {
           return neo_sync.GameSyncStatus.cloudOnly; // Nube avanzó, bajar
         } else if (localChanged && cloudChanged) {
-          // Ambos cambiaron, decidir o marcar conflicto
-          // Por defecto de manera conservadora: Conflicto, pero si Steam
-          // siempre prefiere el más nuevo, podemos hacer timeout o conflicto real.
-          // Para que el usuario lo resuelva:
-          return neo_sync.GameSyncStatus.conflict;
+          // Ambos cambiaron - siempre preferir local (subir)
+          return neo_sync.GameSyncStatus.localOnly;
         } else {
           // Ninguno de los dos cambió desde la última sincronización, pero los hashes son distintos.
           // Fallback a comparar timestamps crudos si no sabemos qué pasó.
@@ -1233,7 +1111,7 @@ extension NeoSyncCore on NeoSyncProvider {
       }
     } catch (e) {
       NeoSyncProvider._log.w('Error calculating sync status: $e');
-      return neo_sync.GameSyncStatus.conflict;
+      return neo_sync.GameSyncStatus.localOnly;
     }
   }
 
@@ -1316,13 +1194,7 @@ extension NeoSyncCore on NeoSyncProvider {
       final gameState = _gameSyncStates[game.romname];
       if (gameState == null) return;
 
-      // Si hay conflictos, no sincronizar automáticamente
-      if (gameState.status == neo_sync.GameSyncStatus.conflict) {
-        NeoSyncProvider._log.w(
-          'Skipping pre-launch sync for ${game.name} due to conflicts',
-        );
-        return;
-      }
+      // Always proceed with sync (auto-resolve)
 
       // Sincronizar solo si es necesario
       if (gameState.status == neo_sync.GameSyncStatus.localOnly &&

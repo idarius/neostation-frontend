@@ -40,6 +40,7 @@ class _GameLaunchDialogState extends State<GameLaunchDialog> {
   static final _log = LoggerService.instance;
 
   bool _closeCalled = false;
+  bool _onGameClosedFired = false;
   bool _postSyncStarted = false;
   bool _postSyncComplete = false;
   String _neoSyncStatus = '';
@@ -86,8 +87,13 @@ class _GameLaunchDialogState extends State<GameLaunchDialog> {
     // Always finalize manager: idempotent, ensures music/SFX restore even if
     // the dialog was dismissed externally (barrier tap) or timer hadn't fired yet.
     GameLaunchManager().onDialogDisposed();
-    if (!_closeCalled) {
-      // Emergency path: notify caller that session ended unexpectedly.
+    if (!_onGameClosedFired) {
+      // onGameClosed was not yet fired — covers two cases:
+      // 1. Normal emergency: dialog disposed before close sequence started.
+      // 2. Race: _closeDialog() set _closeCalled=true (timer started) but
+      //    barrier tap dismissed the dialog before the 1s timer fired.
+      //    The timer will see mounted=false and skip onGameClosed, so we
+      //    must call it here to restore the UI.
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => widget.onGameClosed(),
       );
@@ -197,9 +203,9 @@ class _GameLaunchDialogState extends State<GameLaunchDialog> {
     _closeCalled = true;
     Timer(const Duration(seconds: 1), () {
       if (mounted) {
+        _onGameClosedFired = true;
         Navigator.of(context).pop();
         widget.onGameClosed();
-        // dispose() calls onDialogDisposed() which finalizes manager.
       }
     });
   }
@@ -222,8 +228,7 @@ class _GameLaunchDialogState extends State<GameLaunchDialog> {
           return AppLocale.neoSyncLocalSavesOnly.getString(context);
         case GameSyncStatus.cloudOnly:
           return AppLocale.neoSyncCloudSavesOnly.getString(context);
-        case GameSyncStatus.conflict:
-          return AppLocale.neoSyncSaveConflict.getString(context);
+
         case GameSyncStatus.noSaveFound:
           return AppLocale.neoSyncNoSave.getString(context);
         case GameSyncStatus.disabled:

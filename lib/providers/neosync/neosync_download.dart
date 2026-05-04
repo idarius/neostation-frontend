@@ -257,7 +257,9 @@ extension NeoSyncDownload on NeoSyncProvider {
       if (localFile.existsSync()) {
         final localStat = await localFile.stat();
         if (cloudFile.uploadedAt.isAfter(localStat.modified)) {
-          await _handleConflict(cloudFile, localFile);
+          await _downloadCloudFileImpl(cloudFile, localFile);
+          _downloadedFiles++;
+          _processedItems.add('⬇️ Updated: ${cloudFile.fileName}');
         } else {
           _skippedFiles++;
         }

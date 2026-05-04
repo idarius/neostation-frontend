@@ -17,7 +17,6 @@ extension NeoSyncUpload on NeoSyncProvider {
     _uploadedFiles = 0;
     _skippedFiles = 0;
     _downloadedFiles = 0;
-    _conflictFiles = 0;
     _processedItems = [];
     notify();
 

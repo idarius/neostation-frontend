@@ -216,12 +216,37 @@ class MainActivity: MultiDisplayFlutterActivity(), GamepadsCompatibleActivity {
                         result.error("INVALID_ARGUMENTS", "URI is required", null)
                     }
                 }
+                "readSafFile" -> {
+                    val uriString = call.argument<String>("uri")
+                    if (uriString != null) {
+                        readSafFile(uriString, result)
+                    } else {
+                        result.error("INVALID_ARGUMENTS", "URI is required", null)
+                    }
+                }
                 "getSafFileSize" -> {
                     val uriString = call.argument<String>("uri")
                     if (uriString != null) {
                         getSafFileSize(uriString, result)
                     } else {
                         result.error("INVALID_ARGUMENTS", "URI is required", null)
+                    }
+                }
+                "findEmulatorDocumentProvider" -> {
+                    val packageName = call.argument<String>("packageName")
+                    if (packageName != null) {
+                        findEmulatorDocumentProvider(packageName, result)
+                    } else {
+                        result.error("INVALID_ARGUMENTS", "Package name is required", null)
+                    }
+                }
+                "mirrorEmulatorNand" -> {
+                    val packageName = call.argument<String>("packageName")
+                    val emulatorName = call.argument<String>("emulatorName")
+                    if (packageName != null && emulatorName != null) {
+                        mirrorEmulatorNand(packageName, emulatorName, result)
+                    } else {
+                        result.error("INVALID_ARGUMENTS", "Package name and emulator name are required", null)
                     }
                 }
                 "startSecondaryDisplay" -> {
@@ -707,7 +732,8 @@ class MainActivity: MultiDisplayFlutterActivity(), GamepadsCompatibleActivity {
                         android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID,
                         android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME,
                         android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE,
-                        android.provider.DocumentsContract.Document.COLUMN_SIZE
+                        android.provider.DocumentsContract.Document.COLUMN_SIZE,
+                        android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED
                     ),
                     null,
                     null,
@@ -720,6 +746,7 @@ class MainActivity: MultiDisplayFlutterActivity(), GamepadsCompatibleActivity {
                         val name = it.getString(1)
                         val mimeType = it.getString(2)
                         val size = it.getLong(3)
+                        val lastModified = it.getLong(4)
                         val isDir = mimeType == android.provider.DocumentsContract.Document.MIME_TYPE_DIR
                         
                         // Build individual URI for the file (needed for opening)
@@ -730,7 +757,8 @@ class MainActivity: MultiDisplayFlutterActivity(), GamepadsCompatibleActivity {
                             "path" to fileUri.toString(), // Keep "path" for backward compatibility
                             "name" to name,
                             "isDirectory" to isDir,
-                            "size" to size
+                            "size" to size,
+                            "lastModified" to lastModified
                         ))
                     }
                 }
@@ -816,6 +844,260 @@ class MainActivity: MultiDisplayFlutterActivity(), GamepadsCompatibleActivity {
                 }
             }
         }.start()
+    }
+
+    private fun readSafFile(uriString: String, result: MethodChannel.Result) {
+        Thread {
+            try {
+                val uri = Uri.parse(uriString)
+                val pfd = contentResolver.openFileDescriptor(uri, "r")
+                
+                if (pfd == null) {
+                    runOnUiThread { result.error("READ_FAILED", "Could not open file descriptor", null) }
+                    return@Thread
+                }
+
+                pfd.use { descriptor ->
+                    val fileDescriptor = descriptor.fileDescriptor
+                    val inputStream = java.io.FileInputStream(fileDescriptor)
+                    
+                    inputStream.use { stream ->
+                        val outputStream = java.io.ByteArrayOutputStream()
+                        val buffer = ByteArray(8192)
+                        var read: Int
+                        while (stream.read(buffer).also { read = it } != -1) {
+                            outputStream.write(buffer, 0, read)
+                        }
+                        
+                        runOnUiThread {
+                            result.success(outputStream.toByteArray())
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    result.error("READ_FAILED", e.message, null)
+                }
+            }
+        }.start()
+    }
+
+    private fun findEmulatorDocumentProvider(packageName: String, result: MethodChannel.Result) {
+        Thread {
+            try {
+                val pm = packageManager
+                
+                val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    pm.getPackageInfo(packageName, PackageManager.GET_PROVIDERS)
+                } else {
+                    @Suppress("DEPRECATION")
+                    pm.getPackageInfo(packageName, PackageManager.GET_PROVIDERS)
+                }
+                
+                val providers = packageInfo.providers ?: emptyArray()
+                
+                for (provider in providers) {
+                    val authority = provider.authority ?: continue
+                    
+                    try {
+                        val rootsUri = android.provider.DocumentsContract.buildRootsUri(authority)
+                        val cursor = contentResolver.query(
+                            rootsUri,
+                            arrayOf(
+                                android.provider.DocumentsContract.Root.COLUMN_ROOT_ID,
+                                android.provider.DocumentsContract.Root.COLUMN_DOCUMENT_ID,
+                                android.provider.DocumentsContract.Root.COLUMN_TITLE,
+                                android.provider.DocumentsContract.Root.COLUMN_SUMMARY
+                            ),
+                            null, null, null
+                        )
+                        
+                        cursor?.use {
+                            while (it.moveToNext()) {
+                                val rootId = it.getString(0)
+                                val documentId = it.getString(1)
+                                val title = it.getString(2)
+                                val summary = it.getString(3)
+                                
+                                val treeUri = android.provider.DocumentsContract.buildTreeDocumentUri(authority, documentId)
+                                
+                                // Verify we can actually list children
+                                val childrenUri = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, documentId)
+                                val childCursor = contentResolver.query(
+                                    childrenUri,
+                                    arrayOf(android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME),
+                                    null, null, null
+                                )
+                                
+                                val hasAccess = childCursor != null
+                                childCursor?.close()
+                                
+                                if (hasAccess) {
+                                    runOnUiThread {
+                                        result.success(mapOf(
+                                            "authority" to authority,
+                                            "rootId" to rootId,
+                                            "documentId" to documentId,
+                                            "title" to title,
+                                            "summary" to summary,
+                                            "treeUri" to treeUri.toString()
+                                        ))
+                                    }
+                                    return@Thread
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        continue
+                    }
+                }
+                
+                runOnUiThread {
+                    result.success(null)
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    result.error("PROVIDER_ERROR", e.message, null)
+                }
+            }
+        }.start()
+    }
+
+    private fun mirrorEmulatorNand(packageName: String, emulatorName: String, result: MethodChannel.Result) {
+        Thread {
+            try {
+                val externalDir = getExternalFilesDir(null) ?: run {
+                    runOnUiThread { result.success(null) }
+                    return@Thread
+                }
+                val mirrorRoot = File(externalDir, "switch_mirrors/$emulatorName/nand")
+                mirrorRoot.mkdirs()
+
+                val normalPath = "/storage/emulated/0/Android/data/$packageName/files"
+                val bypassPath = "/storage/emulated/0/Android/\u200bdata/$packageName/files"
+
+                var sourceDir: File? = null
+
+                // 1. Try normal path first
+                val normalFile = File(normalPath)
+                if (normalFile.exists() && normalFile.canRead()) {
+                    sourceDir = normalFile
+                }
+
+                // 2. Try SAF ExternalStorageProvider trick (Android 11-12)
+                if (sourceDir == null) {
+                    try {
+                        val treeUri = android.provider.DocumentsContract.buildTreeDocumentUri(
+                            "com.android.externalstorage.documents",
+                            "primary:Android/data/$packageName/files"
+                        )
+                        val docId = android.provider.DocumentsContract.getTreeDocumentId(treeUri)
+                        val childrenUri = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, docId)
+                        val cursor = contentResolver.query(
+                            childrenUri,
+                            arrayOf(android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME),
+                            null, null, null
+                        )
+                        if (cursor != null) {
+                            cursor.close()
+                            // If we can list, mirror via SAF
+                            mirrorViaSaf(treeUri, mirrorRoot)
+                            runOnUiThread { result.success(mirrorRoot.absolutePath) }
+                            return@Thread
+                        }
+                    } catch (e: Exception) {
+                        // SAF trick failed
+                    }
+                }
+
+                // 3. Try zero-width bypass (Android 14+)
+                if (sourceDir == null) {
+                    try {
+                        val bypassFile = File(bypassPath)
+                        if (bypassFile.exists() && bypassFile.canRead()) {
+                            sourceDir = bypassFile
+                        }
+                    } catch (e: Exception) {
+                        // Bypass failed
+                    }
+                }
+
+                if (sourceDir == null) {
+                    runOnUiThread { result.success(null) }
+                    return@Thread
+                }
+
+                // Mirror from filesystem source
+                mirrorDirectory(sourceDir, mirrorRoot)
+                runOnUiThread { result.success(mirrorRoot.absolutePath) }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    result.error("MIRROR_ERROR", e.message, null)
+                }
+            }
+        }.start()
+    }
+
+    private fun mirrorDirectory(source: File, dest: File) {
+        if (!source.exists()) return
+        if (source.isDirectory) {
+            dest.mkdirs()
+            source.listFiles()?.forEach { child ->
+                mirrorDirectory(child, File(dest, child.name))
+            }
+        } else {
+            if (!dest.exists() || dest.length() != source.length()) {
+                source.copyTo(dest, overwrite = true)
+            }
+            // Preserve timestamp
+            try {
+                dest.setLastModified(source.lastModified())
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun mirrorViaSaf(treeUri: android.net.Uri, destRoot: File) {
+        val docId = android.provider.DocumentsContract.getTreeDocumentId(treeUri)
+        mirrorSafRecursive(treeUri, docId, destRoot)
+    }
+
+    private fun mirrorSafRecursive(treeUri: android.net.Uri, documentId: String, destDir: File) {
+        val childrenUri = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, documentId)
+        val cursor = contentResolver.query(
+            childrenUri,
+            arrayOf(
+                android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE,
+                android.provider.DocumentsContract.Document.COLUMN_SIZE
+            ),
+            null, null, null
+        )
+        
+        cursor?.use {
+            while (it.moveToNext()) {
+                val id = it.getString(0)
+                val name = it.getString(1)
+                val mimeType = it.getString(2)
+                val size = it.getLong(3)
+                val isDir = mimeType == android.provider.DocumentsContract.Document.MIME_TYPE_DIR
+                val destFile = File(destDir, name)
+                
+                if (isDir) {
+                    destFile.mkdirs()
+                    mirrorSafRecursive(treeUri, id, destFile)
+                } else {
+                    if (!destFile.exists() || destFile.length() != size) {
+                        val fileUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(treeUri, id)
+                        contentResolver.openInputStream(fileUri)?.use { input ->
+                            destFile.outputStream().use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun getExternalStorageVolumes(result: MethodChannel.Result) {

@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:neostation/services/logger_service.dart';
+import 'package:neostation/services/saf_directory_service.dart';
 import 'package:path/path.dart' as path;
 import '../repositories/emulator_repository.dart';
 
@@ -189,6 +191,68 @@ class SwitchSaveDetector {
     return null;
   }
 
+  /// Checks if a directory exists without throwing on permission errors.
+  static Future<bool> _directoryExistsSafe(String dirPath) async {
+    try {
+      if (dirPath.startsWith('content://')) {
+        await SafDirectoryService.listFiles(dirPath);
+        return true; // If list succeeds, directory exists and is accessible
+      }
+      return await Directory(dirPath).exists();
+    } on PathAccessException catch (_) {
+      return false;
+    } catch (e) {
+      _log.d('Directory existence check failed for $dirPath: $e');
+      return false;
+    }
+  }
+
+  /// Lists a directory handling both filesystem paths and SAF URIs.
+  static Future<List<dynamic>> _listDirectory(String dirPath) async {
+    if (dirPath.startsWith('content://')) {
+      return SafDirectoryService.listFiles(dirPath);
+    }
+    return Directory(dirPath).list().toList();
+  }
+
+  /// Checks if a directory is non-empty.
+  static Future<bool> _isDirectoryNonEmpty(String dirPath) async {
+    if (dirPath.startsWith('content://')) {
+      final entries = await SafDirectoryService.listFiles(dirPath);
+      return entries.isNotEmpty;
+    }
+    try {
+      return await Directory(dirPath).list().isEmpty == false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Attempts to mirror the emulator's NAND directory to local app storage.
+  /// Uses native tricks (zero-width bypass, SAF external provider) on Android 11+.
+  static Future<String?> _mirrorEmulatorNandNative(
+    String packageName,
+    String emulatorName,
+  ) async {
+    try {
+      _log.i('Mirroring NAND for $packageName ($emulatorName) via native...');
+      const platform = MethodChannel('com.neogamelab.neostation/game');
+      final mirrorPath = await platform.invokeMethod<String>(
+        'mirrorEmulatorNand',
+        {'packageName': packageName, 'emulatorName': emulatorName},
+      );
+      if (mirrorPath != null) {
+        _log.i('Native mirror success for $emulatorName: $mirrorPath');
+      } else {
+        _log.w('Native mirror failed for $emulatorName');
+      }
+      return mirrorPath;
+    } catch (e) {
+      _log.d('Native mirror error for $packageName: $e');
+      return null;
+    }
+  }
+
   /// Detects all active emulator installations and their respective NAND directories.
   static Future<List<EmulatorNandInfo>> detectEmulatorNandPaths() async {
     final results = <EmulatorNandInfo>[];
@@ -204,6 +268,10 @@ class SwitchSaveDetector {
       ];
 
       for (var emu in androidEmulators) {
+        String? detectedNandPath;
+        String? detectedConfigPath;
+        bool detectedViaSaf = false;
+
         try {
           final packageName = emu['package']!;
           final defaultNandPath = path.join(
@@ -220,27 +288,47 @@ class SwitchSaveDetector {
             'config.ini',
           );
 
+          detectedConfigPath = configPath;
           String nandPath = defaultNandPath;
 
-          // Override with custom nand_directory if defined in config.ini.
-          final configFile = File(configPath);
-          if (await configFile.exists()) {
-            final content = await configFile.readAsString();
-            final customNandPath = _parseNandDirectory(
-              content,
-              isAndroid: true,
+          // Try filesystem access first
+          try {
+            final configFile = File(configPath);
+            if (await configFile.exists()) {
+              final content = await configFile.readAsString();
+              final customNandPath = _parseNandDirectory(
+                content,
+                isAndroid: true,
+              );
+              if (customNandPath != null && customNandPath.isNotEmpty) {
+                nandPath = customNandPath;
+              }
+            }
+          } catch (_) {
+            // Config may be inaccessible due to scoped storage
+          }
+
+          if (await _directoryExistsSafe(nandPath)) {
+            detectedNandPath = nandPath;
+          } else {
+            // Fallback: try native mirror with bypass tricks
+            final mirrorPath = await _mirrorEmulatorNandNative(
+              packageName,
+              emu['name']!,
             );
-            if (customNandPath != null && customNandPath.isNotEmpty) {
-              nandPath = customNandPath;
+            if (mirrorPath != null) {
+              detectedNandPath = mirrorPath;
+              detectedViaSaf = true;
             }
           }
 
-          if (await Directory(nandPath).exists()) {
+          if (detectedNandPath != null) {
             results.add(
               EmulatorNandInfo(
                 emulatorName: emu['name']!,
-                configPath: configPath,
-                nandDirectory: nandPath,
+                configPath: detectedConfigPath,
+                nandDirectory: detectedNandPath,
+                isSafUri: detectedViaSaf,
               ),
             );
           }
@@ -306,6 +394,7 @@ class SwitchSaveDetector {
                   emulatorName: emulatorName,
                   configPath: configPath,
                   nandDirectory: nandPath,
+                  isSafUri: false,
                 ),
               );
             }
@@ -359,6 +448,7 @@ class SwitchSaveDetector {
                   emulatorName: def['name']!,
                   configPath: def['config']!,
                   nandDirectory: nandDir,
+                  isSafUri: false,
                 ),
               );
             }
@@ -383,24 +473,30 @@ class SwitchSaveDetector {
         'save',
         '0000000000000000',
       );
-      final saveBaseDir = Directory(saveBasePath);
 
-      if (!await saveBaseDir.exists()) return null;
+      if (!await _directoryExistsSafe(saveBasePath)) return null;
 
-      // Iterate through all potential User IDs.
-      await for (var userIdEntity in saveBaseDir.list()) {
-        if (userIdEntity is Directory) {
-          final titleIdPath = path.join(userIdEntity.path, titleId);
-          final titleIdDir = Directory(titleIdPath);
+      final userIdEntries = await _listDirectory(saveBasePath);
 
-          if (await titleIdDir.exists() && await titleIdDir.list().length > 0) {
-            return SwitchSaveInfo(
-              titleId: titleId,
-              savePath: titleIdPath,
-              userId: path.basename(userIdEntity.path),
-              nandDirectory: nandDirectory,
-            );
-          }
+      for (var userIdEntity in userIdEntries) {
+        String userIdPath;
+        if (nandDirectory.startsWith('content://')) {
+          if (userIdEntity is! Map || userIdEntity['is_directory'] != true) continue;
+          userIdPath = userIdEntity['uri']!.toString();
+        } else {
+          if (userIdEntity is! Directory) continue;
+          userIdPath = userIdEntity.path;
+        }
+
+        final titleIdPath = path.join(userIdPath, titleId);
+
+        if (await _directoryExistsSafe(titleIdPath) && await _isDirectoryNonEmpty(titleIdPath)) {
+          return SwitchSaveInfo(
+            titleId: titleId,
+            savePath: titleIdPath,
+            userId: path.basename(userIdPath),
+            nandDirectory: nandDirectory,
+          );
         }
       }
     } catch (e) {
@@ -449,30 +545,49 @@ class SwitchSaveDetector {
         'save',
         '0000000000000000',
       );
-      final saveBaseDir = Directory(saveBasePath);
-      if (!await saveBaseDir.exists()) return results;
+      if (!await _directoryExistsSafe(saveBasePath)) return results;
 
-      await for (var userIdEntity in saveBaseDir.list()) {
-        if (userIdEntity is Directory) {
-          final userId = path.basename(userIdEntity.path);
+      final userIdEntries = await _listDirectory(saveBasePath);
 
-          await for (var titleIdEntity in userIdEntity.list()) {
-            if (titleIdEntity is Directory) {
-              final titleId = path.basename(titleIdEntity.path);
+      for (var userIdEntity in userIdEntries) {
+        String userIdPath;
+        String userId;
+        if (nandDirectory.startsWith('content://')) {
+          if (userIdEntity is! Map || userIdEntity['is_directory'] != true) continue;
+          userIdPath = userIdEntity['uri']!.toString();
+          userId = userIdEntity['name']!.toString();
+        } else {
+          if (userIdEntity is! Directory) continue;
+          userIdPath = userIdEntity.path;
+          userId = path.basename(userIdPath);
+        }
 
-              // Validate Title ID format (16 hexadecimal characters).
-              if (RegExp(r'^[0-9A-F]{16}$').hasMatch(titleId)) {
-                if (await titleIdEntity.list().length > 0) {
-                  results.add(
-                    SwitchSaveInfo(
-                      titleId: titleId,
-                      savePath: titleIdEntity.path,
-                      userId: userId,
-                      nandDirectory: nandDirectory,
-                    ),
-                  );
-                }
-              }
+        final titleIdEntries = await _listDirectory(userIdPath);
+
+        for (var titleIdEntity in titleIdEntries) {
+          String titleIdPath;
+          String titleId;
+          if (nandDirectory.startsWith('content://')) {
+            if (titleIdEntity is! Map || titleIdEntity['is_directory'] != true) continue;
+            titleIdPath = titleIdEntity['uri']!.toString();
+            titleId = titleIdEntity['name']!.toString();
+          } else {
+            if (titleIdEntity is! Directory) continue;
+            titleIdPath = titleIdEntity.path;
+            titleId = path.basename(titleIdPath);
+          }
+
+          // Validate Title ID format (16 hexadecimal characters).
+          if (RegExp(r'^[0-9A-F]{16}$').hasMatch(titleId)) {
+            if (await _isDirectoryNonEmpty(titleIdPath)) {
+              results.add(
+                SwitchSaveInfo(
+                  titleId: titleId,
+                  savePath: titleIdPath,
+                  userId: userId,
+                  nandDirectory: nandDirectory,
+                ),
+              );
             }
           }
         }
@@ -510,15 +625,18 @@ class SwitchSaveDetector {
   static Future<int> calculateSaveSize(String savePath) async {
     int totalSize = 0;
     try {
-      final saveDir = Directory(savePath);
-      if (!await saveDir.exists()) return 0;
+      if (!await _directoryExistsSafe(savePath)) return 0;
 
-      await for (var entity in saveDir.list(
-        recursive: true,
-        followLinks: false,
-      )) {
-        if (entity is File) {
-          totalSize += (await entity.stat()).size;
+      if (savePath.startsWith('content://')) {
+        totalSize = await _calculateSafSaveSize(savePath);
+      } else {
+        await for (var entity in Directory(savePath).list(
+          recursive: true,
+          followLinks: false,
+        )) {
+          if (entity is File) {
+            totalSize += (await entity.stat()).size;
+          }
         }
       }
     } catch (e) {
@@ -526,6 +644,22 @@ class SwitchSaveDetector {
     }
     return totalSize;
   }
+
+  /// Recursively calculates save size for SAF URIs.
+  static Future<int> _calculateSafSaveSize(String uri) async {
+    int totalSize = 0;
+    final entries = await SafDirectoryService.listFiles(uri);
+    for (final entry in entries) {
+      if (entry['is_directory'] == true) {
+        totalSize += await _calculateSafSaveSize(entry['uri']!.toString());
+      } else {
+        totalSize += await SafDirectoryService.getFileSize(entry['uri']!.toString());
+      }
+    }
+    return totalSize;
+  }
+
+
 }
 
 /// Holds NAND location and metadata for a specific emulator installation.
@@ -533,11 +667,13 @@ class EmulatorNandInfo {
   final String emulatorName;
   final String configPath;
   final String nandDirectory;
+  final bool isSafUri;
 
   EmulatorNandInfo({
     required this.emulatorName,
     required this.configPath,
     required this.nandDirectory,
+    this.isSafUri = false,
   });
 
   @override

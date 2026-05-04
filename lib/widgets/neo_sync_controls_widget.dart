@@ -87,7 +87,6 @@ class NeoSyncControlsWidgetState extends State<NeoSyncControlsWidget> {
                   // Last sync statistics
                   if (neoSyncProvider.uploadedFiles > 0 ||
                       neoSyncProvider.downloadedFiles > 0 ||
-                      neoSyncProvider.conflictFiles > 0 ||
                       neoSyncProvider.skippedFiles > 0)
                     Wrap(
                       spacing: 8.0,
@@ -104,12 +103,6 @@ class NeoSyncControlsWidgetState extends State<NeoSyncControlsWidget> {
                             '↓ ${neoSyncProvider.downloadedFiles}',
                             'Down',
                             Colors.blue,
-                          ),
-                        if (neoSyncProvider.conflictFiles > 0)
-                          _buildStatChip(
-                            '⚠ ${neoSyncProvider.conflictFiles}',
-                            'Conflicts',
-                            Colors.orange,
                           ),
                         if (neoSyncProvider.skippedFiles > 0)
                           _buildStatChip(

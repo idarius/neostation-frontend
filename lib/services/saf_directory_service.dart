@@ -150,4 +150,23 @@ class SafDirectoryService {
       return null;
     }
   }
+
+  /// Reads the entire contents of a SAF file URI.
+  ///
+  /// Uses file descriptor streaming for efficiency. Returns null on failure.
+  static Future<Uint8List?> readFile(String uri) async {
+    if (!Platform.isAndroid) {
+      return null;
+    }
+
+    try {
+      final Uint8List? bytes = await platform.invokeMethod('readSafFile', {
+        'uri': uri,
+      });
+      return bytes;
+    } on PlatformException catch (e) {
+      _log.e('Error reading SAF file: ${e.message}');
+      return null;
+    }
+  }
 }

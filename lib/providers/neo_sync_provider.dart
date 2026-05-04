@@ -6,7 +6,6 @@ import 'package:neostation/services/logger_service.dart';
 import '../services/neosync/neo_sync_service.dart';
 import '../services/neosync/auth_service.dart';
 import '../models/neo_sync_models.dart';
-import '../widgets/sync_conflict_dialog.dart';
 import '../widgets/quota_exceeded_dialog.dart';
 import '../models/neo_sync_models.dart' as neo_sync;
 import '../models/system_model.dart';
@@ -76,8 +75,6 @@ class NeoSyncProvider extends ChangeNotifier {
   /// Count of files successfully downloaded from the cloud.
   int _downloadedFiles = 0;
 
-  /// Count of files where a version conflict was detected.
-  int _conflictFiles = 0;
 
   /// History of item identifiers processed in the current session.
   List<String> _processedItems = [];
@@ -96,12 +93,6 @@ class NeoSyncProvider extends ChangeNotifier {
 
   /// Global flag indicating that a quota limit was recently hit.
   bool _quotaExceededActive = false;
-
-  /// Whether the sync process is halted awaiting user input on a version conflict.
-  bool _isPausedForConflict = false;
-
-  /// Queue of conflict events awaiting user resolution.
-  final List<ConflictPendingResolution> _pendingConflicts = [];
 
   /// Real-time synchronization state for individual games, keyed by unique ID.
   final Map<String, neo_sync.GameSyncState> _gameSyncStates = {};
@@ -139,7 +130,6 @@ class NeoSyncProvider extends ChangeNotifier {
   int get uploadedFiles => _uploadedFiles;
   int get skippedFiles => _skippedFiles;
   int get downloadedFiles => _downloadedFiles;
-  int get conflictFiles => _conflictFiles;
   List<String> get processedItems => _processedItems;
 
   bool get autoSyncEnabled => _autoSyncEnabled;
@@ -147,10 +137,6 @@ class NeoSyncProvider extends ChangeNotifier {
 
   int get quotaExceededAttempts => _quotaExceededAttempts;
   bool get quotaExceededDialogShown => _quotaExceededDialogShown;
-
-  bool get isPausedForConflict => _isPausedForConflict;
-  List<ConflictPendingResolution> get pendingConflicts =>
-      List.unmodifiable(_pendingConflicts);
 
   String? get error => _error;
   NeoSyncQuota? get quota => _quota;

@@ -316,6 +316,9 @@ enum GameSyncStatus {
 
   /// Critical emulator components are missing, preventing path resolution.
   missingEmulator,
+
+  /// The last synchronization attempt failed.
+  error,
 }
 
 /// Represents the comprehensive synchronization state of a specific game.
@@ -399,6 +402,8 @@ class GameSyncState {
         return 'Quota exceeded';
       case GameSyncStatus.missingEmulator:
         return 'No bin selected';
+      case GameSyncStatus.error:
+        return 'Error';
     }
   }
 
@@ -423,6 +428,8 @@ class GameSyncState {
         return Colors.red;
       case GameSyncStatus.missingEmulator:
         return Colors.redAccent;
+      case GameSyncStatus.error:
+        return Colors.red;
     }
   }
 }

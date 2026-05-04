@@ -1699,6 +1699,7 @@ class _SystemGamesListState extends State<SystemGamesList> {
     }
   }
 
+
   /// Presents a 'Random Game' picker to the user.
   void _showRandomGameDialog() {
     if (_games.isEmpty) {
